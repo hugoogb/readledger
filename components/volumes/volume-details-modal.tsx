@@ -27,6 +27,7 @@ import { useForm, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { volumeSchema, type VolumeSchema } from "@/lib/validations";
 import { toast } from "sonner";
+import { formatDateForInput } from "@/utils/date";
 
 const storeOptions = [
   { value: Store.AMAZON, label: "Amazon" },
@@ -84,7 +85,7 @@ export function VolumeDetailsModal({
       coverImage: volume.coverImage || "",
       condition: volume.condition,
       notes: volume.notes || "",
-      purchaseDate: volume.purchaseDate ? new Date(volume.purchaseDate) : null,
+      purchaseDate: formatDateForInput(volume.purchaseDate) as unknown as Date,
     },
   });
 
@@ -101,9 +102,9 @@ export function VolumeDetailsModal({
         coverImage: volume.coverImage || "",
         condition: volume.condition,
         notes: volume.notes || "",
-        purchaseDate: volume.purchaseDate
-          ? new Date(volume.purchaseDate)
-          : null,
+        purchaseDate: formatDateForInput(
+          volume.purchaseDate,
+        ) as unknown as Date,
       });
     }
   }, [isOpen, volume, seriesDefaults, reset]);
@@ -277,7 +278,7 @@ export function VolumeDetailsModal({
               <Input
                 id="purchaseDate"
                 type="date"
-                {...register("purchaseDate", { valueAsDate: true })}
+                {...register("purchaseDate")}
                 icon={<Calendar className="w-4 h-4" />}
               />
             </div>
