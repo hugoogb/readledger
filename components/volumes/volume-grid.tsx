@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Volume } from "@/lib/generated/prisma/client";
+import type { Volume } from "@/lib/generated/prisma/browser";
 import { toggleVolumeRead } from "@/actions/volumes";
 import {
   BookOpen,
@@ -15,6 +15,7 @@ import Image from "next/image";
 import { formatCurrency } from "@/utils/currency";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
 
 type SeriesDefaults = {
   retailPrice?: number | null;
@@ -47,8 +48,14 @@ function VolumeCell({
 
   const handleToggleRead = (e: React.MouseEvent) => {
     e.stopPropagation();
-    startTransition(() => {
-      toggleVolumeRead(volume.id);
+    startTransition(async () => {
+      try {
+        await toggleVolumeRead(volume.id);
+        window.dispatchEvent(new CustomEvent("stats-update"));
+        toast.success(`Volume ${volume.volumeNumber} updated`);
+      } catch {
+        toast.error("Failed to update volume");
+      }
     });
   };
 
@@ -68,11 +75,12 @@ function VolumeCell({
           group relative aspect-3/4 rounded-xl overflow-hidden cursor-pointer
           transition-all duration-200
           ${isPending ? "opacity-50" : ""}
-          ${isOwned
-            ? isRead
-              ? "ring-2 ring-success/60 shadow-md shadow-success/20"
-              : "ring-2 ring-accent/60 shadow-md shadow-accent/20"
-            : "ring-1 ring-border hover:ring-border-hover"
+          ${
+            isOwned
+              ? isRead
+                ? "ring-2 ring-success/60 shadow-md shadow-success/20"
+                : "ring-2 ring-accent/60 shadow-md shadow-accent/20"
+              : "ring-1 ring-border hover:ring-border-hover"
           }
         `}
         onClick={handleOpenModal}
@@ -81,11 +89,12 @@ function VolumeCell({
         <div
           className={`
             absolute inset-0
-            ${isOwned
-              ? isRead
-                ? "bg-linear-to-br from-success/15 to-background-tertiary"
-                : "bg-linear-to-br from-accent/15 to-background-tertiary"
-              : "bg-background-tertiary"
+            ${
+              isOwned
+                ? isRead
+                  ? "bg-linear-to-br from-success/15 to-background-tertiary"
+                  : "bg-linear-to-br from-accent/15 to-background-tertiary"
+                : "bg-background-tertiary"
             }
           `}
         />
@@ -111,13 +120,14 @@ function VolumeCell({
           <span
             className={`
               text-2xl font-bold
-              ${hasCover
-                ? "text-white drop-shadow-md"
-                : isOwned
-                  ? isRead
-                    ? "text-success"
-                    : "text-accent"
-                  : "text-foreground-muted/50"
+              ${
+                hasCover
+                  ? "text-white drop-shadow-md"
+                  : isOwned
+                    ? isRead
+                      ? "text-success"
+                      : "text-accent"
+                    : "text-foreground-muted/50"
               }
             `}
           >
@@ -178,16 +188,16 @@ function VolumeCell({
         {/* Action Buttons - Bottom Right */}
         <div className="absolute bottom-1 right-1 z-20 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
           {!isOwned ? (
-          <Button
-            size="icon"
-            onClick={handleOpenModal}
-            disabled={isPending}
-            variant={isOwned ? "default" : "secondary"}
-            className="w-7 h-7 rounded-md bg-white text-background hover:bg-white/90"
-            title={isOwned ? "Edit volume" : "Mark as owned"}
-          >
-            <Package className="w-3.5 h-3.5" />
-          </Button>
+            <Button
+              size="icon"
+              onClick={handleOpenModal}
+              disabled={isPending}
+              variant={isOwned ? "default" : "secondary"}
+              className="w-7 h-7 rounded-md bg-white text-background hover:bg-white/90"
+              title={isOwned ? "Edit volume" : "Mark as owned"}
+            >
+              <Package className="w-3.5 h-3.5" />
+            </Button>
           ) : (
             <Button
               size="icon"
@@ -262,15 +272,15 @@ export function VolumeGrid({
   return (
     <div className="grid grid-cols-5 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2">
       {volumeSlots.map((volume, index) =>
-          volume ? (
-            <VolumeCell
-              key={volume.id}
-              volume={volume}
-              seriesDefaults={seriesDefaults}
-            />
-          ) : (
-            <EmptyVolumeCell key={index} volumeNumber={index + 1} />
-          ),
+        volume ? (
+          <VolumeCell
+            key={volume.id}
+            volume={volume}
+            seriesDefaults={seriesDefaults}
+          />
+        ) : (
+          <EmptyVolumeCell key={index} volumeNumber={index + 1} />
+        ),
       )}
     </div>
   );

@@ -3,8 +3,8 @@
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
-import { SeriesStatus } from "@/lib/generated/prisma/enums";
-import { Editorial } from "@/lib/generated/prisma/client";
+import { SeriesStatus, Editorial } from "@/lib/generated/prisma/enums";
+import { seriesSchema } from "@/lib/validations";
 
 export type CreateSeriesInput = {
   title: string;
@@ -29,10 +29,13 @@ export type VolumeInput = {
 export async function createSeries(input: CreateSeriesInput) {
   const user = await requireUser();
 
+  const validated = seriesSchema.parse(input);
+
   const series = await prisma.series.create({
     data: {
-      ...input,
+      ...validated,
       userId: user.id,
+      editorial: (validated.editorial as Editorial) || null,
     },
   });
 
@@ -49,10 +52,13 @@ export async function createSeriesWithVolumes(
 ) {
   const user = await requireUser();
 
+  const validated = seriesSchema.parse(input);
+
   const series = await prisma.series.create({
     data: {
-      ...input,
+      ...validated,
       userId: user.id,
+      editorial: (validated.editorial as Editorial) || null,
       volumes: {
         create: volumes.map((v) => ({
           volumeNumber: v.volumeNumber,
@@ -85,9 +91,14 @@ export async function updateSeries(id: string, input: UpdateSeriesInput) {
     throw new Error("Series not found");
   }
 
+  const validated = seriesSchema.partial().parse(input);
+
   const updated = await prisma.series.update({
     where: { id },
-    data: input,
+    data: {
+      ...validated,
+      editorial: (validated.editorial as Editorial) || undefined,
+    },
   });
 
   // If totalVolumes increased, create new volume entries

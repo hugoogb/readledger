@@ -1,5 +1,6 @@
 import { getSeries } from "@/actions/series";
 import { getVolumeStats } from "@/actions/volumes";
+import type { Metadata } from "next";
 import { VolumeGrid } from "@/components/volumes/volume-grid";
 import { BulkMarkOwnedModal } from "@/components/volumes/bulk-mark-owned-modal";
 import { BulkSetReadModal } from "@/components/volumes/bulk-set-read-modal";
@@ -27,7 +28,19 @@ const editorialLabels: Record<string, string> = {
   PLANETA_DEAGOSTINI: "Planeta DeAgostini",
 };
 
-const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "outline" | "destructive" | "success" | "warning" }> = {
+const statusConfig: Record<
+  string,
+  {
+    label: string;
+    variant:
+      | "default"
+      | "secondary"
+      | "outline"
+      | "destructive"
+      | "success"
+      | "warning";
+  }
+> = {
   READING: { label: "Reading", variant: "default" },
   COMPLETED: { label: "Completed", variant: "success" },
   ON_HOLD: { label: "On Hold", variant: "warning" },
@@ -44,6 +57,29 @@ function formatCurrency(amount: number) {
     style: "currency",
     currency: "EUR",
   }).format(amount);
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { id } = await params;
+  const series = await getSeries(id);
+
+  if (!series) {
+    return {
+      title: "Series Not Found",
+    };
+  }
+
+  return {
+    title: series.title,
+    description:
+      series.description || `Track your collection of ${series.title}`,
+    openGraph: {
+      title: `${series.title} | ReadLedger`,
+      description:
+        series.description || `Track your collection of ${series.title}`,
+      images: series.coverImage ? [series.coverImage] : [],
+    },
+  };
 }
 
 export default async function SeriesDetailPage({ params }: Props) {
@@ -114,7 +150,8 @@ export default async function SeriesDetailPage({ params }: Props) {
                   {series.retailPrice && series.totalVolumes && (
                     <span className="flex items-center gap-2">
                       <WalletCards className="w-4 h-4" />
-                      Total retail: {formatCurrency(series.retailPrice * series.totalVolumes)}
+                      Total retail:{" "}
+                      {formatCurrency(series.retailPrice * series.totalVolumes)}
                     </span>
                   )}
                 </div>

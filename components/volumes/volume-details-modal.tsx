@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { updateVolume } from "@/actions/volumes";
+import { updateVolume, type UpdateVolumeInput } from "@/actions/volumes";
 import { Modal } from "@/components/ui/modal";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
@@ -21,25 +21,29 @@ import {
   ImageIcon,
 } from "lucide-react";
 import { Condition, Store } from "@/lib/generated/prisma/enums";
-import { Volume } from "@/lib/generated/prisma/client";
+import type { Volume } from "@/lib/generated/prisma/browser";
 import Image from "next/image";
+import { useForm, type SubmitHandler } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { volumeSchema, type VolumeSchema } from "@/lib/validations";
+import { toast } from "sonner";
 
 const storeOptions = [
-  { value: "AMAZON", label: "Amazon" },
-  { value: "VINTED", label: "Vinted" },
-  { value: "WALLAPOP", label: "Wallapop" },
-  { value: "ABACUS", label: "Abacus" },
-  { value: "CASA_DEL_LIBRO", label: "Casa del Libro" },
-  { value: "NA", label: "N/A" },
+  { value: Store.AMAZON, label: "Amazon" },
+  { value: Store.VINTED, label: "Vinted" },
+  { value: Store.WALLAPOP, label: "Wallapop" },
+  { value: Store.ABACUS, label: "Abacus" },
+  { value: Store.CASA_DEL_LIBRO, label: "Casa del Libro" },
+  { value: Store.NA, label: "N/A" },
 ];
 
 const conditionOptions = [
-  { value: "NEW", label: "New" },
-  { value: "LIKE_NEW", label: "Like New" },
-  { value: "VERY_GOOD", label: "Very Good" },
-  { value: "GOOD", label: "Good" },
-  { value: "ACCEPTABLE", label: "Acceptable" },
-  { value: "POOR", label: "Poor" },
+  { value: Condition.NEW, label: "New" },
+  { value: Condition.LIKE_NEW, label: "Like New" },
+  { value: Condition.VERY_GOOD, label: "Very Good" },
+  { value: Condition.GOOD, label: "Good" },
+  { value: Condition.ACCEPTABLE, label: "Acceptable" },
+  { value: Condition.POOR, label: "Poor" },
 ];
 
 type SeriesDefaults = {
@@ -53,30 +57,6 @@ type VolumeDetailsModalProps = {
   onClose: () => void;
 };
 
-function getInitialFormData(volume: Volume, seriesDefaults?: SeriesDefaults) {
-  if (volume.owned) {
-    return {
-      coverImage: volume.coverImage || "",
-      pricePaid: volume.pricePaid?.toString() || "",
-      store: volume.store || "",
-      condition: volume.condition || "NEW",
-      purchaseDate: volume.purchaseDate
-        ? new Date(volume.purchaseDate).toISOString().split("T")[0]
-        : new Date().toISOString().split("T")[0],
-      notes: volume.notes || "",
-    };
-  } else {
-    return {
-      coverImage: "",
-      pricePaid: seriesDefaults?.retailPrice?.toString() || "",
-      store: "",
-      condition: "NEW",
-      purchaseDate: new Date().toISOString().split("T")[0],
-      notes: "",
-    };
-  }
-}
-
 export function VolumeDetailsModal({
   volume,
   seriesDefaults,
@@ -84,68 +64,103 @@ export function VolumeDetailsModal({
   onClose,
 }: VolumeDetailsModalProps) {
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [formData, setFormData] = useState(() =>
-    getInitialFormData(volume, seriesDefaults),
-  );
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    watch,
+    formState: { errors, isSubmitting },
+  } = useForm<VolumeSchema>({
+    resolver: zodResolver(volumeSchema),
+    defaultValues: {
+      volumeNumber: volume.volumeNumber,
+      title: volume.title || "",
+      owned: volume.owned,
+      read: volume.read,
+      pricePaid:
+        Number(volume.pricePaid?.toFixed(2)) || seriesDefaults?.retailPrice,
+      store: volume.store,
+      coverImage: volume.coverImage || "",
+      condition: volume.condition,
+      notes: volume.notes || "",
+      purchaseDate: volume.purchaseDate ? new Date(volume.purchaseDate) : null,
+    },
+  });
 
   useEffect(() => {
     if (isOpen) {
-      setFormData(getInitialFormData(volume, seriesDefaults));
-      setError(null);
-    }
-  }, [isOpen, volume, seriesDefaults]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      await updateVolume(volume.id, {
-        owned: true,
-        coverImage: formData.coverImage || undefined,
-        pricePaid: formData.pricePaid
-          ? parseFloat(formData.pricePaid)
-          : undefined,
-        store: (formData.store as Store) || undefined,
-        condition: formData.condition as Condition,
-        purchaseDate: formData.purchaseDate
-          ? new Date(formData.purchaseDate)
-          : new Date(),
-        notes: formData.notes || undefined,
+      reset({
+        volumeNumber: volume.volumeNumber,
+        title: volume.title || "",
+        owned: volume.owned,
+        read: volume.read,
+        pricePaid:
+          Number(volume.pricePaid?.toFixed(2)) || seriesDefaults?.retailPrice,
+        store: volume.store,
+        coverImage: volume.coverImage || "",
+        condition: volume.condition,
+        notes: volume.notes || "",
+        purchaseDate: volume.purchaseDate
+          ? new Date(volume.purchaseDate)
+          : null,
       });
+    }
+  }, [isOpen, volume, seriesDefaults, reset]);
+
+  const onSubmit: SubmitHandler<VolumeSchema> = async (data) => {
+    try {
+      const input: UpdateVolumeInput = {
+        volumeNumber: data.volumeNumber,
+        owned: true,
+        read: data.read,
+        pricePaid: Number(data.pricePaid?.toFixed(2)) ?? undefined,
+        condition: data.condition,
+        store: data.store || undefined,
+        coverImage: data.coverImage || undefined,
+        purchaseDate: data.purchaseDate || undefined,
+        readDate: data.readDate || undefined,
+        notes: data.notes || undefined,
+      };
+
+      await updateVolume(volume.id, input);
+      toast.success(`Volume ${volume.volumeNumber} updated`);
+      window.dispatchEvent(new CustomEvent("stats-update"));
       router.refresh();
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to update volume");
-    } finally {
-      setIsLoading(false);
+      toast.error(
+        err instanceof Error ? err.message : "Failed to update volume",
+      );
     }
   };
 
   const handleRemoveOwned = async () => {
-    setIsLoading(true);
-    setError(null);
-
     try {
-      await updateVolume(volume.id, {
+      const input: UpdateVolumeInput = {
         owned: false,
         read: false,
         pricePaid: undefined,
         store: undefined,
+        coverImage: undefined,
         purchaseDate: undefined,
         readDate: undefined,
-      });
+      };
+
+      await updateVolume(volume.id, input);
+      toast.success(`Volume ${volume.volumeNumber} removed from collection`);
+      window.dispatchEvent(new CustomEvent("stats-update"));
       router.refresh();
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to update volume");
-    } finally {
-      setIsLoading(false);
+      toast.error(
+        err instanceof Error ? err.message : "Failed to remove volume",
+      );
     }
   };
+
+  // eslint-disable-next-line react-hooks/incompatible-library
+  const coverImage = watch("coverImage");
 
   return (
     <Modal
@@ -153,24 +168,24 @@ export function VolumeDetailsModal({
       onClose={onClose}
       title={`Volume ${volume.volumeNumber}`}
     >
-      <form onSubmit={handleSubmit} className="space-y-5">
-        {/* Volume Header */}
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         <div className="flex items-center gap-4 pb-4 border-b border-border">
           <div
             className={`
               w-14 h-20 rounded-lg overflow-hidden shrink-0
               flex items-center justify-center
-              ${formData.coverImage
-                ? ""
-                : "bg-linear-to-br from-accent/20 to-accent/5 border border-accent/20"
+              ${
+                coverImage
+                  ? ""
+                  : "bg-linear-to-br from-accent/20 to-accent/5 border border-accent/20"
               }
             `}
           >
-            {formData.coverImage ? (
+            {coverImage ? (
               <Image
                 width={144}
                 height={192}
-                src={formData.coverImage}
+                src={coverImage}
                 alt={`Volume ${volume.volumeNumber}`}
                 className="object-cover"
               />
@@ -187,7 +202,10 @@ export function VolumeDetailsModal({
             </h3>
             <div className="mt-1">
               {volume.owned ? (
-                <Badge variant={volume.read ? "success" : "default"} className="gap-1.5">
+                <Badge
+                  variant={volume.read ? "success" : "default"}
+                  className="gap-1.5"
+                >
                   <Package className="w-3.5 h-3.5" />
                   {volume.read ? "Already read" : "In your collection"}
                 </Badge>
@@ -200,20 +218,21 @@ export function VolumeDetailsModal({
           </div>
         </div>
 
-        {/* Form Fields */}
         <div className="space-y-4">
           <div>
             <Label htmlFor="coverImage">Cover Image URL</Label>
             <Input
               id="coverImage"
               type="url"
-              value={formData.coverImage}
-              onChange={(e) =>
-                setFormData({ ...formData, coverImage: e.target.value })
-              }
+              {...register("coverImage")}
               placeholder="https://..."
               icon={<ImageIcon className="w-4 h-4" />}
             />
+            {errors.coverImage && (
+              <p className="text-xs text-error mt-1">
+                {errors.coverImage.message}
+              </p>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -224,24 +243,19 @@ export function VolumeDetailsModal({
                 type="number"
                 step="0.01"
                 min="0"
-                value={formData.pricePaid}
-                onChange={(e) =>
-                  setFormData({ ...formData, pricePaid: e.target.value })
-                }
+                {...register("pricePaid", { valueAsNumber: true })}
                 placeholder="9.95"
                 icon={<Euro className="w-4 h-4" />}
               />
             </div>
             <div>
               <Label htmlFor="store">Store</Label>
-              <Select
-                id="store"
-                value={formData.store}
-                onChange={(e) => setFormData({ ...formData, store: e.target.value })}
-              >
+              <Select id="store" {...register("store")}>
                 <option value="">Select store...</option>
                 {storeOptions.map((opt) => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
                 ))}
               </Select>
             </div>
@@ -250,15 +264,11 @@ export function VolumeDetailsModal({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="condition">Condition</Label>
-              <Select
-                id="condition"
-                value={formData.condition}
-                onChange={(e) =>
-                  setFormData({ ...formData, condition: e.target.value })
-                }
-              >
+              <Select id="condition" {...register("condition")}>
                 {conditionOptions.map((opt) => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
                 ))}
               </Select>
             </div>
@@ -267,10 +277,7 @@ export function VolumeDetailsModal({
               <Input
                 id="purchaseDate"
                 type="date"
-                value={formData.purchaseDate}
-                onChange={(e) =>
-                  setFormData({ ...formData, purchaseDate: e.target.value })
-                }
+                {...register("purchaseDate", { valueAsDate: true })}
                 icon={<Calendar className="w-4 h-4" />}
               />
             </div>
@@ -283,22 +290,12 @@ export function VolumeDetailsModal({
             </Label>
             <Textarea
               id="notes"
-              value={formData.notes}
-              onChange={(e) =>
-                setFormData({ ...formData, notes: e.target.value })
-              }
+              {...register("notes")}
               rows={2}
               placeholder="Any notes about this volume..."
             />
           </div>
         </div>
-
-        {error && (
-          <div className="flex items-center gap-2 p-3 bg-error/10 border border-error/20 rounded-xl text-error text-sm">
-            <span>⚠️</span>
-            {error}
-          </div>
-        )}
 
         <div className="flex gap-3 pt-2">
           {volume.owned && (
@@ -306,7 +303,7 @@ export function VolumeDetailsModal({
               variant="destructive"
               type="button"
               onClick={handleRemoveOwned}
-              disabled={isLoading}
+              disabled={isSubmitting}
               className="px-3"
               title="Remove from collection"
             >
@@ -323,10 +320,10 @@ export function VolumeDetailsModal({
           </Button>
           <Button
             type="submit"
-            disabled={isLoading}
+            disabled={isSubmitting}
             className="flex-1 gap-2"
           >
-            {isLoading ? (
+            {isSubmitting ? (
               <Loader2 className="w-5 h-5 animate-spin" />
             ) : (
               <>

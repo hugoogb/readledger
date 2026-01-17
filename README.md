@@ -1,36 +1,69 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ReadLedger 📚
 
-## Getting Started
+ReadLedger is a premium Manga Collection Tracker built for serious collectors. Track every volume you own, monitor your reading progress, and get insights into your spending habits with a beautiful, modern interface.
 
-First, run the development server:
+## ✨ Features
+
+- **Intelligent Search**: Find and add manga series instantly using the Jikan (MyAnimeList) API.
+- **Collection Tracking**: Detailed volume management (owned, read, missing).
+- **Financial Insights**: Track how much you spend and see your savings compared to retail prices.
+- **Beautiful Dashboard**: Overview of your entire collection with modern visualizations.
+- **Production Ready**: Built with Next.js 15, Prisma, and Supabase Auth.
+
+## 🚀 Tech Stack
+
+- **Framework**: [Next.js 15](https://nextjs.org/) (App Router)
+- **Database**: [PostgreSQL](https://www.postgresql.org/) (hosted on Supabase)
+- **ORM**: [Prisma](https://www.prisma.io/)
+- **Authentication**: [Supabase Auth](https://supabase.com/auth)
+- **Styling**: [Tailwind CSS 4](https://tailwindcss.com/)
+- **Icons**: [Lucide React](https://lucide.dev/)
+- **Validation**: [Zod](https://zod.dev/)
+
+## 🛠️ Getting Started
+
+### 1. Prerequisites
+
+- Node.js 20+
+- A Supabase project
+
+### 2. Environment Setup
+
+Copy `.env.example` to `.env` and fill in your credentials:
+
+```bash
+cp .env.example .env
+```
+
+### 3. Installation
+
+```bash
+npm install
+```
+
+### 4. Database Setup
+
+Push the schema to your database:
+
+```bash
+npx prisma db push
+```
+
+### 5. Running Locally
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 📦 Deployment
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+This project is optimized for deployment on **Vercel**.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. Create a new project on Vercel.
+2. Link your GitHub repository.
+3. Add the environment variables from your `.env` file.
+4. Deploy!
 
-## Learn More
+## 📄 License
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+MIT

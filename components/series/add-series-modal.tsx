@@ -1,9 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { createSeries, createSeriesWithVolumes } from "@/actions/series";
+import {
+  createSeries,
+  createSeriesWithVolumes,
+  type CreateSeriesInput,
+} from "@/actions/series";
 import { Loader2, Plus, Search, Edit3, BookOpen } from "lucide-react";
-import { SeriesStatus, Editorial } from "@/lib/generated/prisma/enums";
 import { useRouter } from "next/navigation";
 import { Modal } from "@/components/ui/modal";
 import { MangaSearch } from "./manga-search";
@@ -17,78 +20,69 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select } from "@/components/ui/select";
+import { useForm, type SubmitHandler } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { seriesSchema, type SeriesSchema } from "@/lib/validations";
+import { toast } from "sonner";
+import { SeriesStatus, Editorial } from "@/lib/generated/prisma/enums";
 
 const statusOptions = [
-  { value: "READING", label: "Reading" },
-  { value: "COMPLETED", label: "Completed" },
-  { value: "ON_HOLD", label: "On Hold" },
-  { value: "DROPPED", label: "Dropped" },
-  { value: "PLAN_TO_READ", label: "Plan to Read" },
+  { value: SeriesStatus.READING, label: "Reading" },
+  { value: SeriesStatus.COMPLETED, label: "Completed" },
+  { value: SeriesStatus.ON_HOLD, label: "On Hold" },
+  { value: SeriesStatus.DROPPED, label: "Dropped" },
+  { value: SeriesStatus.PLAN_TO_READ, label: "Plan to Read" },
 ];
 
 const editorialOptions = [
-  { value: "", label: "Select editorial..." },
-  { value: "PLANETA_COMIC", label: "Planeta Cómic" },
-  { value: "PLANETA_DEAGOSTINI", label: "Planeta DeAgostini" },
+  { value: Editorial.PLANETA_COMIC, label: "Planeta Cómic" },
+  { value: Editorial.PLANETA_DEAGOSTINI, label: "Planeta DeAgostini" },
 ];
-
-type FormData = {
-  title: string;
-  author: string;
-  editorial: string;
-  totalVolumes: string;
-  retailPrice: string;
-  coverImage: string;
-  description: string;
-  status: SeriesStatus;
-  publishing: boolean;
-  malId: number | null;
-};
-
-const initialFormData: FormData = {
-  title: "",
-  author: "",
-  editorial: "",
-  totalVolumes: "",
-  retailPrice: "",
-  coverImage: "",
-  description: "",
-  status: "READING",
-  publishing: false,
-  malId: null,
-};
 
 export function AddSeriesModal() {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [showSearch, setShowSearch] = useState(true);
-  const [formData, setFormData] = useState<FormData>(initialFormData);
+
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    watch,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<SeriesSchema>({
+    resolver: zodResolver(seriesSchema),
+    defaultValues: {
+      status: SeriesStatus.READING,
+      publishing: false,
+      title: "",
+      author: "",
+      editorial: Editorial.PLANETA_COMIC,
+      coverImage: "",
+      description: "",
+      totalVolumes: null,
+      retailPrice: null,
+      malId: null,
+    },
+  });
 
   const handleOpenChange = (open: boolean) => {
     setIsOpen(open);
     if (!open) {
-      // Reset state when closing
       setShowSearch(true);
-      setFormData(initialFormData);
-      setError(null);
+      reset();
     }
   };
 
   const handleSearchSelect = (data: FormattedMangaData) => {
-    setFormData({
-      title: data.title || "",
-      author: data.author || "",
-      editorial: "",
-      totalVolumes: data.totalVolumes?.toString() || "",
-      retailPrice: "",
-      coverImage: data.coverImage || "",
-      description: data.description || "",
-      status: "READING",
-      publishing: data.publishing,
-      malId: data.malId,
-    });
+    setValue("title", data.title);
+    setValue("author", data.author);
+    setValue("totalVolumes", data.totalVolumes || null);
+    setValue("coverImage", data.coverImage);
+    setValue("description", data.description);
+    setValue("publishing", data.publishing);
+    setValue("malId", data.malId);
     setShowSearch(false);
   };
 
@@ -100,51 +94,42 @@ export function AddSeriesModal() {
     setShowSearch(true);
   };
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setIsLoading(true);
-    setError(null);
-
+  const onSubmit: SubmitHandler<SeriesSchema> = async (data) => {
     try {
-      const totalVols = formData.totalVolumes
-        ? parseInt(formData.totalVolumes)
-        : 0;
-
-      const seriesData = {
-        title: formData.title,
-        author: formData.author || undefined,
-        editorial: (formData.editorial as Editorial) || undefined,
-        status: formData.status,
-        publishing: formData.publishing,
-        totalVolumes: totalVols || undefined,
-        retailPrice: formData.retailPrice
-          ? parseFloat(formData.retailPrice)
-          : undefined,
-        coverImage: formData.coverImage || undefined,
-        description: formData.description || undefined,
-        malId: formData.malId || undefined,
+      const input: CreateSeriesInput = {
+        title: data.title,
+        author: data.author,
+        editorial: data.editorial || undefined,
+        status: data.status,
+        publishing: data.publishing,
+        totalVolumes: data.totalVolumes || undefined,
+        coverImage: data.coverImage,
+        description: data.description || undefined,
+        retailPrice: data.retailPrice || undefined,
+        malId: data.malId || undefined,
       };
 
-      // Always create all volume entries when totalVolumes is known
-      if (totalVols > 0) {
-        const volumes = generateVolumeEntries(totalVols);
-        await createSeriesWithVolumes(seriesData, volumes);
+      if (input.totalVolumes && input.totalVolumes > 0) {
+        const volumes = generateVolumeEntries(input.totalVolumes);
+        await createSeriesWithVolumes(input, volumes);
       } else {
-        await createSeries(seriesData);
+        await createSeries(input);
       }
 
+      toast.success(`${data.title} added to your collection`);
       handleOpenChange(false);
+      window.dispatchEvent(new CustomEvent("stats-update"));
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create series");
-    } finally {
-      setIsLoading(false);
+      toast.error(
+        err instanceof Error ? err.message : "Failed to create series",
+      );
     }
-  }
+  };
 
-  const totalVolumesNum = formData.totalVolumes
-    ? parseInt(formData.totalVolumes)
-    : 0;
+  // eslint-disable-next-line react-hooks/incompatible-library
+  const totalVolumesNum = watch("totalVolumes") || 0;
+  const coverImage = watch("coverImage");
 
   return (
     <>
@@ -184,8 +169,7 @@ export function AddSeriesModal() {
             </Button>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Back button */}
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <Button
               variant="link"
               type="button"
@@ -196,13 +180,12 @@ export function AddSeriesModal() {
               Search again
             </Button>
 
-            {/* Cover Preview */}
-            {formData.coverImage && (
+            {coverImage && (
               <div className="flex justify-center">
                 <Image
                   width={96}
                   height={128}
-                  src={formData.coverImage}
+                  src={coverImage}
                   alt="Cover preview"
                   className="rounded-xl object-cover shadow-lg"
                 />
@@ -213,15 +196,15 @@ export function AddSeriesModal() {
               <Label htmlFor="title">Title *</Label>
               <Input
                 id="title"
-                name="title"
                 type="text"
-                required
-                value={formData.title}
-                onChange={(e) =>
-                  setFormData({ ...formData, title: e.target.value })
-                }
+                {...register("title")}
                 placeholder="One Piece"
               />
+              {errors.title && (
+                <p className="text-xs text-error mt-1">
+                  {errors.title.message}
+                </p>
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -229,26 +212,20 @@ export function AddSeriesModal() {
                 <Label htmlFor="author">Author</Label>
                 <Input
                   id="author"
-                  name="author"
                   type="text"
-                  value={formData.author}
-                  onChange={(e) =>
-                    setFormData({ ...formData, author: e.target.value })
-                  }
+                  {...register("author")}
                   placeholder="Eiichiro Oda"
                 />
+                {errors.author && (
+                  <p className="text-xs text-error mt-1">
+                    {errors.author.message}
+                  </p>
+                )}
               </div>
 
               <div>
                 <Label htmlFor="editorial">Editorial</Label>
-                <Select
-                  id="editorial"
-                  name="editorial"
-                  value={formData.editorial}
-                  onChange={(e) =>
-                    setFormData({ ...formData, editorial: e.target.value })
-                  }
-                >
+                <Select id="editorial" {...register("editorial")}>
                   {editorialOptions.map((option) => (
                     <option key={option.value} value={option.value}>
                       {option.label}
@@ -263,48 +240,40 @@ export function AddSeriesModal() {
                 <Label htmlFor="totalVolumes">Total Volumes</Label>
                 <Input
                   id="totalVolumes"
-                  name="totalVolumes"
                   type="number"
-                  min="1"
-                  value={formData.totalVolumes}
-                  onChange={(e) =>
-                    setFormData({ ...formData, totalVolumes: e.target.value })
-                  }
+                  min="0"
+                  {...register("totalVolumes", { valueAsNumber: true })}
                   placeholder="109"
                 />
+                {errors.totalVolumes && (
+                  <p className="text-xs text-error mt-1">
+                    {errors.totalVolumes.message}
+                  </p>
+                )}
               </div>
 
               <div>
                 <Label htmlFor="retailPrice">Retail Price (EUR)</Label>
                 <Input
                   id="retailPrice"
-                  name="retailPrice"
                   type="number"
                   step="0.01"
                   min="0"
-                  value={formData.retailPrice}
-                  onChange={(e) =>
-                    setFormData({ ...formData, retailPrice: e.target.value })
-                  }
+                  {...register("retailPrice", { valueAsNumber: true })}
                   placeholder="9.95"
                 />
+                {errors.retailPrice && (
+                  <p className="text-xs text-error mt-1">
+                    {errors.retailPrice.message}
+                  </p>
+                )}
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="status">Reading Status</Label>
-                <Select
-                  id="status"
-                  name="status"
-                  value={formData.status}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      status: e.target.value as SeriesStatus,
-                    })
-                  }
-                >
+                <Select id="status" {...register("status")}>
                   {statusOptions.map((option) => (
                     <option key={option.value} value={option.value}>
                       {option.label}
@@ -318,13 +287,7 @@ export function AddSeriesModal() {
                   <div className="relative flex items-center">
                     <input
                       type="checkbox"
-                      checked={formData.publishing}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          publishing: e.target.checked,
-                        })
-                      }
+                      {...register("publishing")}
                       className="peer w-5 h-5 rounded border-border bg-background-tertiary text-accent focus:ring-accent focus:ring-offset-0 transition-all cursor-pointer opacity-0 absolute inset-0 z-10"
                     />
                     <div className="w-5 h-5 rounded border border-border bg-background-tertiary peer-checked:bg-accent peer-checked:border-accent transition-all flex items-center justify-center">
@@ -338,7 +301,6 @@ export function AddSeriesModal() {
               </div>
             </div>
 
-            {/* Volume info notice */}
             {totalVolumesNum > 0 && (
               <div className="p-4 bg-accent/5 border border-accent/20 rounded-xl">
                 <div className="flex items-center gap-3">
@@ -360,35 +322,31 @@ export function AddSeriesModal() {
               <Label htmlFor="coverImage">Cover Image URL</Label>
               <Input
                 id="coverImage"
-                name="coverImage"
                 type="url"
-                value={formData.coverImage}
-                onChange={(e) =>
-                  setFormData({ ...formData, coverImage: e.target.value })
-                }
+                {...register("coverImage")}
                 placeholder="https://..."
               />
+              {errors.coverImage && (
+                <p className="text-xs text-error mt-1">
+                  {errors.coverImage.message}
+                </p>
+              )}
             </div>
 
             <div>
               <Label htmlFor="description">Description</Label>
               <Textarea
                 id="description"
-                name="description"
                 rows={3}
-                value={formData.description}
-                onChange={(e) =>
-                  setFormData({ ...formData, description: e.target.value })
-                }
+                {...register("description")}
                 placeholder="Brief description..."
               />
+              {errors.description && (
+                <p className="text-xs text-error mt-1">
+                  {errors.description.message}
+                </p>
+              )}
             </div>
-
-            {error && (
-              <div className="p-3 bg-error/10 border border-error/20 rounded-xl text-error text-sm">
-                {error}
-              </div>
-            )}
 
             <div className="flex gap-3 pt-2">
               <Button
@@ -401,10 +359,10 @@ export function AddSeriesModal() {
               </Button>
               <Button
                 type="submit"
-                disabled={isLoading}
+                disabled={isSubmitting}
                 className="flex-1 gap-2"
               >
-                {isLoading ? (
+                {isSubmitting ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
                 ) : (
                   "Add Series"

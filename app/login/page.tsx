@@ -15,6 +15,9 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
+import { toast } from "sonner";
+import { useEffect } from "react";
+
 export default function LoginPage() {
   const [state, formAction, isPending] = useActionState(
     async (_: { error?: string } | null, formData: FormData) => {
@@ -23,6 +26,12 @@ export default function LoginPage() {
     },
     null,
   );
+
+  useEffect(() => {
+    if (state?.error) {
+      toast.error(state.error);
+    }
+  }, [state]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4 relative overflow-hidden">
@@ -50,7 +59,9 @@ export default function LoginPage() {
         <Card className="animate-fade-in stagger-1 shadow-2xl shadow-accent/5">
           <CardHeader>
             <CardTitle className="text-2xl">Welcome back</CardTitle>
-            <CardDescription>Enter your credentials to access your account</CardDescription>
+            <CardDescription>
+              Enter your credentials to access your account
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <form action={formAction} className="space-y-6">

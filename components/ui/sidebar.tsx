@@ -2,8 +2,19 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BookOpen, LayoutDashboard, Library, LogOut, User } from "lucide-react";
+import {
+  BookOpen,
+  LayoutDashboard,
+  Library,
+  LogOut,
+  User,
+  TrendingUp,
+} from "lucide-react";
 import { signOut } from "@/actions/auth";
+import { getSeriesStats } from "@/actions/series";
+import { ProgressBar } from "./progress-bar";
+import { useEffect, useState } from "react";
+import { formatCurrency } from "@/utils/currency";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -53,7 +64,13 @@ export function Sidebar() {
         </ul>
       </nav>
 
+      {/* Stats Section */}
+      <div className="px-6 py-4 border-t border-border">
+        <SidebarStats />
+      </div>
+
       {/* Footer */}
+
       <div className="p-4 border-t border-border space-y-1">
         <Link
           href="/dashboard/profile"
@@ -73,5 +90,68 @@ export function Sidebar() {
         </form>
       </div>
     </aside>
+  );
+}
+
+function SidebarStats() {
+  const [stats, setStats] = useState<{
+    progress: number;
+    owned: number;
+    total: number;
+    spent: number;
+  } | null>(null);
+
+  const pathname = usePathname();
+
+  useEffect(() => {
+    const fetchStats = () => {
+      getSeriesStats().then((s) =>
+        setStats({
+          progress: s.collectionProgress,
+          owned: s.totalVolumesOwned,
+          total: s.totalExpectedVolumes,
+          spent: s.totalSpent,
+        }),
+      );
+    };
+
+    fetchStats();
+
+    // Listen for custom update events
+    window.addEventListener("stats-update", fetchStats);
+    return () => window.removeEventListener("stats-update", fetchStats);
+  }, [pathname]);
+
+  if (!stats) return null;
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <div className="flex items-center justify-between mb-1.5 px-0.5">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-foreground-muted flex items-center gap-1.5">
+            <TrendingUp className="w-3 h-3" />
+            Collection
+          </span>
+          <span className="text-[10px] font-bold text-accent">
+            {stats.progress.toFixed(0)}%
+          </span>
+        </div>
+        <ProgressBar value={stats.progress} variant="accent" size="sm" />
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        <div className="p-2 rounded-lg bg-background-tertiary/50 border border-border/50">
+          <p className="text-[10px] text-foreground-muted font-bold uppercase tracking-wider">
+            Owned
+          </p>
+          <p className="text-sm font-semibold">{stats.owned}</p>
+        </div>
+        <div className="p-2 rounded-lg bg-background-tertiary/50 border border-border/50">
+          <p className="text-[10px] text-foreground-muted font-bold uppercase tracking-wider">
+            Spent
+          </p>
+          <p className="text-sm font-semibold">{formatCurrency(stats.spent)}</p>
+        </div>
+      </div>
+    </div>
   );
 }

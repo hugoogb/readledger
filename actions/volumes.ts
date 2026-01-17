@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { Condition, Store } from "@/lib/generated/prisma/enums";
+import { volumeSchema } from "@/lib/validations";
 
 export type CreateVolumeInput = {
   seriesId: string;
@@ -34,20 +35,18 @@ export async function createVolume(input: CreateVolumeInput) {
     throw new Error("Series not found");
   }
 
+  const validated = volumeSchema.parse(input);
+
   const volume = await prisma.volume.create({
     data: {
+      ...validated,
       seriesId: input.seriesId,
       volumeNumber: input.volumeNumber,
-      isbn: input.isbn,
-      coverImage: input.coverImage,
-      owned: input.owned ?? false,
-      read: input.read ?? false,
-      pricePaid: input.pricePaid,
-      condition: input.condition ?? "NEW",
-      store: input.store,
-      purchaseDate: input.owned ? (input.purchaseDate ?? new Date()) : null,
-      readDate: input.read ? (input.readDate ?? new Date()) : null,
-      notes: input.notes,
+      purchaseDate: validated.owned
+        ? (validated.purchaseDate ?? new Date())
+        : null,
+      readDate: validated.read ? (validated.readDate ?? new Date()) : null,
+      store: (validated.store as Store) || null,
     },
   });
 
@@ -70,9 +69,14 @@ export async function updateVolume(id: string, input: UpdateVolumeInput) {
     throw new Error("Volume not found");
   }
 
+  const validated = volumeSchema.partial().parse(input);
+
   const updated = await prisma.volume.update({
     where: { id },
-    data: input,
+    data: {
+      ...validated,
+      store: (validated.store as Store) || undefined,
+    },
   });
 
   revalidatePath("/dashboard");

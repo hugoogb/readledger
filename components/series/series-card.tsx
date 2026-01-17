@@ -2,7 +2,7 @@ import Link from "next/link";
 import { BookOpen, User } from "lucide-react";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import Image from "next/image";
-import { Series, Volume } from "@/lib/generated/prisma/client";
+import type { Series, Volume } from "@/lib/generated/prisma/browser";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
@@ -14,7 +14,20 @@ type SeriesCardProps = {
   series: SeriesWithVolumes;
 };
 
-const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "outline" | "destructive" | "success" | "warning"; colorClass?: string }> = {
+const statusConfig: Record<
+  string,
+  {
+    label: string;
+    variant:
+      | "default"
+      | "secondary"
+      | "outline"
+      | "destructive"
+      | "success"
+      | "warning";
+    colorClass?: string;
+  }
+> = {
   READING: { label: "Reading", variant: "default" },
   COMPLETED: { label: "Completed", variant: "success" },
   ON_HOLD: { label: "On Hold", variant: "warning" },
@@ -52,18 +65,8 @@ export function SeriesCard({ series }: SeriesCardProps) {
           )}
           {/* Status badges */}
           <div className="absolute top-3 right-3 flex flex-col gap-1.5 items-end">
-            <Badge
-              variant={statusInfo.variant}
-            >
-              {statusInfo.label}
-            </Badge>
-            {series.publishing && (
-              <Badge
-                variant="success"
-              >
-                Publishing
-              </Badge>
-            )}
+            <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
+            {series.publishing && <Badge variant="success">Publishing</Badge>}
           </div>
         </div>
 
@@ -87,7 +90,12 @@ export function SeriesCard({ series }: SeriesCardProps) {
                   {owned}/{total}
                 </span>
               </div>
-              <ProgressBar value={ownedProgress} variant="accent" size="sm" className="h-1.5" />
+              <ProgressBar
+                value={ownedProgress}
+                variant="accent"
+                size="sm"
+                className="h-1.5"
+              />
             </div>
             <div>
               <div className="flex items-center justify-between text-[10px] uppercase font-bold tracking-wider mb-1.5 text-foreground-muted">
@@ -96,7 +104,12 @@ export function SeriesCard({ series }: SeriesCardProps) {
                   {read}/{owned}
                 </span>
               </div>
-              <ProgressBar value={readProgress} variant="success" size="sm" className="h-1.5" />
+              <ProgressBar
+                value={readProgress}
+                variant="success"
+                size="sm"
+                className="h-1.5"
+              />
             </div>
           </div>
         </div>

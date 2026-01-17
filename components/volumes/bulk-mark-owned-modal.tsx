@@ -17,32 +17,35 @@ import {
   Calendar,
   Sparkles,
 } from "lucide-react";
-import { Volume } from "@/lib/generated/prisma/client";
+import type { Volume } from "@/lib/generated/prisma/browser";
 import { Condition, Store } from "@/lib/generated/prisma/enums";
 import { updateVolume } from "@/actions/volumes";
 import { formatCurrency } from "@/utils/currency";
 
 const storeOptions = [
-  { value: "AMAZON", label: "Amazon" },
-  { value: "VINTED", label: "Vinted" },
-  { value: "WALLAPOP", label: "Wallapop" },
-  { value: "ABACUS", label: "Abacus" },
-  { value: "CASA_DEL_LIBRO", label: "Casa del Libro" },
-  { value: "NA", label: "N/A" },
+  { value: Store.AMAZON, label: "Amazon" },
+  { value: Store.VINTED, label: "Vinted" },
+  { value: Store.WALLAPOP, label: "Wallapop" },
+  { value: Store.ABACUS, label: "Abacus" },
+  { value: Store.CASA_DEL_LIBRO, label: "Casa del Libro" },
+  { value: Store.NA, label: "N/A" },
 ];
 
 const conditionOptions = [
-  { value: "NEW", label: "New" },
-  { value: "LIKE_NEW", label: "Like New" },
-  { value: "VERY_GOOD", label: "Very Good" },
-  { value: "GOOD", label: "Good" },
-  { value: "ACCEPTABLE", label: "Acceptable" },
-  { value: "POOR", label: "Poor" },
+  { value: Condition.NEW, label: "New" },
+  { value: Condition.LIKE_NEW, label: "Like New" },
+  { value: Condition.VERY_GOOD, label: "Very Good" },
+  { value: Condition.GOOD, label: "Good" },
+  { value: Condition.ACCEPTABLE, label: "Acceptable" },
+  { value: Condition.POOR, label: "Poor" },
 ];
 
 type BulkMarkOwnedModalProps = {
   volumes: Volume[];
 };
+
+const roundToTwo = (value: number) =>
+  Math.round((value + Number.EPSILON) * 100) / 100;
 
 export function BulkMarkOwnedModal({ volumes }: BulkMarkOwnedModalProps) {
   const router = useRouter();
@@ -55,10 +58,16 @@ export function BulkMarkOwnedModal({ volumes }: BulkMarkOwnedModalProps) {
   const [selectedVolumeIds, setSelectedVolumeIds] = useState<Set<string>>(
     new Set(),
   );
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    totalPrice: string;
+    store: Store | undefined;
+    condition: Condition;
+    purchaseDate: string;
+    notes: string;
+  }>({
     totalPrice: "",
-    store: "",
-    condition: "NEW",
+    store: undefined,
+    condition: Condition.NEW,
     purchaseDate: new Date().toISOString().split("T")[0],
     notes: "",
   });
@@ -69,8 +78,8 @@ export function BulkMarkOwnedModal({ volumes }: BulkMarkOwnedModalProps) {
       setSelectedVolumeIds(new Set());
       setFormData({
         totalPrice: "",
-        store: "",
-        condition: "NEW",
+        store: undefined,
+        condition: Condition.NEW,
         purchaseDate: new Date().toISOString().split("T")[0],
         notes: "",
       });
@@ -96,9 +105,12 @@ export function BulkMarkOwnedModal({ volumes }: BulkMarkOwnedModalProps) {
     setSelectedVolumeIds(new Set());
   };
 
+  const totalPriceNumber =
+    formData.totalPrice !== "" ? Number(formData.totalPrice) : 0;
+
   const pricePerVolume =
-    formData.totalPrice && selectedVolumeIds.size > 0
-      ? parseFloat(formData.totalPrice) / selectedVolumeIds.size
+    totalPriceNumber > 0 && selectedVolumeIds.size > 0
+      ? roundToTwo(totalPriceNumber / selectedVolumeIds.size)
       : 0;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -113,16 +125,17 @@ export function BulkMarkOwnedModal({ volumes }: BulkMarkOwnedModalProps) {
         updateVolume(volumeId, {
           owned: true,
           pricePaid: pricePerVolume || undefined,
-          store: (formData.store as Store) || undefined,
-          condition: formData.condition as Condition,
+          store: formData.store,
+          condition: formData.condition,
           purchaseDate: formData.purchaseDate
             ? new Date(formData.purchaseDate)
             : new Date(),
-          notes: formData.notes || undefined,
+          notes: formData.notes,
         }),
       );
 
       await Promise.all(promises);
+      window.dispatchEvent(new CustomEvent("stats-update"));
       router.refresh();
       handleOpenChange(false);
     } catch (err) {
@@ -153,9 +166,7 @@ export function BulkMarkOwnedModal({ volumes }: BulkMarkOwnedModalProps) {
           {/* Volume Selection */}
           <div>
             <div className="flex items-center justify-between mb-3">
-              <Label className="mb-0">
-                Select Volumes
-              </Label>
+              <Label className="mb-0">Select Volumes</Label>
               <div className="flex items-center gap-3">
                 <Badge variant="default" size="sm">
                   {selectedVolumeIds.size} selected
@@ -188,13 +199,16 @@ export function BulkMarkOwnedModal({ volumes }: BulkMarkOwnedModalProps) {
                     <Button
                       key={volume.id}
                       type="button"
-                      variant={selectedVolumeIds.has(volume.id) ? "default" : "outline"}
+                      variant={
+                        selectedVolumeIds.has(volume.id) ? "default" : "outline"
+                      }
                       onClick={() => toggleVolume(volume.id)}
                       className={`
                         min-w-[40px] h-10 px-0 rounded-lg text-sm font-semibold
-                        ${selectedVolumeIds.has(volume.id)
-                          ? "ring-2 ring-accent ring-offset-2 ring-offset-background-tertiary shadow-lg"
-                          : "hover:border-accent/50 hover:bg-accent/5"
+                        ${
+                          selectedVolumeIds.has(volume.id)
+                            ? "ring-2 ring-accent ring-offset-2 ring-offset-background-tertiary shadow-lg"
+                            : "hover:border-accent/50 hover:bg-accent/5"
                         }
                       `}
                     >
@@ -246,11 +260,15 @@ export function BulkMarkOwnedModal({ volumes }: BulkMarkOwnedModalProps) {
               <Select
                 id="store"
                 value={formData.store}
-                onChange={(e) => setFormData({ ...formData, store: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, store: e.target.value as Store })
+                }
               >
                 <option value="">Select store...</option>
                 {storeOptions.map((opt) => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
                 ))}
               </Select>
             </div>
@@ -260,11 +278,16 @@ export function BulkMarkOwnedModal({ volumes }: BulkMarkOwnedModalProps) {
                 id="condition"
                 value={formData.condition}
                 onChange={(e) =>
-                  setFormData({ ...formData, condition: e.target.value })
+                  setFormData({
+                    ...formData,
+                    condition: e.target.value as Condition,
+                  })
                 }
               >
                 {conditionOptions.map((opt) => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
                 ))}
               </Select>
             </div>

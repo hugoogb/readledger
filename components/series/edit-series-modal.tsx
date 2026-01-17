@@ -1,24 +1,32 @@
 "use client";
 
-import { useState } from "react";
-import { updateSeries, deleteSeries } from "@/actions/series";
+import { useState, useEffect } from "react";
+import {
+  updateSeries,
+  deleteSeries,
+  type UpdateSeriesInput,
+} from "@/actions/series";
 import { Loader2, Settings, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Modal } from "@/components/ui/modal";
-import { Editorial, Series } from "@/lib/generated/prisma/client";
-import { SeriesStatus } from "@/lib/generated/prisma/enums";
+import type { Series } from "@/lib/generated/prisma/browser";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { useForm, type SubmitHandler } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { seriesSchema, type SeriesSchema } from "@/lib/validations";
+import { toast } from "sonner";
+import { SeriesStatus, Editorial } from "@/lib/generated/prisma/enums";
 
 const statusOptions = [
-  { value: "READING", label: "Reading" },
-  { value: "COMPLETED", label: "Completed" },
-  { value: "ON_HOLD", label: "On Hold" },
-  { value: "DROPPED", label: "Dropped" },
-  { value: "PLAN_TO_READ", label: "Plan to Read" },
+  { value: SeriesStatus.READING, label: "Reading" },
+  { value: SeriesStatus.COMPLETED, label: "Completed" },
+  { value: SeriesStatus.ON_HOLD, label: "On Hold" },
+  { value: SeriesStatus.DROPPED, label: "Dropped" },
+  { value: SeriesStatus.PLAN_TO_READ, label: "Plan to Read" },
 ];
 
 const editorialOptions = [
@@ -34,51 +42,85 @@ type EditSeriesModalProps = {
 export function EditSeriesModal({ series }: EditSeriesModalProps) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [publishing, setPublishing] = useState(series.publishing);
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setIsLoading(true);
-    setError(null);
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<SeriesSchema>({
+    resolver: zodResolver(seriesSchema),
+    defaultValues: {
+      title: series.title,
+      author: series.author || "",
+      editorial: series.editorial,
+      status: series.status,
+      publishing: series.publishing,
+      totalVolumes: series.totalVolumes,
+      retailPrice: series.retailPrice,
+      coverImage: series.coverImage || "",
+      description: series.description || "",
+      malId: series.malId,
+    },
+  });
 
-    const formData = new FormData(e.currentTarget);
-
-    try {
-      await updateSeries(series.id, {
-        title: formData.get("title") as string,
-        author: (formData.get("author") as string) || undefined,
-        editorial: (formData.get("editorial") as Editorial) || undefined,
-        status: formData.get("status") as SeriesStatus,
-        publishing,
-        totalVolumes: formData.get("totalVolumes")
-          ? parseInt(formData.get("totalVolumes") as string)
-          : undefined,
-        retailPrice: formData.get("retailPrice")
-          ? parseFloat(formData.get("retailPrice") as string)
-          : undefined,
-        coverImage: (formData.get("coverImage") as string) || undefined,
-        description: (formData.get("description") as string) || undefined,
+  useEffect(() => {
+    if (isOpen) {
+      reset({
+        title: series.title,
+        author: series.author || "",
+        editorial: series.editorial,
+        status: series.status,
+        publishing: series.publishing,
+        totalVolumes: series.totalVolumes || null,
+        retailPrice: series.retailPrice,
+        coverImage: series.coverImage || "",
+        description: series.description || "",
+        malId: series.malId || null,
       });
+    }
+  }, [isOpen, series, reset]);
+
+  const onSubmit: SubmitHandler<SeriesSchema> = async (data) => {
+    try {
+      const input: UpdateSeriesInput = {
+        title: data.title,
+        author: data.author || undefined,
+        editorial: (data.editorial || undefined) as Editorial | undefined,
+        status: data.status,
+        publishing: data.publishing,
+        totalVolumes: data.totalVolumes ?? undefined,
+        coverImage: data.coverImage || undefined,
+        description: data.description || undefined,
+        retailPrice: data.retailPrice ?? undefined,
+        malId: data.malId ?? undefined,
+      };
+
+      await updateSeries(series.id, input);
+      toast.success(`${series.title} updated`);
       setIsOpen(false);
+      window.dispatchEvent(new CustomEvent("stats-update"));
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to update series");
-    } finally {
-      setIsLoading(false);
+      toast.error(
+        err instanceof Error ? err.message : "Failed to update series",
+      );
     }
-  }
+  };
 
   async function handleDelete() {
     setIsDeleting(true);
     try {
       await deleteSeries(series.id);
+      toast.success(`${series.title} deleted`);
+      window.dispatchEvent(new CustomEvent("stats-update"));
       router.push("/dashboard/series");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to delete series");
+      toast.error(
+        err instanceof Error ? err.message : "Failed to delete series",
+      );
       setIsDeleting(false);
     }
   }
@@ -135,16 +177,15 @@ export function EditSeriesModal({ series }: EditSeriesModalProps) {
             </div>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div>
               <Label htmlFor="title">Title *</Label>
-              <Input
-                id="title"
-                name="title"
-                type="text"
-                required
-                defaultValue={series.title}
-              />
+              <Input id="title" type="text" {...register("title")} />
+              {errors.title && (
+                <p className="text-xs text-error mt-1">
+                  {errors.title.message}
+                </p>
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -152,18 +193,14 @@ export function EditSeriesModal({ series }: EditSeriesModalProps) {
                 <Label htmlFor="author">Author</Label>
                 <Input
                   id="author"
-                  name="author"
                   type="text"
-                  defaultValue={series.author || ""}
+                  {...register("author")}
+                  placeholder="Eiichiro Oda"
                 />
               </div>
               <div>
                 <Label htmlFor="editorial">Editorial</Label>
-                <Select
-                  id="editorial"
-                  name="editorial"
-                  defaultValue={series.editorial || ""}
-                >
+                <Select id="editorial" {...register("editorial")}>
                   {editorialOptions.map((option) => (
                     <option key={option.value} value={option.value}>
                       {option.label}
@@ -178,21 +215,19 @@ export function EditSeriesModal({ series }: EditSeriesModalProps) {
                 <Label htmlFor="totalVolumes">Total Volumes</Label>
                 <Input
                   id="totalVolumes"
-                  name="totalVolumes"
                   type="number"
-                  min="1"
-                  defaultValue={series.totalVolumes || ""}
+                  min="0"
+                  {...register("totalVolumes", { valueAsNumber: true })}
                 />
               </div>
               <div>
                 <Label htmlFor="retailPrice">Retail Price (EUR)</Label>
                 <Input
                   id="retailPrice"
-                  name="retailPrice"
                   type="number"
                   step="0.01"
                   min="0"
-                  defaultValue={series.retailPrice || ""}
+                  {...register("retailPrice", { valueAsNumber: true })}
                 />
               </div>
             </div>
@@ -200,11 +235,7 @@ export function EditSeriesModal({ series }: EditSeriesModalProps) {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="status">Reading Status</Label>
-                <Select
-                  id="status"
-                  name="status"
-                  defaultValue={series.status}
-                >
+                <Select id="status" {...register("status")}>
                   {statusOptions.map((option) => (
                     <option key={option.value} value={option.value}>
                       {option.label}
@@ -213,19 +244,19 @@ export function EditSeriesModal({ series }: EditSeriesModalProps) {
                 </Select>
               </div>
 
-              <div className="flex items-end pb-3">
+              <div className="flex items-end pb-1">
                 <label className="flex items-center gap-3 cursor-pointer group">
                   <div className="relative flex items-center">
                     <input
                       type="checkbox"
-                      checked={publishing}
-                      onChange={(e) => setPublishing(e.target.checked)}
-                      className="peer sr-only"
+                      {...register("publishing")}
+                      className="peer w-5 h-5 rounded border-border bg-background-tertiary text-accent focus:ring-accent focus:ring-offset-0 transition-all cursor-pointer opacity-0 absolute inset-0 z-10"
                     />
-                    <div className="w-10 h-6 bg-background-tertiary border border-border rounded-full transition-colors peer-checked:bg-accent peer-checked:border-accent"></div>
-                    <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-all peer-checked:left-5"></div>
+                    <div className="w-5 h-5 rounded border border-border bg-background-tertiary peer-checked:bg-accent peer-checked:border-accent transition-all flex items-center justify-center">
+                      <div className="w-2.5 h-2.5 bg-white rounded-full opacity-0 peer-checked:opacity-100 transition-opacity" />
+                    </div>
                   </div>
-                  <span className="text-sm font-medium text-foreground-muted group-hover:text-foreground transition-colors">
+                  <span className="text-sm font-medium group-hover:text-foreground transition-colors">
                     Still Publishing
                   </span>
                 </label>
@@ -234,29 +265,22 @@ export function EditSeriesModal({ series }: EditSeriesModalProps) {
 
             <div>
               <Label htmlFor="coverImage">Cover Image URL</Label>
-              <Input
-                id="coverImage"
-                name="coverImage"
-                type="url"
-                defaultValue={series.coverImage || ""}
-              />
+              <Input id="coverImage" type="url" {...register("coverImage")} />
+              {errors.coverImage && (
+                <p className="text-xs text-error mt-1">
+                  {errors.coverImage.message}
+                </p>
+              )}
             </div>
 
             <div>
               <Label htmlFor="description">Description</Label>
               <Textarea
                 id="description"
-                name="description"
                 rows={3}
-                defaultValue={series.description || ""}
+                {...register("description")}
               />
             </div>
-
-            {error && (
-              <div className="p-3 bg-error/10 border border-error/20 rounded-xl text-error text-sm">
-                {error}
-              </div>
-            )}
 
             <div className="flex gap-3 pt-2">
               <Button
@@ -275,12 +299,8 @@ export function EditSeriesModal({ series }: EditSeriesModalProps) {
               >
                 Cancel
               </Button>
-              <Button
-                type="submit"
-                disabled={isLoading}
-                className="flex-1"
-              >
-                {isLoading ? (
+              <Button type="submit" disabled={isSubmitting} className="flex-1">
+                {isSubmitting ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
                 ) : (
                   "Save Changes"

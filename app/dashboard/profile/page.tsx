@@ -54,7 +54,9 @@ export default async function ProfilePage() {
             <div className="flex items-center gap-3 p-4 rounded-xl bg-background-tertiary border border-border/50">
               <Mail className="w-5 h-5 text-foreground-muted" />
               <div>
-                <p className="text-xs text-foreground-muted uppercase font-bold tracking-wider">Email</p>
+                <p className="text-xs text-foreground-muted uppercase font-bold tracking-wider">
+                  Email
+                </p>
                 <p className="font-medium">{user.email}</p>
               </div>
             </div>
@@ -62,7 +64,9 @@ export default async function ProfilePage() {
             <div className="flex items-center gap-3 p-4 rounded-xl bg-background-tertiary border border-border/50">
               <Calendar className="w-5 h-5 text-foreground-muted" />
               <div>
-                <p className="text-xs text-foreground-muted uppercase font-bold tracking-wider">Member since</p>
+                <p className="text-xs text-foreground-muted uppercase font-bold tracking-wider">
+                  Member since
+                </p>
                 <p className="font-medium">
                   {new Intl.DateTimeFormat("en-US", {
                     dateStyle: "long",

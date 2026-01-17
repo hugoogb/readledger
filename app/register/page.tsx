@@ -50,7 +50,9 @@ export default function RegisterPage() {
         <Card className="animate-fade-in stagger-1 shadow-2xl shadow-accent/5">
           <CardHeader>
             <CardTitle className="text-2xl">Create account</CardTitle>
-            <CardDescription>Join ReadLedger to track your manga collection</CardDescription>
+            <CardDescription>
+              Join ReadLedger to track your manga collection
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <form action={formAction} className="space-y-6">

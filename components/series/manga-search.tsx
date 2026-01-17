@@ -15,11 +15,12 @@ type MangaSearchProps = {
   onSelect: (data: ReturnType<typeof formatMangaForSeries>) => void;
 };
 
+import { toast } from "sonner";
+
 export function MangaSearch({ onSelect }: MangaSearchProps) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<MangaSearchResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const performSearch = useCallback(async (searchQuery: string) => {
     if (searchQuery.length < 2) {
@@ -28,13 +29,12 @@ export function MangaSearch({ onSelect }: MangaSearchProps) {
     }
 
     setIsLoading(true);
-    setError(null);
 
     try {
       const data = await searchManga(searchQuery);
       setResults(data);
     } catch {
-      setError("Failed to search. Please try again.");
+      toast.error("Failed to search manga. Please try again.");
       setResults([]);
     } finally {
       setIsLoading(false);
@@ -71,8 +71,6 @@ export function MangaSearch({ onSelect }: MangaSearchProps) {
           <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-foreground-muted animate-spin" />
         )}
       </div>
-
-      {error && <p className="text-sm text-error">{error}</p>}
 
       <div className="max-h-80 overflow-y-auto space-y-2 pr-1">
         {results.length === 0 && query.length >= 2 && !isLoading && (
@@ -111,22 +109,31 @@ export function MangaSearch({ onSelect }: MangaSearchProps) {
               )}
               <div className="flex items-center gap-2 mt-1.5 overflow-hidden">
                 {manga.volumes && (
-                  <Badge variant="secondary" size="sm" className="bg-accent/10 hover:bg-accent/20 text-accent border-none">
+                  <Badge
+                    variant="secondary"
+                    size="sm"
+                    className="bg-accent/10 hover:bg-accent/20 text-accent border-none"
+                  >
                     {manga.volumes} vols
                   </Badge>
                 )}
                 <Badge
                   variant="secondary"
                   size="sm"
-                  className={manga.publishing
-                    ? "bg-success/10 hover:bg-success/20 text-success border-none"
-                    : "bg-foreground-muted/10 hover:bg-foreground-muted/20 text-foreground-muted border-none"
+                  className={
+                    manga.publishing
+                      ? "bg-success/10 hover:bg-success/20 text-success border-none"
+                      : "bg-foreground-muted/10 hover:bg-foreground-muted/20 text-foreground-muted border-none"
                   }
                 >
                   {manga.publishing ? "Publishing" : "Finished"}
                 </Badge>
                 {manga.score && (
-                  <Badge variant="secondary" size="sm" className="bg-warning/10 hover:bg-warning/20 text-warning border-none">
+                  <Badge
+                    variant="secondary"
+                    size="sm"
+                    className="bg-warning/10 hover:bg-warning/20 text-warning border-none"
+                  >
                     ★ {manga.score}
                   </Badge>
                 )}

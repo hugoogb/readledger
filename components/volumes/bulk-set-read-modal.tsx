@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Modal } from "@/components/ui/modal";
 import { Loader2, BookMarked, Check, Sparkles } from "lucide-react";
-import { Volume } from "@/lib/generated/prisma/client";
+import type { Volume } from "@/lib/generated/prisma/browser";
 import { updateVolume } from "@/actions/volumes";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -75,6 +75,7 @@ export function BulkSetReadModal({ volumes }: BulkSetReadModalProps) {
       );
 
       await Promise.all(promises);
+      window.dispatchEvent(new CustomEvent("stats-update"));
       router.refresh();
       handleOpenChange(false);
     } catch (err) {
@@ -113,9 +114,7 @@ export function BulkSetReadModal({ volumes }: BulkSetReadModalProps) {
           {/* Volume Selection */}
           <div>
             <div className="flex items-center justify-between mb-3">
-              <Label className="mb-0">
-                Select Volumes to Mark as Read
-              </Label>
+              <Label className="mb-0">Select Volumes to Mark as Read</Label>
               <div className="flex items-center gap-3">
                 <Badge variant="success" size="sm">
                   {selectedVolumeIds.size} selected
@@ -148,13 +147,16 @@ export function BulkSetReadModal({ volumes }: BulkSetReadModalProps) {
                     <Button
                       key={volume.id}
                       type="button"
-                      variant={selectedVolumeIds.has(volume.id) ? "success" : "outline"}
+                      variant={
+                        selectedVolumeIds.has(volume.id) ? "success" : "outline"
+                      }
                       onClick={() => toggleVolume(volume.id)}
                       className={`
                         min-w-[40px] h-10 px-0 rounded-lg text-sm font-semibold
-                        ${selectedVolumeIds.has(volume.id)
-                          ? "ring-2 ring-success ring-offset-2 ring-offset-background-tertiary shadow-lg"
-                          : "hover:border-success/50 hover:bg-success/5"
+                        ${
+                          selectedVolumeIds.has(volume.id)
+                            ? "ring-2 ring-success ring-offset-2 ring-offset-background-tertiary shadow-lg"
+                            : "hover:border-success/50 hover:bg-success/5"
                         }
                       `}
                     >

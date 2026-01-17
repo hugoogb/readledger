@@ -16,7 +16,11 @@ type SeriesListProps = {
   searchQuery?: string;
 };
 
-async function SeriesList({ series, statusFilter, searchQuery }: SeriesListProps) {
+async function SeriesList({
+  series,
+  statusFilter,
+  searchQuery,
+}: SeriesListProps) {
   if (series.length === 0) {
     return (
       <div className="text-center py-16">
@@ -81,7 +85,11 @@ export default async function SeriesPage({ searchParams }: Props) {
         </Suspense>
       </div>
 
-      <SeriesList series={series} statusFilter={statusFilter} searchQuery={searchQuery} />
+      <SeriesList
+        series={series}
+        statusFilter={statusFilter}
+        searchQuery={searchQuery}
+      />
     </div>
   );
 }
