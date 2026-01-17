@@ -1,0 +1,97 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String?
+  avatarUrl String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  series    Series[]
+
+  @@map("users")
+}
+
+model Series {
+  id           String       @id @default(uuid())
+  userId       String
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title        String
+  author       String?
+  editorial    Editorial?
+  status       SeriesStatus @default(READING)
+  publishing   Boolean      @default(false)
+  totalVolumes Int?
+  coverImage   String?
+  description  String?
+  retailPrice  Float?
+  malId        Int?         @unique
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  volumes      Volume[]
+
+  @@index([userId])
+  @@map("series")
+}
+
+model Volume {
+  id           String    @id @default(uuid())
+  seriesId     String
+  series       Series    @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+  volumeNumber Int
+  title        String?
+  coverImage   String?
+  isbn         String?
+  owned        Boolean   @default(false)
+  read         Boolean   @default(false)
+  pricePaid    Float?
+  condition    Condition @default(NEW)
+  store        Store?
+  purchaseDate DateTime?
+  readDate     DateTime?
+  notes        String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@unique([seriesId, volumeNumber])
+  @@index([seriesId])
+  @@map("volumes")
+}
+
+enum SeriesStatus {
+  READING
+  COMPLETED
+  ON_HOLD
+  DROPPED
+  PLAN_TO_READ
+}
+
+enum Condition {
+  NEW
+  LIKE_NEW
+  VERY_GOOD
+  GOOD
+  ACCEPTABLE
+  POOR
+}
+
+enum Editorial {
+  PLANETA_COMIC
+  PLANETA_DEAGOSTINI
+}
+
+enum Store {
+  AMAZON
+  VINTED
+  WALLAPOP
+  ABACUS
+  CASA_DEL_LIBRO
+  NA
+}
