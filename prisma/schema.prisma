@@ -8,60 +8,95 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  name      String?
-  avatarUrl String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  series    Series[]
+  id         String      @id @default(uuid())
+  email      String      @unique
+  name       String?
+  avatarUrl  String?
+  currency   String      @default("EUR")
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  series     Series[]
+  publishers Publisher[]
+  stores     UserStore[]
 
   @@map("users")
+}
+
+model Publisher {
+  id        String   @id @default(uuid())
+  userId    String
+  name      String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  series    Series[]
+
+  @@unique([userId, name])
+  @@index([userId])
+  @@map("publishers")
+}
+
+model UserStore {
+  id        String   @id @default(uuid())
+  userId    String
+  name      String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  volumes   Volume[]
+
+  @@unique([userId, name])
+  @@index([userId])
+  @@map("user_stores")
 }
 
 model Series {
   id           String       @id @default(uuid())
   userId       String
-  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   title        String
   author       String?
-  editorial    Editorial?
   status       SeriesStatus @default(READING)
-  publishing   Boolean      @default(false)
   totalVolumes Int?
   coverImage   String?
   description  String?
-  retailPrice  Float?
-  malId        Int?         @unique
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
+  retailPrice  Float?
+  mangadexId   String?
+  publishing   Boolean      @default(false)
+  publisherId  String?
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  publisher    Publisher?   @relation(fields: [publisherId], references: [id], onDelete: SetNull)
   volumes      Volume[]
 
+  @@unique([userId, mangadexId])
   @@index([userId])
+  @@index([userId], map: "idx_series_userid")
   @@map("series")
 }
 
 model Volume {
-  id           String    @id @default(uuid())
+  id           String     @id @default(uuid())
   seriesId     String
-  series       Series    @relation(fields: [seriesId], references: [id], onDelete: Cascade)
   volumeNumber Int
-  title        String?
-  coverImage   String?
-  isbn         String?
-  owned        Boolean   @default(false)
-  read         Boolean   @default(false)
+  owned        Boolean    @default(false)
+  read         Boolean    @default(false)
+  wishlist     Boolean    @default(false)
   pricePaid    Float?
-  condition    Condition @default(NEW)
-  store        Store?
+  condition    Condition?
   purchaseDate DateTime?
   readDate     DateTime?
   notes        String?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  isbn         String?
+  coverImage   String?
+  title        String?
+  storeId      String?
+  series       Series     @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+  store        UserStore? @relation(fields: [storeId], references: [id], onDelete: SetNull)
 
   @@unique([seriesId, volumeNumber])
   @@index([seriesId])
+  @@index([seriesId], map: "idx_volumes_seriesid")
   @@map("volumes")
 }
 
@@ -80,18 +115,4 @@ enum Condition {
   GOOD
   ACCEPTABLE
   POOR
-}
-
-enum Editorial {
-  PLANETA_COMIC
-  PLANETA_DEAGOSTINI
-}
-
-enum Store {
-  AMAZON
-  VINTED
-  WALLAPOP
-  ABACUS
-  CASA_DEL_LIBRO
-  NA
 }

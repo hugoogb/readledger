@@ -1,147 +1,122 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { Modal } from "@/components/ui/modal";
-import { Input } from "@/components/ui/input";
-import { Select } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
+import { createStore } from "@/actions/stores";
+import { bulkMarkOwned } from "@/actions/volumes";
 import { Badge } from "@/components/ui/badge";
-import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { CreatableSelect } from "@/components/ui/creatable-select";
+import { FormField } from "@/components/ui/form-field";
+import { FormSection } from "@/components/ui/form-section";
+import { Input } from "@/components/ui/input";
+import { Modal } from "@/components/ui/modal";
+import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { useToggleSet } from "@/hooks/use-toggle-set";
+import { conditionOptions } from "@/lib/constants";
+import type { Volume } from "@/lib/generated/prisma/browser";
+import { Condition } from "@/lib/generated/prisma/enums";
 import {
-  Loader2,
-  Package,
+  bulkMarkOwnedSchema,
+  type BulkMarkOwnedSchema,
+} from "@/lib/validations";
+import { formatCurrency } from "@/utils/currency";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  Calendar,
   Check,
   Euro,
-  Calendar,
+  Loader2,
+  Package,
   Sparkles,
+  StickyNote,
 } from "lucide-react";
-import type { Volume } from "@/lib/generated/prisma/browser";
-import { Condition, Store } from "@/lib/generated/prisma/enums";
-import { updateVolume } from "@/actions/volumes";
-import { formatCurrency } from "@/utils/currency";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { useForm, type SubmitHandler } from "react-hook-form";
+import { toast } from "sonner";
 
-const storeOptions = [
-  { value: Store.AMAZON, label: "Amazon" },
-  { value: Store.VINTED, label: "Vinted" },
-  { value: Store.WALLAPOP, label: "Wallapop" },
-  { value: Store.ABACUS, label: "Abacus" },
-  { value: Store.CASA_DEL_LIBRO, label: "Casa del Libro" },
-  { value: Store.NA, label: "N/A" },
-];
-
-const conditionOptions = [
-  { value: Condition.NEW, label: "New" },
-  { value: Condition.LIKE_NEW, label: "Like New" },
-  { value: Condition.VERY_GOOD, label: "Very Good" },
-  { value: Condition.GOOD, label: "Good" },
-  { value: Condition.ACCEPTABLE, label: "Acceptable" },
-  { value: Condition.POOR, label: "Poor" },
-];
+type UserStore = { id: string; name: string };
 
 type BulkMarkOwnedModalProps = {
   volumes: Volume[];
+  stores?: UserStore[];
 };
 
 const roundToTwo = (value: number) =>
   Math.round((value + Number.EPSILON) * 100) / 100;
 
-export function BulkMarkOwnedModal({ volumes }: BulkMarkOwnedModalProps) {
+export function BulkMarkOwnedModal({
+  volumes,
+  stores = [],
+}: BulkMarkOwnedModalProps) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const unownedVolumes = volumes.filter((v) => !v.owned);
+  const {
+    set: selectedIds,
+    toggle,
+    selectAll,
+    clear,
+    size: selectedCount,
+    has,
+  } = useToggleSet<string>();
 
-  const [selectedVolumeIds, setSelectedVolumeIds] = useState<Set<string>>(
-    new Set(),
-  );
-  const [formData, setFormData] = useState<{
-    totalPrice: string;
-    store: Store | undefined;
-    condition: Condition;
-    purchaseDate: string;
-    notes: string;
-  }>({
-    totalPrice: "",
-    store: undefined,
-    condition: Condition.NEW,
-    purchaseDate: new Date().toISOString().split("T")[0],
-    notes: "",
+  const {
+    register,
+    handleSubmit,
+    reset,
+    watch,
+    setValue,
+    formState: { errors, isSubmitting },
+  } = useForm<BulkMarkOwnedSchema>({
+    resolver: zodResolver(bulkMarkOwnedSchema),
+    defaultValues: {
+      totalPrice: undefined,
+      storeId: "",
+      condition: Condition.NEW,
+      purchaseDate: new Date().toISOString().split("T")[0],
+      notes: "",
+    },
   });
 
   const handleOpenChange = (open: boolean) => {
     setIsOpen(open);
     if (!open) {
-      setSelectedVolumeIds(new Set());
-      setFormData({
-        totalPrice: "",
-        store: undefined,
-        condition: Condition.NEW,
-        purchaseDate: new Date().toISOString().split("T")[0],
-        notes: "",
-      });
-      setError(null);
+      clear();
+      reset();
     }
   };
 
-  const toggleVolume = (volumeId: string) => {
-    const newSet = new Set(selectedVolumeIds);
-    if (newSet.has(volumeId)) {
-      newSet.delete(volumeId);
-    } else {
-      newSet.add(volumeId);
-    }
-    setSelectedVolumeIds(newSet);
-  };
-
-  const selectAll = () => {
-    setSelectedVolumeIds(new Set(unownedVolumes.map((v) => v.id)));
-  };
-
-  const deselectAll = () => {
-    setSelectedVolumeIds(new Set());
-  };
-
-  const totalPriceNumber =
-    formData.totalPrice !== "" ? Number(formData.totalPrice) : 0;
-
+  // eslint-disable-next-line react-hooks/incompatible-library
+  const totalPrice = watch("totalPrice");
+  const storeId = watch("storeId");
   const pricePerVolume =
-    totalPriceNumber > 0 && selectedVolumeIds.size > 0
-      ? roundToTwo(totalPriceNumber / selectedVolumeIds.size)
+    totalPrice && totalPrice > 0 && selectedCount > 0
+      ? roundToTwo(totalPrice / selectedCount)
       : 0;
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (selectedVolumeIds.size === 0) return;
-
-    setIsLoading(true);
-    setError(null);
+  const onSubmit: SubmitHandler<BulkMarkOwnedSchema> = async (data) => {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
 
     try {
-      const promises = Array.from(selectedVolumeIds).map((volumeId) =>
-        updateVolume(volumeId, {
-          owned: true,
-          pricePaid: pricePerVolume || undefined,
-          store: formData.store,
-          condition: formData.condition,
-          purchaseDate: formData.purchaseDate
-            ? new Date(formData.purchaseDate)
-            : new Date(),
-          notes: formData.notes,
-        }),
-      );
-
-      await Promise.all(promises);
-      window.dispatchEvent(new CustomEvent("stats-update"));
+      await bulkMarkOwned(ids, {
+        pricePaid: pricePerVolume || undefined,
+        storeId: data.storeId || undefined,
+        condition: data.condition,
+        purchaseDate: data.purchaseDate
+          ? new Date(data.purchaseDate)
+          : new Date(),
+        notes: data.notes || undefined,
+      });
+      toast.success(`${ids.length} volumes marked as owned`);
       router.refresh();
       handleOpenChange(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to update volumes");
-    } finally {
-      setIsLoading(false);
+      toast.error(
+        err instanceof Error ? err.message : "Failed to update volumes",
+      );
     }
   };
 
@@ -162,20 +137,22 @@ export function BulkMarkOwnedModal({ volumes }: BulkMarkOwnedModalProps) {
         title="Bulk Mark as Owned"
         maxWidth="lg"
       >
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
           {/* Volume Selection */}
           <div>
             <div className="flex items-center justify-between mb-3">
-              <Label className="mb-0">Select Volumes</Label>
+              <FormField label="Select Volumes">
+                <span />
+              </FormField>
               <div className="flex items-center gap-3">
                 <Badge variant="default" size="sm">
-                  {selectedVolumeIds.size} selected
+                  {selectedCount} selected
                 </Badge>
                 <div className="flex gap-2">
                   <Button
                     variant="link"
                     type="button"
-                    onClick={selectAll}
+                    onClick={() => selectAll(unownedVolumes.map((v) => v.id))}
                     className="h-auto p-0 text-xs font-medium text-accent hover:text-accent-hover"
                   >
                     Select All
@@ -184,7 +161,7 @@ export function BulkMarkOwnedModal({ volumes }: BulkMarkOwnedModalProps) {
                   <Button
                     variant="link"
                     type="button"
-                    onClick={deselectAll}
+                    onClick={clear}
                     className="h-auto p-0 text-xs font-medium text-foreground-muted hover:text-foreground"
                   >
                     Clear
@@ -199,14 +176,12 @@ export function BulkMarkOwnedModal({ volumes }: BulkMarkOwnedModalProps) {
                     <Button
                       key={volume.id}
                       type="button"
-                      variant={
-                        selectedVolumeIds.has(volume.id) ? "default" : "outline"
-                      }
-                      onClick={() => toggleVolume(volume.id)}
+                      variant={has(volume.id) ? "default" : "outline"}
+                      onClick={() => toggle(volume.id)}
                       className={`
-                        min-w-[40px] h-10 px-0 rounded-lg text-sm font-semibold
+                        min-w-10 h-10 px-0 rounded-lg text-sm font-semibold
                         ${
-                          selectedVolumeIds.has(volume.id)
+                          has(volume.id)
                             ? "ring-2 ring-accent ring-offset-2 ring-offset-background-tertiary shadow-lg"
                             : "hover:border-accent/50 hover:bg-accent/5"
                         }
@@ -217,7 +192,7 @@ export function BulkMarkOwnedModal({ volumes }: BulkMarkOwnedModalProps) {
                   ))
                 ) : (
                   <p className="text-sm text-foreground-muted py-2">
-                    🎉 All volumes are already owned!
+                    All volumes are already owned!
                   </p>
                 )}
               </div>
@@ -225,21 +200,23 @@ export function BulkMarkOwnedModal({ volumes }: BulkMarkOwnedModalProps) {
           </div>
 
           {/* Total Price with calculation preview */}
-          <div>
-            <Label htmlFor="totalPrice">Total Price Paid (€)</Label>
+          <FormField
+            label="Total Price Paid"
+            htmlFor="totalPrice"
+            error={errors.totalPrice?.message}
+            required
+          >
             <Input
               id="totalPrice"
               type="number"
               step="0.01"
               min="0"
-              value={formData.totalPrice}
-              onChange={(e) =>
-                setFormData({ ...formData, totalPrice: e.target.value })
-              }
+              {...register("totalPrice", { valueAsNumber: true })}
               placeholder="Enter total amount..."
               icon={<Euro className="w-4 h-4" />}
+              error={!!errors.totalPrice}
             />
-            {selectedVolumeIds.size > 0 && formData.totalPrice && (
+            {selectedCount > 0 && !isNaN(totalPrice) && (
               <div className="mt-2 flex items-center gap-2 text-sm">
                 <Sparkles className="w-4 h-4 text-accent" />
                 <span className="text-foreground-muted">
@@ -251,38 +228,53 @@ export function BulkMarkOwnedModal({ volumes }: BulkMarkOwnedModalProps) {
                 </span>
               </div>
             )}
-          </div>
+          </FormField>
 
           {/* Store and Condition */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="store">Store</Label>
-              <Select
-                id="store"
-                value={formData.store}
-                onChange={(e) =>
-                  setFormData({ ...formData, store: e.target.value as Store })
-                }
-              >
-                <option value="">Select store...</option>
-                {storeOptions.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="condition">Condition</Label>
+          <FormSection columns={2}>
+            <FormField
+              label="Store"
+              htmlFor="storeId"
+              error={errors.storeId?.message}
+            >
+              <CreatableSelect
+                id="storeId"
+                options={stores.map((s) => ({
+                  value: s.id,
+                  label: s.name,
+                }))}
+                value={storeId ?? ""}
+                onChange={(val) => setValue("storeId", val || "")}
+                onCreate={async (name) => {
+                  try {
+                    const store = await createStore(name);
+                    toast.success(`Store "${store.name}" created`);
+                    router.refresh();
+                    return store;
+                  } catch (err) {
+                    toast.error(
+                      err instanceof Error
+                        ? err.message
+                        : "Failed to create store",
+                    );
+                    throw err;
+                  }
+                }}
+                placeholder="No store"
+                createLabel="Add new store..."
+                error={!!errors.storeId}
+              />
+            </FormField>
+            <FormField
+              label="Condition"
+              htmlFor="condition"
+              error={errors.condition?.message}
+              required
+            >
               <Select
                 id="condition"
-                value={formData.condition}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    condition: e.target.value as Condition,
-                  })
-                }
+                {...register("condition")}
+                error={!!errors.condition}
               >
                 {conditionOptions.map((opt) => (
                   <option key={opt.value} value={opt.value}>
@@ -290,44 +282,40 @@ export function BulkMarkOwnedModal({ volumes }: BulkMarkOwnedModalProps) {
                   </option>
                 ))}
               </Select>
-            </div>
-          </div>
+            </FormField>
+          </FormSection>
 
           {/* Purchase Date */}
-          <div>
-            <Label htmlFor="purchaseDate">Purchase Date</Label>
+          <FormField
+            label="Purchase Date"
+            htmlFor="purchaseDate"
+            error={errors.purchaseDate?.message}
+            required
+          >
             <Input
               id="purchaseDate"
               type="date"
-              value={formData.purchaseDate}
-              onChange={(e) =>
-                setFormData({ ...formData, purchaseDate: e.target.value })
-              }
+              {...register("purchaseDate")}
               icon={<Calendar className="w-4 h-4" />}
+              error={!!errors.purchaseDate}
             />
-          </div>
+          </FormField>
 
           {/* Notes */}
-          <div>
-            <Label htmlFor="notes">Notes</Label>
+          <FormField
+            label="Notes"
+            htmlFor="notes"
+            error={errors.notes?.message}
+          >
             <Textarea
               id="notes"
-              value={formData.notes}
-              onChange={(e) =>
-                setFormData({ ...formData, notes: e.target.value })
-              }
+              {...register("notes")}
               rows={2}
               placeholder="Any notes about this purchase..."
+              icon={<StickyNote className="w-4 h-4" />}
+              error={!!errors.notes}
             />
-          </div>
-
-          {/* Error */}
-          {error && (
-            <div className="flex items-center gap-2 p-3 bg-error/10 border border-error/20 rounded-xl text-error text-sm">
-              <span>⚠️</span>
-              {error}
-            </div>
-          )}
+          </FormField>
 
           {/* Actions */}
           <div className="flex gap-3 pt-2">
@@ -341,15 +329,15 @@ export function BulkMarkOwnedModal({ volumes }: BulkMarkOwnedModalProps) {
             </Button>
             <Button
               type="submit"
-              disabled={isLoading || selectedVolumeIds.size === 0}
+              disabled={isSubmitting || selectedCount === 0}
               className="flex-1 gap-2"
             >
-              {isLoading ? (
+              {isSubmitting ? (
                 <Loader2 className="w-5 h-5 animate-spin" />
               ) : (
                 <>
                   <Check className="w-4 h-4" />
-                  Mark {selectedVolumeIds.size} as Owned
+                  Mark {selectedCount} as Owned
                 </>
               )}
             </Button>

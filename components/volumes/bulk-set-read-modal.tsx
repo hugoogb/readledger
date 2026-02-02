@@ -1,14 +1,16 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { Modal } from "@/components/ui/modal";
-import { Loader2, BookMarked, Check, Sparkles } from "lucide-react";
-import type { Volume } from "@/lib/generated/prisma/browser";
-import { updateVolume } from "@/actions/volumes";
-import { Button } from "@/components/ui/button";
+import { bulkSetRead } from "@/actions/volumes";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Modal } from "@/components/ui/modal";
+import { useToggleSet } from "@/hooks/use-toggle-set";
+import type { Volume } from "@/lib/generated/prisma/browser";
+import { BookMarked, Check, Loader2, Sparkles } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { toast } from "sonner";
 
 type BulkSetReadModalProps = {
   volumes: Volume[];
@@ -18,68 +20,51 @@ export function BulkSetReadModal({ volumes }: BulkSetReadModalProps) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const unreadVolumes = volumes.filter((v) => v.owned && !v.read);
-
-  const [selectedVolumeIds, setSelectedVolumeIds] = useState<Set<string>>(
-    new Set(),
-  );
+  const {
+    set: selectedIds,
+    toggle,
+    selectAll,
+    clear,
+    selectUpTo,
+    size: selectedCount,
+    has,
+  } = useToggleSet<string>();
 
   const handleOpenChange = (open: boolean) => {
     setIsOpen(open);
     if (!open) {
-      setSelectedVolumeIds(new Set());
-      setError(null);
+      clear();
     }
   };
 
-  const toggleVolume = (volumeId: string) => {
-    const newSet = new Set(selectedVolumeIds);
-    if (newSet.has(volumeId)) {
-      newSet.delete(volumeId);
-    } else {
-      newSet.add(volumeId);
-    }
-    setSelectedVolumeIds(newSet);
-  };
-
-  const selectAll = () => {
-    setSelectedVolumeIds(new Set(unreadVolumes.map((v) => v.id)));
-  };
-
-  const deselectAll = () => {
-    setSelectedVolumeIds(new Set());
-  };
-
-  const selectUpTo = (volumeNumber: number) => {
-    const volumesToSelect = unreadVolumes
-      .filter((v) => v.volumeNumber <= volumeNumber)
-      .map((v) => v.id);
-    setSelectedVolumeIds(new Set(volumesToSelect));
+  const handleSelectUpTo = (volumeNumber: number) => {
+    selectUpTo(
+      unreadVolumes.map((v) => v.id),
+      (id) => {
+        const vol = unreadVolumes.find((v) => v.id === id);
+        return vol ? vol.volumeNumber <= volumeNumber : false;
+      },
+    );
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (selectedVolumeIds.size === 0) return;
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
 
     setIsLoading(true);
-    setError(null);
 
     try {
-      const promises = Array.from(selectedVolumeIds).map((volumeId) =>
-        updateVolume(volumeId, {
-          read: true,
-          readDate: new Date(),
-        }),
-      );
-
-      await Promise.all(promises);
-      window.dispatchEvent(new CustomEvent("stats-update"));
+      await bulkSetRead(ids);
+      toast.success(`${ids.length} volumes marked as read`);
       router.refresh();
       handleOpenChange(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to update volumes");
+      toast.error(
+        err instanceof Error ? err.message : "Failed to update volumes",
+      );
     } finally {
       setIsLoading(false);
     }
@@ -117,13 +102,13 @@ export function BulkSetReadModal({ volumes }: BulkSetReadModalProps) {
               <Label className="mb-0">Select Volumes to Mark as Read</Label>
               <div className="flex items-center gap-3">
                 <Badge variant="success" size="sm">
-                  {selectedVolumeIds.size} selected
+                  {selectedCount} selected
                 </Badge>
                 <div className="flex gap-2">
                   <Button
                     variant="link"
                     type="button"
-                    onClick={selectAll}
+                    onClick={() => selectAll(unreadVolumes.map((v) => v.id))}
                     className="h-auto p-0 text-xs font-medium text-success hover:text-success/80"
                   >
                     Select All
@@ -132,7 +117,7 @@ export function BulkSetReadModal({ volumes }: BulkSetReadModalProps) {
                   <Button
                     variant="link"
                     type="button"
-                    onClick={deselectAll}
+                    onClick={clear}
                     className="h-auto p-0 text-xs font-medium text-foreground-muted hover:text-foreground"
                   >
                     Clear
@@ -147,14 +132,12 @@ export function BulkSetReadModal({ volumes }: BulkSetReadModalProps) {
                     <Button
                       key={volume.id}
                       type="button"
-                      variant={
-                        selectedVolumeIds.has(volume.id) ? "success" : "outline"
-                      }
-                      onClick={() => toggleVolume(volume.id)}
+                      variant={has(volume.id) ? "success" : "outline"}
+                      onClick={() => toggle(volume.id)}
                       className={`
-                        min-w-[40px] h-10 px-0 rounded-lg text-sm font-semibold
+                        min-w-10 h-10 px-0 rounded-lg text-sm font-semibold
                         ${
-                          selectedVolumeIds.has(volume.id)
+                          has(volume.id)
                             ? "ring-2 ring-success ring-offset-2 ring-offset-background-tertiary shadow-lg"
                             : "hover:border-success/50 hover:bg-success/5"
                         }
@@ -165,7 +148,7 @@ export function BulkSetReadModal({ volumes }: BulkSetReadModalProps) {
                   ))
                 ) : (
                   <p className="text-sm text-foreground-muted py-2">
-                    📚 All owned volumes are already read!
+                    All owned volumes are already read!
                   </p>
                 )}
               </div>
@@ -187,21 +170,13 @@ export function BulkSetReadModal({ volumes }: BulkSetReadModalProps) {
                     key={num}
                     type="button"
                     variant="outline"
-                    onClick={() => selectUpTo(num)}
+                    onClick={() => handleSelectUpTo(num)}
                     className="hover:border-success/50 hover:bg-success/5 hover:text-success"
                   >
                     Up to #{num}
                   </Button>
                 ))}
               </div>
-            </div>
-          )}
-
-          {/* Error */}
-          {error && (
-            <div className="flex items-center gap-2 p-3 bg-error/10 border border-error/20 rounded-xl text-error text-sm">
-              <span>⚠️</span>
-              {error}
             </div>
           )}
 
@@ -218,7 +193,7 @@ export function BulkSetReadModal({ volumes }: BulkSetReadModalProps) {
             <Button
               type="submit"
               variant="success"
-              disabled={isLoading || selectedVolumeIds.size === 0}
+              disabled={isLoading || selectedCount === 0}
               className="flex-1 gap-2"
             >
               {isLoading ? (
@@ -226,7 +201,7 @@ export function BulkSetReadModal({ volumes }: BulkSetReadModalProps) {
               ) : (
                 <>
                   <Check className="w-4 h-4" />
-                  Mark {selectedVolumeIds.size} as Read
+                  Mark {selectedCount} as Read
                 </>
               )}
             </Button>

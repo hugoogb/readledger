@@ -1,97 +1,126 @@
 "use client";
 
-import { useState } from "react";
 import {
+  checkDuplicateSeries,
   createSeries,
   createSeriesWithVolumes,
   type CreateSeriesInput,
 } from "@/actions/series";
-import { Loader2, Plus, Search, Edit3, BookOpen } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
-import { MangaSearch } from "./manga-search";
+import { ProgressBar } from "@/components/ui/progress-bar";
+import { SeriesStatus } from "@/lib/generated/prisma/enums";
 import {
+  fetchVolumeCovers,
   generateVolumeEntries,
   type FormattedMangaData,
+  type VolumeData,
 } from "@/lib/manga-api";
-import Image from "next/image";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select } from "@/components/ui/select";
-import { useForm, type SubmitHandler } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { seriesSchema, type SeriesSchema } from "@/lib/validations";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { BookOpen, Edit3, Loader2, Plus, Search } from "lucide-react";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { FormProvider, useForm, type SubmitHandler } from "react-hook-form";
 import { toast } from "sonner";
-import { SeriesStatus, Editorial } from "@/lib/generated/prisma/enums";
+import { MangaSearch } from "./manga-search";
+import { SeriesFormFields } from "./series-form-fields";
 
-const statusOptions = [
-  { value: SeriesStatus.READING, label: "Reading" },
-  { value: SeriesStatus.COMPLETED, label: "Completed" },
-  { value: SeriesStatus.ON_HOLD, label: "On Hold" },
-  { value: SeriesStatus.DROPPED, label: "Dropped" },
-  { value: SeriesStatus.PLAN_TO_READ, label: "Plan to Read" },
-];
+type Publisher = { id: string; name: string };
 
-const editorialOptions = [
-  { value: Editorial.PLANETA_COMIC, label: "Planeta Cómic" },
-  { value: Editorial.PLANETA_DEAGOSTINI, label: "Planeta DeAgostini" },
-];
+type AddSeriesModalProps = {
+  publishers?: Publisher[];
+};
 
-export function AddSeriesModal() {
+export function AddSeriesModal({ publishers = [] }: AddSeriesModalProps) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [showSearch, setShowSearch] = useState(true);
+  const [volumeData, setVolumeData] = useState<VolumeData[]>([]);
+  const [isFetchingVolumes, setIsFetchingVolumes] = useState(false);
+  const [fetchProgress, setFetchProgress] = useState({ fetched: 0, total: 0 });
 
-  const {
-    register,
-    handleSubmit,
-    setValue,
-    watch,
-    reset,
-    formState: { errors, isSubmitting },
-  } = useForm<SeriesSchema>({
+  const methods = useForm<SeriesSchema>({
     resolver: zodResolver(seriesSchema),
     defaultValues: {
       status: SeriesStatus.READING,
       publishing: false,
       title: "",
       author: "",
-      editorial: Editorial.PLANETA_COMIC,
+      publisherId: "",
       coverImage: "",
       description: "",
       totalVolumes: null,
       retailPrice: null,
-      malId: null,
+      mangadexId: null,
     },
   });
+
+  const {
+    handleSubmit,
+    setValue,
+    watch,
+    reset,
+    formState: { isSubmitting },
+  } = methods;
 
   const handleOpenChange = (open: boolean) => {
     setIsOpen(open);
     if (!open) {
       setShowSearch(true);
+      setVolumeData([]);
+      setIsFetchingVolumes(false);
       reset();
     }
   };
 
-  const handleSearchSelect = (data: FormattedMangaData) => {
+  const handleSearchSelect = async (data: FormattedMangaData) => {
+    // Check for duplicate
+    if (data.mangadexId) {
+      const isDuplicate = await checkDuplicateSeries(data.mangadexId);
+      if (isDuplicate) {
+        toast.warning(`"${data.title}" is already in your collection`);
+        return;
+      }
+    }
+
+    // Set form values immediately
     setValue("title", data.title);
     setValue("author", data.author);
     setValue("totalVolumes", data.totalVolumes || null);
     setValue("coverImage", data.coverImage);
     setValue("description", data.description);
     setValue("publishing", data.publishing);
-    setValue("malId", data.malId);
-    setShowSearch(false);
-  };
+    setValue("mangadexId", data.mangadexId);
 
-  const handleManualEntry = () => {
+    // Show loading state while fetching volumes
     setShowSearch(false);
-  };
 
-  const handleBackToSearch = () => {
-    setShowSearch(true);
+    if (data.totalVolumes && data.totalVolumes > 0) {
+      setIsFetchingVolumes(true);
+      setFetchProgress({ fetched: 0, total: data.totalVolumes });
+      try {
+        const volumes = await fetchVolumeCovers(
+          data.mangadexId,
+          data.totalVolumes,
+          (fetched, total) => setFetchProgress({ fetched, total }),
+        );
+        setVolumeData(volumes);
+      } catch {
+        // Fallback to placeholder volumes
+        const placeholders = generateVolumeEntries(data.totalVolumes);
+        setVolumeData(
+          placeholders.map((v) => ({
+            ...v,
+            coverImage: null,
+            isbn: null,
+          })),
+        );
+      } finally {
+        setIsFetchingVolumes(false);
+      }
+    }
   };
 
   const onSubmit: SubmitHandler<SeriesSchema> = async (data) => {
@@ -99,17 +128,26 @@ export function AddSeriesModal() {
       const input: CreateSeriesInput = {
         title: data.title,
         author: data.author,
-        editorial: data.editorial || undefined,
+        publisherId: data.publisherId || undefined,
         status: data.status,
         publishing: data.publishing,
         totalVolumes: data.totalVolumes || undefined,
         coverImage: data.coverImage,
         description: data.description || undefined,
         retailPrice: data.retailPrice || undefined,
-        malId: data.malId || undefined,
+        mangadexId: data.mangadexId || undefined,
       };
 
-      if (input.totalVolumes && input.totalVolumes > 0) {
+      if (volumeData.length > 0) {
+        await createSeriesWithVolumes(
+          input,
+          volumeData.map((v) => ({
+            volumeNumber: v.volumeNumber,
+            title: v.title,
+            coverImage: v.coverImage,
+          })),
+        );
+      } else if (input.totalVolumes && input.totalVolumes > 0) {
         const volumes = generateVolumeEntries(input.totalVolumes);
         await createSeriesWithVolumes(input, volumes);
       } else {
@@ -118,7 +156,6 @@ export function AddSeriesModal() {
 
       toast.success(`${data.title} added to your collection`);
       handleOpenChange(false);
-      window.dispatchEvent(new CustomEvent("stats-update"));
       router.refresh();
     } catch (err) {
       toast.error(
@@ -127,9 +164,12 @@ export function AddSeriesModal() {
     }
   };
 
-  // eslint-disable-next-line react-hooks/incompatible-library
   const totalVolumesNum = watch("totalVolumes") || 0;
   const coverImage = watch("coverImage");
+
+  const volumesWithCovers = volumeData.filter((v) => v.coverImage);
+  const previewVolumes = volumeData.slice(0, 10);
+  const remainingCount = volumeData.length - previewVolumes.length;
 
   return (
     <>
@@ -161,215 +201,156 @@ export function AddSeriesModal() {
 
             <Button
               variant="outline"
-              onClick={handleManualEntry}
+              onClick={() => setShowSearch(false)}
               className="w-full h-14"
             >
               <Edit3 className="w-5 h-5" />
               Enter manually
             </Button>
           </div>
-        ) : (
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <Button
-              variant="link"
-              type="button"
-              onClick={handleBackToSearch}
-              className="h-auto p-0 gap-1 text-sm"
-            >
-              <Search className="w-4 h-4" />
-              Search again
-            </Button>
-
-            {coverImage && (
-              <div className="flex justify-center">
-                <Image
-                  width={96}
-                  height={128}
-                  src={coverImage}
-                  alt="Cover preview"
-                  className="rounded-xl object-cover shadow-lg"
-                />
-              </div>
-            )}
-
-            <div>
-              <Label htmlFor="title">Title *</Label>
-              <Input
-                id="title"
-                type="text"
-                {...register("title")}
-                placeholder="One Piece"
+        ) : isFetchingVolumes ? (
+          <div className="flex flex-col items-center justify-center py-12 gap-4">
+            <Loader2 className="w-8 h-8 animate-spin text-accent" />
+            <div className="w-full max-w-xs space-y-2">
+              <ProgressBar
+                value={
+                  fetchProgress.total > 0
+                    ? (fetchProgress.fetched / fetchProgress.total) * 100
+                    : 0
+                }
+                variant="accent"
+                size="md"
               />
-              {errors.title && (
-                <p className="text-xs text-error mt-1">
-                  {errors.title.message}
-                </p>
+              <p className="text-sm text-foreground-muted text-center">
+                Fetching covers... {fetchProgress.fetched}/{fetchProgress.total}
+              </p>
+            </div>
+          </div>
+        ) : (
+          <FormProvider {...methods}>
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+              <Button
+                variant="link"
+                type="button"
+                onClick={() => {
+                  setShowSearch(true);
+                  setVolumeData([]);
+                }}
+                className="h-auto p-0 gap-1 text-sm"
+              >
+                <Search className="w-4 h-4" />
+                Search again
+              </Button>
+
+              {coverImage && (
+                <div className="flex justify-center">
+                  <Image
+                    width={96}
+                    height={128}
+                    src={coverImage}
+                    alt="Cover preview"
+                    className="rounded-xl object-cover shadow-lg"
+                  />
+                </div>
               )}
-            </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="author">Author</Label>
-                <Input
-                  id="author"
-                  type="text"
-                  {...register("author")}
-                  placeholder="Eiichiro Oda"
-                />
-                {errors.author && (
-                  <p className="text-xs text-error mt-1">
-                    {errors.author.message}
-                  </p>
-                )}
-              </div>
+              <SeriesFormFields publishers={publishers} />
 
-              <div>
-                <Label htmlFor="editorial">Editorial</Label>
-                <Select id="editorial" {...register("editorial")}>
-                  {editorialOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </Select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="totalVolumes">Total Volumes</Label>
-                <Input
-                  id="totalVolumes"
-                  type="number"
-                  min="0"
-                  {...register("totalVolumes", { valueAsNumber: true })}
-                  placeholder="109"
-                />
-                {errors.totalVolumes && (
-                  <p className="text-xs text-error mt-1">
-                    {errors.totalVolumes.message}
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <Label htmlFor="retailPrice">Retail Price (EUR)</Label>
-                <Input
-                  id="retailPrice"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  {...register("retailPrice", { valueAsNumber: true })}
-                  placeholder="9.95"
-                />
-                {errors.retailPrice && (
-                  <p className="text-xs text-error mt-1">
-                    {errors.retailPrice.message}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="status">Reading Status</Label>
-                <Select id="status" {...register("status")}>
-                  {statusOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </Select>
-              </div>
-
-              <div className="flex items-end pb-1">
-                <label className="flex items-center gap-3 cursor-pointer group">
-                  <div className="relative flex items-center">
-                    <input
-                      type="checkbox"
-                      {...register("publishing")}
-                      className="peer w-5 h-5 rounded border-border bg-background-tertiary text-accent focus:ring-accent focus:ring-offset-0 transition-all cursor-pointer opacity-0 absolute inset-0 z-10"
-                    />
-                    <div className="w-5 h-5 rounded border border-border bg-background-tertiary peer-checked:bg-accent peer-checked:border-accent transition-all flex items-center justify-center">
-                      <div className="w-2.5 h-2.5 bg-white rounded-full opacity-0 peer-checked:opacity-100 transition-opacity" />
+              {/* Volume cover preview */}
+              {volumeData.length > 0 ? (
+                <div className="p-4 bg-accent/5 border border-accent/20 rounded-xl space-y-3">
+                  <div className="flex items-center gap-3">
+                    <BookOpen className="w-5 h-5 text-accent shrink-0" />
+                    <div>
+                      <div className="font-medium">
+                        {volumeData.length} volume entries will be created
+                      </div>
+                      {volumesWithCovers.length > 0 && (
+                        <p className="text-sm text-foreground-muted mt-0.5">
+                          {volumesWithCovers.length} with cover images from
+                          MangaDex
+                        </p>
+                      )}
                     </div>
                   </div>
-                  <span className="text-sm font-medium group-hover:text-foreground transition-colors">
-                    Still Publishing
-                  </span>
-                </label>
-              </div>
-            </div>
 
-            {totalVolumesNum > 0 && (
-              <div className="p-4 bg-accent/5 border border-accent/20 rounded-xl">
-                <div className="flex items-center gap-3">
-                  <BookOpen className="w-5 h-5 text-accent shrink-0" />
-                  <div>
-                    <div className="font-medium">
-                      {totalVolumesNum} volume entries will be created
-                    </div>
-                    <p className="text-sm text-foreground-muted mt-0.5">
-                      You can then mark which ones you own, have read, or are
-                      missing
-                    </p>
+                  <div className="flex gap-2 overflow-x-auto pb-2">
+                    {previewVolumes.map((vol) => (
+                      <div
+                        key={vol.volumeNumber}
+                        className="shrink-0 w-16 text-center"
+                      >
+                        {vol.coverImage ? (
+                          <Image
+                            width={64}
+                            height={96}
+                            src={vol.coverImage}
+                            alt={`Vol. ${vol.volumeNumber}`}
+                            className="rounded-lg object-cover shadow-sm w-16 h-24"
+                          />
+                        ) : (
+                          <div className="w-16 h-24 rounded-lg bg-background-tertiary flex items-center justify-center">
+                            <span className="text-xs text-foreground-muted font-medium">
+                              {vol.volumeNumber}
+                            </span>
+                          </div>
+                        )}
+                        <p className="text-[10px] text-foreground-muted mt-1 truncate">
+                          Vol. {vol.volumeNumber}
+                        </p>
+                      </div>
+                    ))}
+                    {remainingCount > 0 && (
+                      <div className="shrink-0 w-16 flex items-center justify-center">
+                        <span className="text-sm text-foreground-muted font-medium">
+                          +{remainingCount} more
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
+              ) : (
+                totalVolumesNum > 0 && (
+                  <div className="p-4 bg-accent/5 border border-accent/20 rounded-xl">
+                    <div className="flex items-center gap-3">
+                      <BookOpen className="w-5 h-5 text-accent shrink-0" />
+                      <div>
+                        <div className="font-medium">
+                          {totalVolumesNum} volume entries will be created
+                        </div>
+                        <p className="text-sm text-foreground-muted mt-0.5">
+                          You can then mark which ones you own, have read, or
+                          are missing
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )
+              )}
+
+              <div className="flex gap-3 pt-2">
+                <Button
+                  variant="outline"
+                  type="button"
+                  onClick={() => handleOpenChange(false)}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="flex-1 gap-2"
+                >
+                  {isSubmitting ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    "Add Series"
+                  )}
+                </Button>
               </div>
-            )}
-
-            <div>
-              <Label htmlFor="coverImage">Cover Image URL</Label>
-              <Input
-                id="coverImage"
-                type="url"
-                {...register("coverImage")}
-                placeholder="https://..."
-              />
-              {errors.coverImage && (
-                <p className="text-xs text-error mt-1">
-                  {errors.coverImage.message}
-                </p>
-              )}
-            </div>
-
-            <div>
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                rows={3}
-                {...register("description")}
-                placeholder="Brief description..."
-              />
-              {errors.description && (
-                <p className="text-xs text-error mt-1">
-                  {errors.description.message}
-                </p>
-              )}
-            </div>
-
-            <div className="flex gap-3 pt-2">
-              <Button
-                variant="outline"
-                type="button"
-                onClick={() => handleOpenChange(false)}
-                className="flex-1"
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={isSubmitting}
-                className="flex-1 gap-2"
-              >
-                {isSubmitting ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                  "Add Series"
-                )}
-              </Button>
-            </div>
-          </form>
+            </form>
+          </FormProvider>
         )}
       </Modal>
     </>

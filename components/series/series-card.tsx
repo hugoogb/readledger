@@ -2,37 +2,13 @@ import Link from "next/link";
 import { BookOpen, User } from "lucide-react";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import Image from "next/image";
-import type { Series, Volume } from "@/lib/generated/prisma/browser";
+import type { SeriesWithVolumes } from "@/types";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-
-export type SeriesWithVolumes = Series & {
-  volumes: Volume[];
-};
+import { statusConfig } from "@/lib/constants";
 
 type SeriesCardProps = {
   series: SeriesWithVolumes;
-};
-
-const statusConfig: Record<
-  string,
-  {
-    label: string;
-    variant:
-      | "default"
-      | "secondary"
-      | "outline"
-      | "destructive"
-      | "success"
-      | "warning";
-    colorClass?: string;
-  }
-> = {
-  READING: { label: "Reading", variant: "default" },
-  COMPLETED: { label: "Completed", variant: "success" },
-  ON_HOLD: { label: "On Hold", variant: "warning" },
-  DROPPED: { label: "Dropped", variant: "destructive" },
-  PLAN_TO_READ: { label: "Plan to Read", variant: "secondary" },
 };
 
 export function SeriesCard({ series }: SeriesCardProps) {

@@ -1,7 +1,8 @@
-export function formatCurrency(amount: number) {
-  return new Intl.NumberFormat("es-ES", {
+export function formatCurrency(amount: number, currency: string = "EUR") {
+  const locale = currency === "EUR" ? "es-ES" : undefined;
+  return new Intl.NumberFormat(locale, {
     style: "currency",
-    currency: "EUR",
+    currency,
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(amount);

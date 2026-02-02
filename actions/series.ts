@@ -3,20 +3,22 @@
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
-import { SeriesStatus, Editorial } from "@/lib/generated/prisma/enums";
+import { cache } from "react";
+import { SeriesStatus } from "@/lib/generated/prisma/enums";
 import { seriesSchema } from "@/lib/validations";
+import { checkUserActionLimit } from "@/lib/rate-limit";
 
 export type CreateSeriesInput = {
   title: string;
   author?: string;
-  editorial?: Editorial;
+  publisherId?: string;
   status?: SeriesStatus;
   publishing?: boolean;
   totalVolumes?: number;
   coverImage?: string;
   description?: string;
   retailPrice?: number;
-  malId?: number;
+  mangadexId?: string;
 };
 
 export type UpdateSeriesInput = Partial<CreateSeriesInput>;
@@ -24,10 +26,12 @@ export type UpdateSeriesInput = Partial<CreateSeriesInput>;
 export type VolumeInput = {
   volumeNumber: number;
   title?: string;
+  coverImage?: string | null;
 };
 
 export async function createSeries(input: CreateSeriesInput) {
   const user = await requireUser();
+  checkUserActionLimit(user.id);
 
   const validated = seriesSchema.parse(input);
 
@@ -35,7 +39,7 @@ export async function createSeries(input: CreateSeriesInput) {
     data: {
       ...validated,
       userId: user.id,
-      editorial: (validated.editorial as Editorial) || null,
+      publisherId: validated.publisherId || null,
     },
   });
 
@@ -51,6 +55,7 @@ export async function createSeriesWithVolumes(
   volumes: VolumeInput[],
 ) {
   const user = await requireUser();
+  checkUserActionLimit(user.id);
 
   const validated = seriesSchema.parse(input);
 
@@ -58,11 +63,12 @@ export async function createSeriesWithVolumes(
     data: {
       ...validated,
       userId: user.id,
-      editorial: (validated.editorial as Editorial) || null,
+      publisherId: validated.publisherId || null,
       volumes: {
         create: volumes.map((v) => ({
           volumeNumber: v.volumeNumber,
           title: v.title,
+          coverImage: v.coverImage || null,
           owned: false,
           read: false,
         })),
@@ -81,6 +87,7 @@ export async function createSeriesWithVolumes(
 
 export async function updateSeries(id: string, input: UpdateSeriesInput) {
   const user = await requireUser();
+  checkUserActionLimit(user.id);
 
   const series = await prisma.series.findFirst({
     where: { id, userId: user.id },
@@ -97,7 +104,7 @@ export async function updateSeries(id: string, input: UpdateSeriesInput) {
     where: { id },
     data: {
       ...validated,
-      editorial: (validated.editorial as Editorial) || undefined,
+      publisherId: validated.publisherId || undefined,
     },
   });
 
@@ -136,6 +143,7 @@ export async function updateSeries(id: string, input: UpdateSeriesInput) {
 
 export async function deleteSeries(id: string) {
   const user = await requireUser();
+  checkUserActionLimit(user.id);
 
   const series = await prisma.series.findFirst({
     where: { id, userId: user.id },
@@ -159,8 +167,10 @@ export async function getSeries(id: string) {
   const series = await prisma.series.findFirst({
     where: { id, userId: user.id },
     include: {
+      publisher: true,
       volumes: {
         orderBy: { volumeNumber: "asc" },
+        include: { store: true },
       },
     },
   });
@@ -168,8 +178,15 @@ export async function getSeries(id: string) {
   return series;
 }
 
-export async function getAllSeries(status?: SeriesStatus) {
+export type SortOption = "updated" | "title_asc" | "title_desc" | "created" | "completion" | "spent";
+
+export async function getAllSeries(status?: SeriesStatus, sort?: SortOption) {
   const user = await requireUser();
+
+  let orderBy: { [key: string]: string } = { updatedAt: "desc" };
+  if (sort === "title_asc") orderBy = { title: "asc" };
+  else if (sort === "title_desc") orderBy = { title: "desc" };
+  else if (sort === "created") orderBy = { createdAt: "desc" };
 
   const series = await prisma.series.findMany({
     where: {
@@ -177,15 +194,59 @@ export async function getAllSeries(status?: SeriesStatus) {
       ...(status && { status }),
     },
     include: {
+      publisher: true,
       volumes: true,
     },
-    orderBy: { updatedAt: "desc" },
+    orderBy,
   });
+
+  // Client-side sort for computed fields
+  if (sort === "completion") {
+    series.sort((a, b) => {
+      const aTotal = a.totalVolumes || a.volumes.length;
+      const bTotal = b.totalVolumes || b.volumes.length;
+      const aProgress = aTotal > 0 ? a.volumes.filter((v) => v.owned).length / aTotal : 0;
+      const bProgress = bTotal > 0 ? b.volumes.filter((v) => v.owned).length / bTotal : 0;
+      return bProgress - aProgress;
+    });
+  } else if (sort === "spent") {
+    series.sort((a, b) => {
+      const aSpent = a.volumes.reduce((acc, v) => acc + (v.pricePaid || 0), 0);
+      const bSpent = b.volumes.reduce((acc, v) => acc + (v.pricePaid || 0), 0);
+      return bSpent - aSpent;
+    });
+  }
 
   return series;
 }
 
-export async function getSeriesStats() {
+export async function checkDuplicateSeries(mangadexId: string): Promise<boolean> {
+  const user = await requireUser();
+
+  const existing = await prisma.series.findFirst({
+    where: { userId: user.id, mangadexId },
+  });
+
+  return !!existing;
+}
+
+export async function getExistingMangadexIds(mangadexIds: string[]): Promise<string[]> {
+  const user = await requireUser();
+
+  if (mangadexIds.length === 0) return [];
+
+  const existing = await prisma.series.findMany({
+    where: {
+      userId: user.id,
+      mangadexId: { in: mangadexIds },
+    },
+    select: { mangadexId: true },
+  });
+
+  return existing.map((s) => s.mangadexId).filter((id): id is string => id !== null);
+}
+
+export const getSeriesStats = cache(async function getSeriesStats() {
   const user = await requireUser();
 
   const series = await prisma.series.findMany({
@@ -250,5 +311,17 @@ export async function getSeriesStats() {
         : 0,
     readingProgress:
       totalVolumesOwned > 0 ? (totalVolumesRead / totalVolumesOwned) * 100 : 0,
+  };
+});
+
+export async function getDashboardData() {
+  const [stats, recentSeries] = await Promise.all([
+    getSeriesStats(),
+    getAllSeries(),
+  ]);
+
+  return {
+    stats,
+    recentSeries: recentSeries.slice(0, 5),
   };
 }
