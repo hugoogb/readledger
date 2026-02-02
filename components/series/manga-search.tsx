@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Search, Loader2, BookOpen, ChevronLeft, ChevronRight, Library } from "lucide-react";
+import { searchManga } from "@/actions/mangadex";
 import {
-  searchMangaPaginated,
   formatMangaForSeries,
   type MangaSearchResult,
   type PaginatedSearchResult,
@@ -41,7 +41,7 @@ export function MangaSearch({ onSelect }: MangaSearchProps) {
     setIsLoading(true);
 
     try {
-      const result = await searchMangaPaginated(searchQuery, page);
+      const result = await searchManga(searchQuery, page);
       setResults(result.data);
       setPagination(result.pagination);
 

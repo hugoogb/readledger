@@ -8,10 +8,9 @@ import {
 } from "@/actions/series";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
-import { ProgressBar } from "@/components/ui/progress-bar";
 import { SeriesStatus } from "@/lib/generated/prisma/enums";
+import { getVolumeCovers } from "@/actions/mangadex";
 import {
-  fetchVolumeCovers,
   generateVolumeEntries,
   type FormattedMangaData,
   type VolumeData,
@@ -39,7 +38,7 @@ export function AddSeriesModal({ publishers = [] }: AddSeriesModalProps) {
   const [showSearch, setShowSearch] = useState(true);
   const [volumeData, setVolumeData] = useState<VolumeData[]>([]);
   const [isFetchingVolumes, setIsFetchingVolumes] = useState(false);
-  const [fetchProgress, setFetchProgress] = useState({ fetched: 0, total: 0 });
+  const [fetchTotal, setFetchTotal] = useState(0);
 
   const methods = useForm<SeriesSchema>({
     resolver: zodResolver(seriesSchema),
@@ -99,12 +98,11 @@ export function AddSeriesModal({ publishers = [] }: AddSeriesModalProps) {
 
     if (data.totalVolumes && data.totalVolumes > 0) {
       setIsFetchingVolumes(true);
-      setFetchProgress({ fetched: 0, total: data.totalVolumes });
+      setFetchTotal(data.totalVolumes);
       try {
-        const volumes = await fetchVolumeCovers(
+        const volumes = await getVolumeCovers(
           data.mangadexId,
           data.totalVolumes,
-          (fetched, total) => setFetchProgress({ fetched, total }),
         );
         setVolumeData(volumes);
       } catch {
@@ -211,20 +209,9 @@ export function AddSeriesModal({ publishers = [] }: AddSeriesModalProps) {
         ) : isFetchingVolumes ? (
           <div className="flex flex-col items-center justify-center py-12 gap-4">
             <Loader2 className="w-8 h-8 animate-spin text-accent" />
-            <div className="w-full max-w-xs space-y-2">
-              <ProgressBar
-                value={
-                  fetchProgress.total > 0
-                    ? (fetchProgress.fetched / fetchProgress.total) * 100
-                    : 0
-                }
-                variant="accent"
-                size="md"
-              />
-              <p className="text-sm text-foreground-muted text-center">
-                Fetching covers... {fetchProgress.fetched}/{fetchProgress.total}
-              </p>
-            </div>
+            <p className="text-sm text-foreground-muted text-center">
+              Fetching covers for {fetchTotal} volumes...
+            </p>
           </div>
         ) : (
           <FormProvider {...methods}>
