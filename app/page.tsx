@@ -103,8 +103,75 @@ export default function Home() {
               </p>
             </div>
           </div>
+
+          {/* How it works */}
+          <div className="mt-24 animate-fade-in stagger-4">
+            <h2 className="text-3xl font-bold text-center mb-12">
+              How it works
+            </h2>
+            <div className="grid sm:grid-cols-3 gap-8">
+              <div className="text-center">
+                <div className="w-12 h-12 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center mx-auto mb-4 text-accent font-bold text-lg">
+                  1
+                </div>
+                <h3 className="text-lg font-semibold mb-2">Add series</h3>
+                <p className="text-foreground-muted">
+                  Search for manga titles and add them to your collection in
+                  seconds.
+                </p>
+              </div>
+
+              <div className="text-center">
+                <div className="w-12 h-12 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center mx-auto mb-4 text-accent font-bold text-lg">
+                  2
+                </div>
+                <h3 className="text-lg font-semibold mb-2">Track volumes</h3>
+                <p className="text-foreground-muted">
+                  Mark volumes as owned or read, log prices, and track
+                  condition.
+                </p>
+              </div>
+
+              <div className="text-center">
+                <div className="w-12 h-12 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center mx-auto mb-4 text-accent font-bold text-lg">
+                  3
+                </div>
+                <h3 className="text-lg font-semibold mb-2">Get insights</h3>
+                <p className="text-foreground-muted">
+                  View spending trends, reading progress, and collection
+                  statistics at a glance.
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       </main>
+
+      {/* Footer */}
+      <footer className="relative z-10 border-t border-border px-6 py-8">
+        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-accent/10 border border-accent/20 flex items-center justify-center">
+              <BookOpen className="w-4 h-4 text-accent" />
+            </div>
+            <span className="font-semibold">ReadLedger</span>
+          </div>
+          <div className="flex items-center gap-6 text-sm text-foreground-muted">
+            <Link
+              href="/login"
+              className="hover:text-foreground transition-colors"
+            >
+              Sign in
+            </Link>
+            <Link
+              href="/register"
+              className="hover:text-foreground transition-colors"
+            >
+              Get started
+            </Link>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

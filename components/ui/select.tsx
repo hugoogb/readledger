@@ -4,15 +4,17 @@ import { ChevronDown } from "lucide-react";
 
 export interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
   icon?: React.ReactNode;
+  error?: boolean;
 }
 
 const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
-  ({ className, children, icon, ...props }, ref) => {
+  ({ className, children, icon, error, ...props }, ref) => {
     return (
       <div className="relative group/select">
         <select
           className={cn(
             "flex h-12 w-full rounded-xl border border-border bg-background-tertiary px-4 py-3 text-sm text-foreground ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-50 transition-colors appearance-none cursor-pointer pr-10 hover:border-border-hover",
+            error && "border-error focus-visible:ring-error",
             className,
           )}
           ref={ref}

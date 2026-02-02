@@ -1,7 +1,6 @@
-import { getCurrentUser } from "@/lib/auth";
 import { signOut } from "@/actions/auth";
-import { User, Mail, Calendar, LogOut } from "lucide-react";
-import Image from "next/image";
+import { ExportButton } from "@/components/import-export/export-button";
+import { ImportModal } from "@/components/import-export/import-modal";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -10,6 +9,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { getCurrentUser } from "@/lib/auth";
+import { Calendar, Database, LogOut, Mail, User } from "lucide-react";
+import Image from "next/image";
 
 export default async function ProfilePage() {
   const user = await getCurrentUser();
@@ -47,17 +49,16 @@ export default async function ProfilePage() {
               <CardTitle className="text-xl">
                 {user.name || "Anonymous"}
               </CardTitle>
-              <CardDescription>{user.email}</CardDescription>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center gap-3 p-4 rounded-xl bg-background-tertiary border border-border/50">
               <Mail className="w-5 h-5 text-foreground-muted" />
-              <div>
+              <div className="min-w-0 flex-1">
                 <p className="text-xs text-foreground-muted uppercase font-bold tracking-wider">
                   Email
                 </p>
-                <p className="font-medium">{user.email}</p>
+                <p className="max-w-full font-medium truncate">{user.email}</p>
               </div>
             </div>
 
@@ -77,8 +78,27 @@ export default async function ProfilePage() {
           </CardContent>
         </Card>
 
-        {/* Sign Out */}
+        {/* Import / Export */}
         <Card className="animate-fade-in stagger-2">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Database className="w-5 h-5" />
+              Data
+            </CardTitle>
+            <CardDescription>
+              Export or import your collection data
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-3">
+              <ExportButton />
+              <ImportModal />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Sign Out */}
+        <Card className="animate-fade-in stagger-3">
           <CardHeader>
             <CardTitle className="text-lg">Account Actions</CardTitle>
           </CardHeader>

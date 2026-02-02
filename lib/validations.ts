@@ -1,22 +1,17 @@
 import { z } from "zod";
-import {
-  Condition,
-  SeriesStatus,
-  Store,
-  Editorial,
-} from "./generated/prisma/enums";
+import { Condition, SeriesStatus } from "./generated/prisma/enums";
 
 export const seriesSchema = z.object({
-  title: z.string().min(1, "Title is required").max(255),
+  title: z.string().trim().min(1, "Title is required").max(255),
   author: z.string().max(255).optional().or(z.literal("")),
-  editorial: z.enum(Editorial).optional().nullable(),
+  publisherId: z.string().nullable().optional(),
   status: z.enum(SeriesStatus),
   publishing: z.boolean(),
-  totalVolumes: z.number().int().min(0).nullable(),
+  totalVolumes: z.number("Total volumes is required and must be a number").int().min(0).nullable(),
   coverImage: z.url("Must be a valid URL").optional().or(z.literal("")),
   description: z.string().max(2000).optional().or(z.literal("")),
-  retailPrice: z.number().min(0).nullable().optional(),
-  malId: z.number().int().nullable().optional(),
+  retailPrice: z.number("Retail price must be a number").min(0).nullable().optional(),
+  mangadexId: z.string().nullable().optional(),
 });
 
 export const volumeSchema = z.object({
@@ -24,14 +19,29 @@ export const volumeSchema = z.object({
   title: z.string().max(255).optional().or(z.literal("")),
   owned: z.boolean(),
   read: z.boolean(),
-  pricePaid: z.number().min(0).nullable().optional(),
-  condition: z.enum(Condition),
-  store: z.enum(Store).nullable().optional(),
+  wishlist: z.boolean().optional(),
+  pricePaid: z.number("Price paid is required and must be a number").min(0).nullable().optional(),
+  condition: z.enum(Condition).nullable().optional(),
+  storeId: z.string().nullable().optional(),
   coverImage: z.url("Must be a valid URL").optional().or(z.literal("")),
   purchaseDate: z.date().nullable().optional(),
   readDate: z.date().nullable().optional(),
   notes: z.string().max(1000).optional().or(z.literal("")),
 });
 
+export const bulkMarkOwnedSchema = z.object({
+  totalPrice: z.number("Total price is required and must be a number").min(0),
+  storeId: z.string().nullable().optional(),
+  condition: z.enum(Condition),
+  purchaseDate: z.string().min(1, "Purchase date is required"),
+  notes: z.string().max(1000).optional().or(z.literal("")),
+});
+
+export const bulkSetReadSchema = z.object({
+  volumeIds: z.array(z.string()).min(1, "Select at least one volume"),
+});
+
 export type SeriesSchema = z.infer<typeof seriesSchema>;
 export type VolumeSchema = z.infer<typeof volumeSchema>;
+export type BulkMarkOwnedSchema = z.infer<typeof bulkMarkOwnedSchema>;
+export type BulkSetReadSchema = z.infer<typeof bulkSetReadSchema>;

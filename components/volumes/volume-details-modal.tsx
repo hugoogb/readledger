@@ -1,59 +1,44 @@
 "use client";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { createStore } from "@/actions/stores";
 import { updateVolume, type UpdateVolumeInput } from "@/actions/volumes";
-import { Modal } from "@/components/ui/modal";
-import { Input } from "@/components/ui/input";
-import { Select } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { CreatableSelect } from "@/components/ui/creatable-select";
+import { FormField } from "@/components/ui/form-field";
+import { FormSection } from "@/components/ui/form-section";
+import { Input } from "@/components/ui/input";
+import { Modal } from "@/components/ui/modal";
+import { Select } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { conditionOptions } from "@/lib/constants";
+import type { Volume } from "@/lib/generated/prisma/browser";
+import { volumeSchema, type VolumeSchema } from "@/lib/validations";
+import type { SeriesDefaults } from "@/types";
+import { formatDateForInput } from "@/utils/date";
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
+  Calendar,
+  Euro,
+  ImageIcon,
   Loader2,
   Package,
-  Trash2,
-  Euro,
-  Calendar,
   Sparkles,
   StickyNote,
-  ImageIcon,
+  Trash2,
 } from "lucide-react";
-import { Condition, Store } from "@/lib/generated/prisma/enums";
-import type { Volume } from "@/lib/generated/prisma/browser";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 import { useForm, type SubmitHandler } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { volumeSchema, type VolumeSchema } from "@/lib/validations";
 import { toast } from "sonner";
-import { formatDateForInput } from "@/utils/date";
 
-const storeOptions = [
-  { value: Store.AMAZON, label: "Amazon" },
-  { value: Store.VINTED, label: "Vinted" },
-  { value: Store.WALLAPOP, label: "Wallapop" },
-  { value: Store.ABACUS, label: "Abacus" },
-  { value: Store.CASA_DEL_LIBRO, label: "Casa del Libro" },
-  { value: Store.NA, label: "N/A" },
-];
-
-const conditionOptions = [
-  { value: Condition.NEW, label: "New" },
-  { value: Condition.LIKE_NEW, label: "Like New" },
-  { value: Condition.VERY_GOOD, label: "Very Good" },
-  { value: Condition.GOOD, label: "Good" },
-  { value: Condition.ACCEPTABLE, label: "Acceptable" },
-  { value: Condition.POOR, label: "Poor" },
-];
-
-type SeriesDefaults = {
-  retailPrice?: number | null;
-};
+type UserStore = { id: string; name: string };
 
 type VolumeDetailsModalProps = {
   volume: Volume;
   seriesDefaults?: SeriesDefaults;
+  stores?: UserStore[];
   isOpen: boolean;
   onClose: () => void;
 };
@@ -61,6 +46,7 @@ type VolumeDetailsModalProps = {
 export function VolumeDetailsModal({
   volume,
   seriesDefaults,
+  stores = [],
   isOpen,
   onClose,
 }: VolumeDetailsModalProps) {
@@ -71,6 +57,7 @@ export function VolumeDetailsModal({
     handleSubmit,
     reset,
     watch,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<VolumeSchema>({
     resolver: zodResolver(volumeSchema),
@@ -80,12 +67,16 @@ export function VolumeDetailsModal({
       owned: volume.owned,
       read: volume.read,
       pricePaid:
-        Number(volume.pricePaid?.toFixed(2)) || seriesDefaults?.retailPrice,
-      store: volume.store,
+        volume.pricePaid !== null && volume.pricePaid !== undefined
+          ? Number(volume.pricePaid?.toFixed(2))
+          : seriesDefaults?.retailPrice,
+      storeId: volume.storeId ?? "",
       coverImage: volume.coverImage || "",
-      condition: volume.condition,
+      condition: volume.condition ?? "NEW",
       notes: volume.notes || "",
-      purchaseDate: formatDateForInput(volume.purchaseDate) as unknown as Date,
+      purchaseDate: (volume.owned
+        ? formatDateForInput(volume.purchaseDate)
+        : new Date().toISOString().split("T")[0]) as unknown as Date,
     },
   });
 
@@ -97,14 +88,16 @@ export function VolumeDetailsModal({
         owned: volume.owned,
         read: volume.read,
         pricePaid:
-          Number(volume.pricePaid?.toFixed(2)) || seriesDefaults?.retailPrice,
-        store: volume.store,
+          volume.pricePaid !== null && volume.pricePaid !== undefined
+            ? Number(volume.pricePaid?.toFixed(2))
+            : seriesDefaults?.retailPrice,
+        storeId: volume.storeId ?? "",
         coverImage: volume.coverImage || "",
-        condition: volume.condition,
+        condition: volume.condition ?? "NEW",
         notes: volume.notes || "",
-        purchaseDate: formatDateForInput(
-          volume.purchaseDate,
-        ) as unknown as Date,
+        purchaseDate: (volume.owned
+          ? formatDateForInput(volume.purchaseDate)
+          : new Date().toISOString().split("T")[0]) as unknown as Date,
       });
     }
   }, [isOpen, volume, seriesDefaults, reset]);
@@ -117,7 +110,7 @@ export function VolumeDetailsModal({
         read: data.read,
         pricePaid: Number(data.pricePaid?.toFixed(2)) ?? undefined,
         condition: data.condition,
-        store: data.store || undefined,
+        storeId: data.storeId || null,
         coverImage: data.coverImage || undefined,
         purchaseDate: data.purchaseDate || undefined,
         readDate: data.readDate || undefined,
@@ -126,7 +119,6 @@ export function VolumeDetailsModal({
 
       await updateVolume(volume.id, input);
       toast.success(`Volume ${volume.volumeNumber} updated`);
-      window.dispatchEvent(new CustomEvent("stats-update"));
       router.refresh();
       onClose();
     } catch (err) {
@@ -141,16 +133,15 @@ export function VolumeDetailsModal({
       const input: UpdateVolumeInput = {
         owned: false,
         read: false,
-        pricePaid: undefined,
-        store: undefined,
-        coverImage: undefined,
-        purchaseDate: undefined,
-        readDate: undefined,
+        pricePaid: null,
+        condition: null,
+        storeId: null,
+        purchaseDate: null,
+        readDate: null,
       };
 
       await updateVolume(volume.id, input);
       toast.success(`Volume ${volume.volumeNumber} removed from collection`);
-      window.dispatchEvent(new CustomEvent("stats-update"));
       router.refresh();
       onClose();
     } catch (err) {
@@ -162,6 +153,7 @@ export function VolumeDetailsModal({
 
   // eslint-disable-next-line react-hooks/incompatible-library
   const coverImage = watch("coverImage");
+  const storeId = watch("storeId");
 
   return (
     <Modal
@@ -220,25 +212,28 @@ export function VolumeDetailsModal({
         </div>
 
         <div className="space-y-4">
-          <div>
-            <Label htmlFor="coverImage">Cover Image URL</Label>
+          <FormField
+            label="Cover Image URL"
+            htmlFor="coverImage"
+            error={errors.coverImage?.message}
+          >
             <Input
               id="coverImage"
               type="url"
               {...register("coverImage")}
               placeholder="https://..."
               icon={<ImageIcon className="w-4 h-4" />}
+              error={!!errors.coverImage}
             />
-            {errors.coverImage && (
-              <p className="text-xs text-error mt-1">
-                {errors.coverImage.message}
-              </p>
-            )}
-          </div>
+          </FormField>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="pricePaid">Price Paid (€)</Label>
+          <FormSection columns={2}>
+            <FormField
+              label="Price Paid"
+              htmlFor="pricePaid"
+              error={errors.pricePaid?.message}
+              required
+            >
               <Input
                 id="pricePaid"
                 type="number"
@@ -247,55 +242,95 @@ export function VolumeDetailsModal({
                 {...register("pricePaid", { valueAsNumber: true })}
                 placeholder="9.95"
                 icon={<Euro className="w-4 h-4" />}
+                error={!!errors.pricePaid}
               />
-            </div>
-            <div>
-              <Label htmlFor="store">Store</Label>
-              <Select id="store" {...register("store")}>
-                <option value="">Select store...</option>
-                {storeOptions.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </Select>
-            </div>
-          </div>
+            </FormField>
+            <FormField
+              label="Store"
+              htmlFor="storeId"
+              error={errors.storeId?.message}
+            >
+              <CreatableSelect
+                id="storeId"
+                options={stores.map((s) => ({
+                  value: s.id,
+                  label: s.name,
+                }))}
+                value={storeId ?? ""}
+                onChange={(val) => setValue("storeId", val || null)}
+                onCreate={async (name) => {
+                  try {
+                    const store = await createStore(name);
+                    toast.success(`Store "${store.name}" created`);
+                    router.refresh();
+                    return store;
+                  } catch (err) {
+                    toast.error(
+                      err instanceof Error
+                        ? err.message
+                        : "Failed to create store",
+                    );
+                    throw err;
+                  }
+                }}
+                placeholder="No store"
+                createLabel="Add new store..."
+                error={!!errors.storeId}
+              />
+            </FormField>
+          </FormSection>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="condition">Condition</Label>
-              <Select id="condition" {...register("condition")}>
+          <FormSection columns={2}>
+            <FormField
+              label="Condition"
+              htmlFor="condition"
+              error={errors.condition?.message}
+              required
+            >
+              <Select
+                id="condition"
+                {...register("condition")}
+                error={!!errors.condition}
+              >
                 {conditionOptions.map((opt) => (
                   <option key={opt.value} value={opt.value}>
                     {opt.label}
                   </option>
                 ))}
               </Select>
-            </div>
-            <div>
-              <Label htmlFor="purchaseDate">Purchase Date</Label>
+            </FormField>
+            <FormField
+              label="Purchase Date"
+              htmlFor="purchaseDate"
+              error={errors.purchaseDate?.message}
+              required
+            >
               <Input
                 id="purchaseDate"
                 type="date"
-                {...register("purchaseDate")}
+                {...register("purchaseDate", {
+                  setValueAs: (v: string) => (v ? new Date(v) : null),
+                })}
                 icon={<Calendar className="w-4 h-4" />}
+                error={!!errors.purchaseDate}
               />
-            </div>
-          </div>
+            </FormField>
+          </FormSection>
 
-          <div>
-            <Label htmlFor="notes" className="flex items-center gap-2">
-              <StickyNote className="w-4 h-4" />
-              Notes
-            </Label>
+          <FormField
+            label="Notes"
+            htmlFor="notes"
+            error={errors.notes?.message}
+          >
             <Textarea
               id="notes"
               {...register("notes")}
               rows={2}
               placeholder="Any notes about this volume..."
+              icon={<StickyNote className="w-4 h-4" />}
+              error={!!errors.notes}
             />
-          </div>
+          </FormField>
         </div>
 
         <div className="flex gap-3 pt-2">
@@ -306,7 +341,7 @@ export function VolumeDetailsModal({
               onClick={handleRemoveOwned}
               disabled={isSubmitting}
               className="px-3"
-              title="Remove from collection"
+              aria-label="Remove from collection"
             >
               <Trash2 className="w-5 h-5" />
             </Button>

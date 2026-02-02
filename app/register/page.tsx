@@ -1,7 +1,7 @@
 "use client";
 
 import { signUp } from "@/actions/auth";
-import { BookOpen, Mail, Lock, User, ArrowRight, Loader2 } from "lucide-react";
+import { BookOpen, Mail, Lock, User, ArrowRight, Loader2, Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import { useActionState } from "react";
 import { Button } from "@/components/ui/button";
@@ -14,8 +14,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { useState } from "react";
 
 export default function RegisterPage() {
+  const [showPassword, setShowPassword] = useState(false);
   const [state, formAction, isPending] = useActionState(
     async (_: { error?: string } | null, formData: FormData) => {
       const result = await signUp(formData);
@@ -85,11 +87,25 @@ export default function RegisterPage() {
                 <Input
                   id="password"
                   name="password"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   required
                   minLength={6}
                   placeholder="••••••••"
                   icon={<Lock className="w-5 h-5" />}
+                  endIcon={
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="cursor-pointer hover:text-foreground transition-colors"
+                      tabIndex={-1}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="w-5 h-5" />
+                      ) : (
+                        <Eye className="w-5 h-5" />
+                      )}
+                    </button>
+                  }
                 />
                 <p className="text-[10px] text-foreground-muted uppercase font-bold tracking-wider pt-1">
                   Minimum 6 characters

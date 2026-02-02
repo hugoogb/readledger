@@ -3,8 +3,9 @@
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
-import { Condition, Store } from "@/lib/generated/prisma/enums";
+import { Condition } from "@/lib/generated/prisma/enums";
 import { volumeSchema } from "@/lib/validations";
+import { checkUserActionLimit } from "@/lib/rate-limit";
 
 export type CreateVolumeInput = {
   seriesId: string;
@@ -13,20 +14,22 @@ export type CreateVolumeInput = {
   coverImage?: string;
   owned?: boolean;
   read?: boolean;
+  wishlist?: boolean;
   pricePaid?: number;
   condition?: Condition;
-  store?: Store;
+  storeId?: string;
   purchaseDate?: Date;
   readDate?: Date;
   notes?: string;
 };
 
-export type UpdateVolumeInput = Partial<Omit<CreateVolumeInput, "seriesId">>;
+export type UpdateVolumeInput = Partial<{
+  [K in keyof Omit<CreateVolumeInput, "seriesId">]: Omit<CreateVolumeInput, "seriesId">[K] | null;
+}>;
 
 export async function createVolume(input: CreateVolumeInput) {
   const user = await requireUser();
 
-  // Verify the series belongs to the user
   const series = await prisma.series.findFirst({
     where: { id: input.seriesId, userId: user.id },
   });
@@ -46,7 +49,8 @@ export async function createVolume(input: CreateVolumeInput) {
         ? (validated.purchaseDate ?? new Date())
         : null,
       readDate: validated.read ? (validated.readDate ?? new Date()) : null,
-      store: (validated.store as Store) || null,
+      storeId: validated.storeId || null,
+      condition: (validated.condition as Condition) || null,
     },
   });
 
@@ -59,6 +63,7 @@ export async function createVolume(input: CreateVolumeInput) {
 
 export async function updateVolume(id: string, input: UpdateVolumeInput) {
   const user = await requireUser();
+  checkUserActionLimit(user.id);
 
   const volume = await prisma.volume.findFirst({
     where: { id },
@@ -75,7 +80,8 @@ export async function updateVolume(id: string, input: UpdateVolumeInput) {
     where: { id },
     data: {
       ...validated,
-      store: (validated.store as Store) || undefined,
+      storeId: validated.storeId !== undefined ? (validated.storeId || null) : undefined,
+      condition: validated.condition ? (validated.condition as Condition) : validated.condition === null ? null : undefined,
     },
   });
 
@@ -119,11 +125,14 @@ export async function toggleVolumeOwned(id: string) {
     throw new Error("Volume not found");
   }
 
+  const nowOwned = !volume.owned;
   const updated = await prisma.volume.update({
     where: { id },
     data: {
-      owned: !volume.owned,
-      purchaseDate: !volume.owned ? new Date() : null,
+      owned: nowOwned,
+      purchaseDate: nowOwned ? new Date() : null,
+      // Auto-clear wishlist when marking as owned
+      ...(nowOwned ? { wishlist: false } : {}),
     },
   });
 
@@ -157,7 +166,6 @@ export async function toggleVolumeRead(id: string) {
   return updated;
 }
 
-// Mark a range of volumes as owned
 export async function markVolumesOwned(
   seriesId: string,
   volumeNumbers: number[],
@@ -181,8 +189,7 @@ export async function markVolumesOwned(
     data: {
       owned,
       purchaseDate: owned ? new Date() : null,
-      // If marking as not owned, also mark as not read
-      ...(owned ? {} : { read: false, readDate: null }),
+      ...(owned ? { wishlist: false } : { read: false, readDate: null }),
     },
   });
 
@@ -191,7 +198,6 @@ export async function markVolumesOwned(
   revalidatePath(`/dashboard/series/${seriesId}`);
 }
 
-// Mark a range of volumes as read
 export async function markVolumesRead(
   seriesId: string,
   volumeNumbers: number[],
@@ -207,7 +213,6 @@ export async function markVolumesRead(
     throw new Error("Series not found");
   }
 
-  // Only update volumes that are owned
   await prisma.volume.updateMany({
     where: {
       seriesId,
@@ -225,7 +230,6 @@ export async function markVolumesRead(
   revalidatePath(`/dashboard/series/${seriesId}`);
 }
 
-// Mark all volumes up to a certain number as owned
 export async function markVolumesOwnedUpTo(
   seriesId: string,
   upToVolume: number,
@@ -248,6 +252,7 @@ export async function markVolumesOwnedUpTo(
     data: {
       owned: true,
       purchaseDate: new Date(),
+      wishlist: false,
     },
   });
 
@@ -256,7 +261,6 @@ export async function markVolumesOwnedUpTo(
   revalidatePath(`/dashboard/series/${seriesId}`);
 }
 
-// Mark all owned volumes as read
 export async function markAllOwnedAsRead(seriesId: string) {
   const user = await requireUser();
 
@@ -299,8 +303,8 @@ export async function getVolumeStats(seriesId: string) {
   const volumes = series.volumes;
   const owned = volumes.filter((v) => v.owned).length;
   const read = volumes.filter((v) => v.read).length;
+  const wishlisted = volumes.filter((v) => v.wishlist).length;
   const totalSpent = volumes.reduce((acc, v) => acc + (v.pricePaid || 0), 0);
-  // Retail value is calculated from series retail price
   const retailPricePerVolume = series.retailPrice || 0;
   const totalRetailValue = owned * retailPricePerVolume;
   const averagePrice = owned > 0 ? totalSpent / owned : 0;
@@ -313,6 +317,7 @@ export async function getVolumeStats(seriesId: string) {
     read,
     missing,
     total,
+    wishlisted,
     totalSpent,
     totalRetailValue,
     averagePrice,
@@ -322,4 +327,89 @@ export async function getVolumeStats(seriesId: string) {
     ownedProgress: total > 0 ? (owned / total) * 100 : 0,
     readProgress: owned > 0 ? (read / owned) * 100 : 0,
   };
+}
+
+export async function bulkMarkOwned(
+  volumeIds: string[],
+  data: {
+    pricePaid?: number;
+    storeId?: string;
+    condition: Condition;
+    purchaseDate?: Date;
+    notes?: string;
+  },
+) {
+  const user = await requireUser();
+  checkUserActionLimit(user.id);
+
+  const volumes = await prisma.volume.findMany({
+    where: { id: { in: volumeIds } },
+    include: { series: true },
+  });
+
+  if (volumes.length !== volumeIds.length) {
+    throw new Error("Some volumes not found");
+  }
+
+  const seriesIds = new Set<string>();
+  for (const volume of volumes) {
+    if (volume.series.userId !== user.id) {
+      throw new Error("Unauthorized");
+    }
+    seriesIds.add(volume.seriesId);
+  }
+
+  await prisma.volume.updateMany({
+    where: { id: { in: volumeIds } },
+    data: {
+      owned: true,
+      wishlist: false,
+      pricePaid: data.pricePaid ?? null,
+      storeId: data.storeId || null,
+      condition: data.condition,
+      purchaseDate: data.purchaseDate ?? new Date(),
+      notes: data.notes ?? null,
+    },
+  });
+
+  revalidatePath("/dashboard");
+  revalidatePath("/dashboard/series");
+  for (const seriesId of seriesIds) {
+    revalidatePath(`/dashboard/series/${seriesId}`);
+  }
+}
+
+export async function bulkSetRead(volumeIds: string[]) {
+  const user = await requireUser();
+
+  const volumes = await prisma.volume.findMany({
+    where: { id: { in: volumeIds } },
+    include: { series: true },
+  });
+
+  if (volumes.length !== volumeIds.length) {
+    throw new Error("Some volumes not found");
+  }
+
+  const seriesIds = new Set<string>();
+  for (const volume of volumes) {
+    if (volume.series.userId !== user.id) {
+      throw new Error("Unauthorized");
+    }
+    seriesIds.add(volume.seriesId);
+  }
+
+  await prisma.volume.updateMany({
+    where: { id: { in: volumeIds }, owned: true },
+    data: {
+      read: true,
+      readDate: new Date(),
+    },
+  });
+
+  revalidatePath("/dashboard");
+  revalidatePath("/dashboard/series");
+  for (const seriesId of seriesIds) {
+    revalidatePath(`/dashboard/series/${seriesId}`);
+  }
 }

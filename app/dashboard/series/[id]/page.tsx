@@ -1,63 +1,41 @@
+import { getPublishers } from "@/actions/publishers";
 import { getSeries } from "@/actions/series";
+import { getStores } from "@/actions/stores";
 import { getVolumeStats } from "@/actions/volumes";
-import type { Metadata } from "next";
-import { VolumeGrid } from "@/components/volumes/volume-grid";
+import { EditSeriesModal } from "@/components/series/edit-series-modal";
+import { Badge } from "@/components/ui/badge";
+import { ProgressBar } from "@/components/ui/progress-bar";
+import {
+  StatsCardSkeleton,
+  VolumeGridSkeleton,
+} from "@/components/ui/skeletons";
+import { StatsCard } from "@/components/ui/stats-card";
 import { BulkMarkOwnedModal } from "@/components/volumes/bulk-mark-owned-modal";
 import { BulkSetReadModal } from "@/components/volumes/bulk-set-read-modal";
-import { EditSeriesModal } from "@/components/series/edit-series-modal";
-import { StatsCard } from "@/components/ui/stats-card";
-import { ProgressBar } from "@/components/ui/progress-bar";
-import { Badge } from "@/components/ui/badge";
+import { VolumeGrid } from "@/components/volumes/volume-grid";
+import { statusConfig } from "@/lib/constants";
+import { formatCurrency } from "@/utils/currency";
 import {
   ArrowLeft,
-  BookOpen,
-  Package,
   BookMarked,
-  Wallet,
-  User,
-  PiggyBank,
+  BookOpen,
   Building2,
+  Heart,
+  Package,
+  PiggyBank,
+  User,
+  Wallet,
   WalletCards,
 } from "lucide-react";
+import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import Image from "next/image";
-
-const editorialLabels: Record<string, string> = {
-  PLANETA_COMIC: "Planeta Cómic",
-  PLANETA_DEAGOSTINI: "Planeta DeAgostini",
-};
-
-const statusConfig: Record<
-  string,
-  {
-    label: string;
-    variant:
-      | "default"
-      | "secondary"
-      | "outline"
-      | "destructive"
-      | "success"
-      | "warning";
-  }
-> = {
-  READING: { label: "Reading", variant: "default" },
-  COMPLETED: { label: "Completed", variant: "success" },
-  ON_HOLD: { label: "On Hold", variant: "warning" },
-  DROPPED: { label: "Dropped", variant: "destructive" },
-  PLAN_TO_READ: { label: "Plan to Read", variant: "secondary" },
-};
+import { Suspense } from "react";
 
 type Props = {
   params: Promise<{ id: string }>;
 };
-
-function formatCurrency(amount: number) {
-  return new Intl.NumberFormat("es-ES", {
-    style: "currency",
-    currency: "EUR",
-  }).format(amount);
-}
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
@@ -82,19 +60,110 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
+async function SeriesStatsSection({ seriesId }: { seriesId: string }) {
+  const stats = await getVolumeStats(seriesId);
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+      <div className="animate-fade-in stagger-1">
+        <StatsCard
+          title="Owned"
+          value={stats.owned}
+          icon={Package}
+          variant="accent"
+        />
+      </div>
+      <div className="animate-fade-in stagger-2">
+        <StatsCard
+          title="Read"
+          value={stats.read}
+          icon={BookMarked}
+          variant="success"
+        />
+      </div>
+      <div className="animate-fade-in stagger-3">
+        <StatsCard
+          title="Missing"
+          value={stats.missing}
+          icon={BookOpen}
+          variant="default"
+        />
+      </div>
+      <div className="animate-fade-in stagger-4">
+        <StatsCard
+          title="Total Spent"
+          value={formatCurrency(stats.totalSpent)}
+          subtitle={`${formatCurrency(stats.averagePrice)} avg`}
+          icon={Wallet}
+          variant="warning"
+        />
+      </div>
+      <div className="animate-fade-in stagger-5">
+        <StatsCard
+          title="Savings"
+          value={formatCurrency(stats.savings)}
+          subtitle={
+            stats.savingsPercentage > 0
+              ? `${stats.savingsPercentage.toFixed(0)}% saved`
+              : undefined
+          }
+          icon={PiggyBank}
+          variant="success"
+        />
+      </div>
+    </div>
+  );
+}
+
+async function SeriesProgressSection({ seriesId }: { seriesId: string }) {
+  const stats = await getVolumeStats(seriesId);
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+      <div>
+        <ProgressBar
+          value={stats.ownedProgress}
+          variant="accent"
+          size="md"
+          label="Collection Progress"
+          showPercentage
+        />
+        <p className="text-sm text-foreground-muted mt-2">
+          {stats.owned} of {stats.total} volumes owned
+        </p>
+      </div>
+      <div>
+        <ProgressBar
+          value={stats.readProgress}
+          variant="success"
+          size="md"
+          label="Reading Progress"
+          showPercentage
+        />
+        <p className="text-sm text-foreground-muted mt-2">
+          {stats.read} of {stats.owned} owned volumes read
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export default async function SeriesDetailPage({ params }: Props) {
   const { id } = await params;
-  const series = await getSeries(id);
+  const [series, publishers, stores] = await Promise.all([
+    getSeries(id),
+    getPublishers(),
+    getStores(),
+  ]);
 
   if (!series) {
     notFound();
   }
 
-  const stats = await getVolumeStats(id);
   const statusInfo = statusConfig[series.status] || statusConfig.READING;
 
   return (
-    <div className="p-8">
+    <div className="p-4 lg:p-8">
       {/* Header */}
       <div className="mb-8 animate-fade-in">
         <Link
@@ -135,10 +204,10 @@ export default async function SeriesDetailPage({ params }: Props) {
                       {series.author}
                     </span>
                   )}
-                  {series.editorial && (
+                  {series.publisher && (
                     <span className="flex items-center gap-2">
                       <Building2 className="w-4 h-4" />
-                      {editorialLabels[series.editorial] || series.editorial}
+                      {series.publisher.name}
                     </span>
                   )}
                   {series.retailPrice && (
@@ -165,7 +234,7 @@ export default async function SeriesDetailPage({ params }: Props) {
                     Publishing
                   </Badge>
                 )}
-                <EditSeriesModal series={series} />
+                <EditSeriesModal series={series} publishers={publishers} />
               </div>
             </div>
 
@@ -176,98 +245,38 @@ export default async function SeriesDetailPage({ params }: Props) {
             )}
 
             {/* Progress Bars */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-              <div>
-                <ProgressBar
-                  value={stats.ownedProgress}
-                  variant="accent"
-                  size="md"
-                  label="Collection Progress"
-                  showPercentage
-                />
-                <p className="text-sm text-foreground-muted mt-2">
-                  {stats.owned} of {stats.total} volumes owned
-                </p>
-              </div>
-              <div>
-                <ProgressBar
-                  value={stats.readProgress}
-                  variant="success"
-                  size="md"
-                  label="Reading Progress"
-                  showPercentage
-                />
-                <p className="text-sm text-foreground-muted mt-2">
-                  {stats.read} of {stats.owned} owned volumes read
-                </p>
-              </div>
-            </div>
+            <Suspense fallback={null}>
+              <SeriesProgressSection seriesId={id} />
+            </Suspense>
           </div>
         </div>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
-        <div className="animate-fade-in stagger-1">
-          <StatsCard
-            title="Owned"
-            value={stats.owned}
-            icon={Package}
-            variant="accent"
-          />
-        </div>
-        <div className="animate-fade-in stagger-2">
-          <StatsCard
-            title="Read"
-            value={stats.read}
-            icon={BookMarked}
-            variant="success"
-          />
-        </div>
-        <div className="animate-fade-in stagger-3">
-          <StatsCard
-            title="Missing"
-            value={stats.missing}
-            icon={BookOpen}
-            variant="default"
-          />
-        </div>
-        <div className="animate-fade-in stagger-4">
-          <StatsCard
-            title="Total Spent"
-            value={formatCurrency(stats.totalSpent)}
-            subtitle={`${formatCurrency(stats.averagePrice)} avg`}
-            icon={Wallet}
-            variant="warning"
-          />
-        </div>
-        <div className="animate-fade-in stagger-5">
-          <StatsCard
-            title="Savings"
-            value={formatCurrency(stats.savings)}
-            subtitle={
-              stats.savingsPercentage > 0
-                ? `${stats.savingsPercentage.toFixed(0)}% saved`
-                : undefined
-            }
-            icon={PiggyBank}
-            variant="success"
-          />
-        </div>
-      </div>
+      <Suspense
+        fallback={
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <StatsCardSkeleton key={i} />
+            ))}
+          </div>
+        }
+      >
+        <SeriesStatsSection seriesId={id} />
+      </Suspense>
 
       {/* Volume Grid */}
       <div className="glass rounded-2xl p-6 animate-fade-in stagger-6">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between flex-wrap gap-6 mb-6">
           <div>
             <h2 className="text-xl font-semibold">Volumes</h2>
             <p className="text-sm text-foreground-muted mt-1">
               Click the icons to toggle owned/read status
             </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center flex-wrap gap-3">
             <BulkSetReadModal volumes={series.volumes} />
-            <BulkMarkOwnedModal volumes={series.volumes} />
+            <BulkMarkOwnedModal volumes={series.volumes} stores={stores} />
           </div>
         </div>
 
@@ -286,7 +295,15 @@ export default async function SeriesDetailPage({ params }: Props) {
               <div className="w-5 h-5 rounded-md bg-linear-to-br from-success/20 to-success/5 ring-2 ring-success/50" />
               <span className="text-foreground-muted">Read</span>
             </div>
+            <div className="flex items-center gap-2">
+              <div className="w-5 h-5 rounded-md bg-linear-to-br from-error/20 to-error/5 ring-2 ring-error/50" />
+              <span className="text-foreground-muted">Wishlisted</span>
+            </div>
             <div className="flex items-center gap-2 ml-auto">
+              <Heart className="w-4 h-4 text-foreground-muted" />
+              <span className="text-foreground-muted">Wishlist</span>
+            </div>
+            <div className="flex items-center gap-2">
               <Package className="w-4 h-4 text-foreground-muted" />
               <span className="text-foreground-muted">Mark owned</span>
             </div>
@@ -297,13 +314,16 @@ export default async function SeriesDetailPage({ params }: Props) {
           </div>
         </div>
 
-        <VolumeGrid
-          volumes={series.volumes}
-          totalVolumes={series.totalVolumes}
-          seriesDefaults={{
-            retailPrice: series.retailPrice,
-          }}
-        />
+        <Suspense fallback={<VolumeGridSkeleton />}>
+          <VolumeGrid
+            volumes={series.volumes}
+            totalVolumes={series.totalVolumes}
+            seriesDefaults={{
+              retailPrice: series.retailPrice,
+            }}
+            stores={stores}
+          />
+        </Suspense>
       </div>
     </div>
   );

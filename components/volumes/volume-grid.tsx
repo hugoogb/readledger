@@ -1,47 +1,42 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import type { Volume } from "@/lib/generated/prisma/browser";
+
 import { toggleVolumeRead } from "@/actions/volumes";
+import { toggleWishlist } from "@/actions/wishlist";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import type { SeriesDefaults, VolumeWithStore } from "@/types";
+import { formatCurrency } from "@/utils/currency";
 import {
+  BookMarked,
   BookOpen,
   Check,
+  Heart,
   Package,
-  BookMarked,
   ShoppingBag,
 } from "lucide-react";
-import { VolumeDetailsModal } from "./volume-details-modal";
 import Image from "next/image";
-import { formatCurrency } from "@/utils/currency";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { VolumeDetailsModal } from "./volume-details-modal";
 
-type SeriesDefaults = {
-  retailPrice?: number | null;
-};
+type UserStore = { id: string; name: string };
 
 type VolumeGridProps = {
-  volumes: Volume[];
+  volumes: VolumeWithStore[];
   totalVolumes: number | null;
   seriesDefaults?: SeriesDefaults;
-};
-
-const storeLabels: Record<string, string> = {
-  AMAZON: "Amazon",
-  VINTED: "Vinted",
-  WALLAPOP: "Wallapop",
-  ABACUS: "Abacus",
-  CASA_DEL_LIBRO: "CdL",
-  NA: "N/A",
+  stores?: UserStore[];
 };
 
 function VolumeCell({
   volume,
   seriesDefaults,
+  stores,
 }: {
-  volume: Volume;
+  volume: VolumeWithStore;
   seriesDefaults?: SeriesDefaults;
+  stores?: UserStore[];
 }) {
   const [isPending, startTransition] = useTransition();
   const [showModal, setShowModal] = useState(false);
@@ -51,10 +46,25 @@ function VolumeCell({
     startTransition(async () => {
       try {
         await toggleVolumeRead(volume.id);
-        window.dispatchEvent(new CustomEvent("stats-update"));
         toast.success(`Volume ${volume.volumeNumber} updated`);
       } catch {
         toast.error("Failed to update volume");
+      }
+    });
+  };
+
+  const handleToggleWishlist = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    startTransition(async () => {
+      try {
+        await toggleWishlist(volume.id);
+        toast.success(
+          volume.wishlist
+            ? `Volume ${volume.volumeNumber} removed from wishlist`
+            : `Volume ${volume.volumeNumber} added to wishlist`,
+        );
+      } catch {
+        toast.error("Failed to update wishlist");
       }
     });
   };
@@ -66,14 +76,24 @@ function VolumeCell({
 
   const isOwned = volume.owned;
   const isRead = volume.read;
+  const isWishlisted = volume.wishlist && !isOwned;
   const hasCover = !!volume.coverImage;
 
   return (
     <>
       <div
+        role="button"
+        tabIndex={0}
+        onClick={handleOpenModal}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            handleOpenModal(e as unknown as React.MouseEvent);
+          }
+        }}
         className={`
           group relative aspect-3/4 rounded-xl overflow-hidden cursor-pointer
-          transition-all duration-200
+          transition-all duration-200 w-full text-left
           ${isPending ? "opacity-50" : ""}
           ${
             isOwned
@@ -83,7 +103,7 @@ function VolumeCell({
               : "ring-1 ring-border hover:ring-border-hover"
           }
         `}
-        onClick={handleOpenModal}
+        aria-label={`Volume ${volume.volumeNumber}${isOwned ? (isRead ? ", owned and read" : ", owned") : ", not owned"}`}
       >
         {/* Background */}
         <div
@@ -106,7 +126,8 @@ function VolumeCell({
             height={256}
             src={volume.coverImage!}
             alt={`Volume ${volume.volumeNumber}`}
-            className="absolute inset-0 object-cover"
+            className="absolute inset-0 object-cover w-full h-full group-hover:scale-105 transition-transform"
+            loading="lazy"
           />
         )}
 
@@ -136,7 +157,7 @@ function VolumeCell({
         </div>
 
         {/* Status Badge - Top Right */}
-        {isOwned && (
+        {isOwned ? (
           <div className="absolute top-1 right-1 z-10">
             <Badge
               size="sm"
@@ -156,7 +177,18 @@ function VolumeCell({
               )}
             </Badge>
           </div>
-        )}
+        ) : isWishlisted ? (
+          <div className="absolute top-1 right-1 z-10">
+            <Badge
+              size="sm"
+              variant="destructive"
+              className="gap-0.5 uppercase font-bold"
+            >
+              <Heart className="w-2.5 h-2.5 fill-current" />
+              Want
+            </Badge>
+          </div>
+        ) : null}
 
         {/* Price badge */}
         {volume.pricePaid != null && isOwned && (
@@ -180,24 +212,38 @@ function VolumeCell({
               className="bg-black/60 text-white/80 border-none gap-0.5"
             >
               <ShoppingBag className="w-2.5 h-2.5" />
-              {storeLabels[volume.store]}
+              {volume.store.name}
             </Badge>
           </div>
         )}
 
         {/* Action Buttons - Bottom Right */}
-        <div className="absolute bottom-1 right-1 z-20 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="absolute bottom-1 right-1 z-20 flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
           {!isOwned ? (
-            <Button
-              size="icon"
-              onClick={handleOpenModal}
-              disabled={isPending}
-              variant={isOwned ? "default" : "secondary"}
-              className="w-7 h-7 rounded-md bg-white text-background hover:bg-white/90"
-              title={isOwned ? "Edit volume" : "Mark as owned"}
-            >
-              <Package className="w-3.5 h-3.5" />
-            </Button>
+            <>
+              <Button
+                size="icon"
+                onClick={handleToggleWishlist}
+                disabled={isPending}
+                variant="secondary"
+                className={`w-7 h-7 rounded-md ${isWishlisted ? "bg-error text-white hover:bg-error/90" : "bg-white text-background hover:bg-white/90"}`}
+                aria-label={`${isWishlisted ? "Remove" : "Add"} volume ${volume.volumeNumber} ${isWishlisted ? "from" : "to"} wishlist`}
+              >
+                <Heart
+                  className={`w-3.5 h-3.5 ${isWishlisted ? "fill-current" : ""}`}
+                />
+              </Button>
+              <Button
+                size="icon"
+                onClick={handleOpenModal}
+                disabled={isPending}
+                variant="secondary"
+                className="w-7 h-7 rounded-md bg-white text-background hover:bg-white/90"
+                aria-label={`Mark volume ${volume.volumeNumber} as owned`}
+              >
+                <Package className="w-3.5 h-3.5" />
+              </Button>
+            </>
           ) : (
             <Button
               size="icon"
@@ -205,7 +251,7 @@ function VolumeCell({
               disabled={isPending}
               variant={isRead ? "success" : "secondary"}
               className={`w-7 h-7 rounded-md ${!isRead ? "bg-white text-background hover:bg-white/90" : ""}`}
-              title={isRead ? "Mark as unread" : "Mark as read"}
+              aria-label={`Mark volume ${volume.volumeNumber} as ${isRead ? "unread" : "read"}`}
             >
               <Check className="w-3.5 h-3.5" />
             </Button>
@@ -217,6 +263,7 @@ function VolumeCell({
         <VolumeDetailsModal
           volume={volume}
           seriesDefaults={seriesDefaults}
+          stores={stores}
           isOpen={showModal}
           onClose={() => setShowModal(false)}
         />
@@ -246,6 +293,7 @@ export function VolumeGrid({
   volumes,
   totalVolumes,
   seriesDefaults,
+  stores,
 }: VolumeGridProps) {
   const maxVolume =
     totalVolumes || Math.max(...volumes.map((v) => v.volumeNumber), 0);
@@ -270,18 +318,21 @@ export function VolumeGrid({
   }
 
   return (
-    <div className="grid grid-cols-5 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2">
-      {volumeSlots.map((volume, index) =>
-        volume ? (
-          <VolumeCell
-            key={volume.id}
-            volume={volume}
-            seriesDefaults={seriesDefaults}
-          />
-        ) : (
-          <EmptyVolumeCell key={index} volumeNumber={index + 1} />
-        ),
-      )}
+    <div>
+      <div className="grid grid-cols-5 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2">
+        {volumeSlots.map((volume, index) =>
+          volume ? (
+            <VolumeCell
+              key={volume.id}
+              volume={volume}
+              seriesDefaults={seriesDefaults}
+              stores={stores}
+            />
+          ) : (
+            <EmptyVolumeCell key={index} volumeNumber={index + 1} />
+          ),
+        )}
+      </div>
     </div>
   );
 }
