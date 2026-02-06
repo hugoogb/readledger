@@ -102,7 +102,7 @@ export function BulkSetReadModal({ volumes }: BulkSetReadModalProps) {
               <Label className="mb-0">Select Volumes to Mark as Read</Label>
               <div className="flex items-center gap-3">
                 <Badge variant="success" size="sm">
-                  {selectedCount} selected
+                  <span className="text-nowrap">{selectedCount} selected</span>
                 </Badge>
                 <div className="flex gap-2">
                   <Button

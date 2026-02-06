@@ -1,7 +1,12 @@
 "use client";
 
 import { createStore } from "@/actions/stores";
-import { updateVolume, type UpdateVolumeInput } from "@/actions/volumes";
+import {
+  toggleVolumeRead,
+  updateVolume,
+  type UpdateVolumeInput,
+} from "@/actions/volumes";
+import { toggleWishlist } from "@/actions/wishlist";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CreatableSelect } from "@/components/ui/creatable-select";
@@ -19,7 +24,9 @@ import { formatDateForInput } from "@/utils/date";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Calendar,
+  Check,
   Euro,
+  Heart,
   ImageIcon,
   Loader2,
   Package,
@@ -151,9 +158,41 @@ export function VolumeDetailsModal({
     }
   };
 
+  const handleToggleRead = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    try {
+      await toggleVolumeRead(volume.id);
+      toast.success(`Volume ${volume.volumeNumber} updated`);
+      router.refresh();
+      onClose();
+    } catch {
+      toast.error("Failed to update volume");
+    }
+  };
+
+  const handleToggleWishlist = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    try {
+      await toggleWishlist(volume.id);
+      toast.success(
+        volume.wishlist
+          ? `Volume ${volume.volumeNumber} removed from wishlist`
+          : `Volume ${volume.volumeNumber} added to wishlist`,
+      );
+      router.refresh();
+      onClose();
+    } catch {
+      toast.error("Failed to update wishlist");
+    }
+  };
+
   // eslint-disable-next-line react-hooks/incompatible-library
   const coverImage = watch("coverImage");
   const storeId = watch("storeId");
+
+  const isOwned = volume.owned;
+  const isRead = volume.read;
+  const isWishlisted = volume.wishlist && !isOwned;
 
   return (
     <Modal
@@ -190,22 +229,55 @@ export function VolumeDetailsModal({
           </div>
 
           <div className="flex-1 min-w-0">
-            <h3 className="text-lg font-semibold text-foreground">
-              Volume {volume.volumeNumber}
-            </h3>
-            <div className="mt-1">
-              {volume.owned ? (
-                <Badge
-                  variant={volume.read ? "success" : "default"}
-                  className="gap-1.5"
+            <div className="flex items-center gap-2">
+              <h3 className="text-lg font-semibold text-foreground">
+                Volume {volume.volumeNumber}
+              </h3>
+              <div className="mt-1">
+                {volume.owned ? (
+                  <Badge
+                    variant={volume.read ? "success" : "default"}
+                    className="gap-1.5"
+                  >
+                    <Package className="w-3.5 h-3.5" />
+                    {volume.read ? "Already read" : "In your collection"}
+                  </Badge>
+                ) : (
+                  <p className="text-sm text-foreground-muted">
+                    Add to your collection
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="mt-2">
+              {isOwned && (
+                <Button
+                  size="sm"
+                  onClick={handleToggleRead}
+                  variant={isRead ? "success" : "secondary"}
+                  className={`rounded-md ${!isRead ? "bg-white text-background hover:bg-white/90" : ""}`}
+                  aria-label={`Mark volume ${volume.volumeNumber} as ${isRead ? "unread" : "read"}`}
                 >
-                  <Package className="w-3.5 h-3.5" />
-                  {volume.read ? "Already read" : "In your collection"}
-                </Badge>
-              ) : (
-                <p className="text-sm text-foreground-muted">
-                  Add to your collection
-                </p>
+                  <Check className="w-3.5 h-3.5" />
+                  Mark as {isRead ? "unread" : "read"}
+                </Button>
+              )}
+
+              {!volume.owned && (
+                <Button
+                  size="sm"
+                  onClick={handleToggleWishlist}
+                  variant="secondary"
+                  className={`rounded-md ${isWishlisted ? "bg-error text-white hover:bg-error/90" : "bg-white text-background hover:bg-white/90"}`}
+                  aria-label={`${isWishlisted ? "Remove" : "Add"} volume ${volume.volumeNumber} ${isWishlisted ? "from" : "to"} wishlist`}
+                >
+                  <Heart
+                    className={`w-3.5 h-3.5 ${isWishlisted ? "fill-current" : ""}`}
+                  />
+                  {isWishlisted ? "Remove" : "Add"}{" "}
+                  {isWishlisted ? "from" : "to"} wishlist
+                </Button>
               )}
             </div>
           </div>

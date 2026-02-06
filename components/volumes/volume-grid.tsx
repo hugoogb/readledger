@@ -192,7 +192,7 @@ function VolumeCell({
 
         {/* Price badge */}
         {volume.pricePaid != null && isOwned && (
-          <div className="absolute top-1 left-1 z-10">
+          <div className="hidden lg:block absolute top-1 left-1 z-10">
             <Badge
               size="sm"
               variant="secondary"
@@ -205,7 +205,7 @@ function VolumeCell({
 
         {/* Store badge - Bottom Left */}
         {volume.store && isOwned && (
-          <div className="absolute bottom-1 left-1 z-10">
+          <div className="hidden lg:block absolute bottom-1 left-1 z-10">
             <Badge
               size="sm"
               variant="secondary"
@@ -218,15 +218,15 @@ function VolumeCell({
         )}
 
         {/* Action Buttons - Bottom Right */}
-        <div className="absolute bottom-1 right-1 z-20 flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+        <div className="hidden sm:flex absolute bottom-1 right-1 z-20 items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
           {!isOwned ? (
             <>
               <Button
-                size="icon"
+                size="icon-sm"
                 onClick={handleToggleWishlist}
                 disabled={isPending}
                 variant="secondary"
-                className={`w-7 h-7 rounded-md ${isWishlisted ? "bg-error text-white hover:bg-error/90" : "bg-white text-background hover:bg-white/90"}`}
+                className={`rounded-md ${isWishlisted ? "bg-error text-white hover:bg-error/90" : "bg-white text-background hover:bg-white/90"}`}
                 aria-label={`${isWishlisted ? "Remove" : "Add"} volume ${volume.volumeNumber} ${isWishlisted ? "from" : "to"} wishlist`}
               >
                 <Heart
@@ -234,11 +234,11 @@ function VolumeCell({
                 />
               </Button>
               <Button
-                size="icon"
+                size="icon-sm"
                 onClick={handleOpenModal}
                 disabled={isPending}
                 variant="secondary"
-                className="w-7 h-7 rounded-md bg-white text-background hover:bg-white/90"
+                className="rounded-md bg-white text-background hover:bg-white/90"
                 aria-label={`Mark volume ${volume.volumeNumber} as owned`}
               >
                 <Package className="w-3.5 h-3.5" />
@@ -246,11 +246,11 @@ function VolumeCell({
             </>
           ) : (
             <Button
-              size="icon"
+              size="icon-sm"
               onClick={handleToggleRead}
               disabled={isPending}
               variant={isRead ? "success" : "secondary"}
-              className={`w-7 h-7 rounded-md ${!isRead ? "bg-white text-background hover:bg-white/90" : ""}`}
+              className={`rounded-md ${!isRead ? "bg-white text-background hover:bg-white/90" : ""}`}
               aria-label={`Mark volume ${volume.volumeNumber} as ${isRead ? "unread" : "read"}`}
             >
               <Check className="w-3.5 h-3.5" />
@@ -319,7 +319,7 @@ export function VolumeGrid({
 
   return (
     <div>
-      <div className="grid grid-cols-5 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2">
+      <div className="grid grid-cols-3 sm:grid-cols-6 lg:grid-cols-9 gap-2">
         {volumeSlots.map((volume, index) =>
           volume ? (
             <VolumeCell
