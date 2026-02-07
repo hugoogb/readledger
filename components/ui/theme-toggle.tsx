@@ -1,7 +1,7 @@
 "use client";
 
-import { Sun, Moon, Monitor } from "lucide-react";
 import { useTheme } from "@/hooks/use-theme";
+import { Monitor, Moon, Sun } from "lucide-react";
 
 const themes = [
   { value: "light", icon: Sun, label: "Light" },
@@ -16,6 +16,7 @@ export function ThemeToggle() {
     <div className="flex items-center gap-1 p-1 rounded-lg bg-background-tertiary/50 border border-border/50">
       {themes.map(({ value, icon: Icon, label }) => (
         <button
+          suppressHydrationWarning
           key={value}
           onClick={() => setTheme(value)}
           className={`p-1.5 rounded-md transition-colors cursor-pointer ${
