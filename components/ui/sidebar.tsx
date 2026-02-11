@@ -1,10 +1,10 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   BarChart3,
-  BookOpen,
   Heart,
   LayoutDashboard,
   Library,
@@ -30,9 +30,13 @@ export function SidebarNav() {
       {/* Logo */}
       <div className="p-6 border-b border-border">
         <Link href="/dashboard" className="flex items-center gap-2">
-          <div className="w-10 h-10 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center">
-            <BookOpen className="w-5 h-5 text-accent" />
-          </div>
+          <Image
+            src="/readledger-logo.webp"
+            alt="ReadLedger logo"
+            width={40}
+            height={40}
+            className="rounded-xl"
+          />
           <span className="text-xl font-bold">ReadLedger</span>
         </Link>
       </div>
