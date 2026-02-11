@@ -1,8 +1,8 @@
+import { ThemeProvider } from "@/components/providers/theme-provider";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
 import { Toaster } from "sonner";
-import { ThemeProvider } from "@/components/providers/theme-provider";
+import "./globals.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
     "reading progress",
     "manga spending",
   ],
-  authors: [{ name: "ReadLedger Team" }],
+  authors: [{ name: "hugoogb.dev" }],
   openGraph: {
     title: "ReadLedger - Manga Collection Tracker",
     description: "Track your manga collection, reading progress, and spending",
@@ -40,6 +40,10 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "ReadLedger - Manga Collection Tracker",
     description: "Track your manga collection, reading progress, and spending",
+  },
+  icons: {
+    icon: "/readledger-logo.webp",
+    apple: "/readledger-logo.webp",
   },
 };
 

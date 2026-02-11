@@ -1,4 +1,5 @@
-import { BookOpen, ArrowRight, Library, BarChart3, Wallet } from "lucide-react";
+import { ArrowRight, BarChart3, Library, Wallet } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 
 export default function Home() {
@@ -6,7 +7,7 @@ export default function Home() {
     <div className="min-h-screen bg-background">
       {/* Background decoration */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-accent/5 rounded-full blur-3xl" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-200 h-150 bg-accent/5 rounded-full blur-3xl" />
         <div className="absolute bottom-0 left-0 w-96 h-96 bg-accent/5 rounded-full blur-3xl" />
         <div className="absolute bottom-0 right-0 w-96 h-96 bg-accent/5 rounded-full blur-3xl" />
       </div>
@@ -15,12 +16,16 @@ export default function Home() {
       <header className="relative z-10 px-6 py-4">
         <nav className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center">
-              <BookOpen className="w-5 h-5 text-accent" />
-            </div>
+            <Image
+              src="/readledger-logo.webp"
+              alt="ReadLedger logo"
+              width={48}
+              height={48}
+              className="rounded-xl"
+            />
             <span className="text-xl font-bold">ReadLedger</span>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-col md:flex-row items-center gap-4">
             <Link
               href="/login"
               className="text-foreground-muted hover:text-foreground transition-colors"
@@ -151,9 +156,13 @@ export default function Home() {
       <footer className="relative z-10 border-t border-border px-6 py-8">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-accent/10 border border-accent/20 flex items-center justify-center">
-              <BookOpen className="w-4 h-4 text-accent" />
-            </div>
+            <Image
+              src="/readledger-logo.webp"
+              alt="ReadLedger logo"
+              width={32}
+              height={32}
+              className="rounded-lg"
+            />
             <span className="font-semibold">ReadLedger</span>
           </div>
           <div className="flex items-center gap-6 text-sm text-foreground-muted">
