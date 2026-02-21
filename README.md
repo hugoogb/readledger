@@ -1,68 +1,120 @@
-# ReadLedger 📚
+# 📚 ReadLedger
 
-ReadLedger is a premium Manga Collection Tracker built for serious collectors. Track every volume you own, monitor your reading progress, and get insights into your spending habits with a beautiful, modern interface.
+**ReadLedger** is a manga collection tracker designed for collectors who want more than just a list of volumes.
 
-## ✨ Features
+It helps you understand your collection through **reading progress, spending analysis, and savings insights**.
 
-- **Intelligent Search**: Find and add manga series instantly using the Jikan (MyAnimeList) API.
-- **Collection Tracking**: Detailed volume management (owned, read, missing).
-- **Financial Insights**: Track how much you spend and see your savings compared to retail prices.
-- **Beautiful Dashboard**: Overview of your entire collection with modern visualizations.
-- **Production Ready**: Built with Next.js 15, Prisma, and Supabase Auth.
+---
 
-## 🚀 Tech Stack
+## ✨ Motivation
 
-- **Framework**: [Next.js 15](https://nextjs.org/) (App Router)
-- **Database**: [PostgreSQL](https://www.postgresql.org/) (hosted on Supabase)
-- **ORM**: [Prisma](https://www.prisma.io/)
-- **Authentication**: [Supabase Auth](https://supabase.com/auth)
-- **Styling**: [Tailwind CSS 4](https://tailwindcss.com/)
-- **Icons**: [Lucide React](https://lucide.dev/)
-- **Validation**: [Zod](https://zod.dev/)
+ReadLedger started from a simple personal need.
 
-## 🛠️ Getting Started
+While building my **One Piece** collection, I wanted to answer questions like:
 
-### 1. Prerequisites
+- How many volumes do I own?
+- Which ones have I read?
+- How much money have I spent in total?
+- How much have I saved buying second-hand?
 
-- Node.js 20+
-- A Supabase project
+Existing tools didn’t fully address this workflow, so ReadLedger was built as a focused solution for manga collectors.
 
-### 2. Environment Setup
+---
 
-Copy `.env.example` to `.env` and fill in your credentials:
+## 🚀 Features
+
+- 📚 Track owned volumes
+- ✅ Mark reading progress
+- 💰 Monitor total spending
+- 💸 Track second-hand savings
+- 📊 View collection statistics
+- ⚡ Fast, responsive UI
+
+---
+
+## 🧠 Tech Stack
+
+ReadLedger is a modern full-stack web application built with:
+
+- **Frontend:** Next.js + React
+- **Backend / Database:** Supabase
+- **ORM:** Prisma
+- **Language:** TypeScript
+
+This architecture provides:
+
+- Real-time database capabilities
+- Type-safe data access
+- Scalable backend infrastructure
+- Optimized frontend performance
+
+---
+
+## 🌐 Live Application
+
+👉 https://readledger.app
+
+---
+
+## 💻 Repository
+
+👉 https://github.com/hugoogb/readledger
+
+---
+
+## 🛠️ Local Development
+
+### 1️⃣ Clone the repository
+
+```bash
+git clone https://github.com/hugoogb/readledger.git
+cd readledger
+```
+
+### 2️⃣ Install dependencies
+
+```bash
+pnpm install
+```
+
+### 3️⃣ Configure environment variables
 
 ```bash
 cp .env.example .env
 ```
 
-### 3. Installation
+And update with your values
+
+### 4️⃣ Database Setup
 
 ```bash
-npm install
+pnpm db:migrate
+pnpm db:generate
 ```
 
-### 4. Database Setup
-
-Push the schema to your database:
+### 5️⃣ Start development server
 
 ```bash
-npx prisma db push
+pnpm dev
 ```
 
-### 5. Running Locally
+## 📊 Project Goals
 
-```bash
-npm run dev
-```
+ReadLedger is designed to evolve into:
 
-## 📦 Deployment
+- A richer analytics platform for collectors
+- Support for multiple series & formats
+- Advanced statistics & visualizations
+- Improved UX & performance
 
-This project is optimized for deployment on **Vercel**.
+## 🤝 Contributions
 
-1. Create a new project on Vercel.
-2. Link your GitHub repository.
-3. Add the environment variables from your `.env` file.
-4. Deploy!
+Feedback, ideas, and contributions are welcome.
+If you’d like to improve ReadLedger:
+
+1. Fork the repo
+2. Create a feature branch
+3. Open a pull request
 
 ## 📄 License
 
