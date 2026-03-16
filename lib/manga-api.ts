@@ -1,9 +1,12 @@
 // MangaDex API
 // Documentation: https://api.mangadex.org/docs/
 
+import { TTLCache } from "./cache";
+import { logger } from "./logger";
 import { throttleMangadex } from "./rate-limit";
 
 const MANGADEX_BASE_URL = "https://api.mangadex.org";
+const MANGADEX_TIMEOUT_MS = 10_000;
 
 // --- Raw MangaDex response types ---
 
@@ -218,7 +221,10 @@ async function fetchLastVolume(mangadexId: string): Promise<number | null> {
   try {
     const res = await fetch(
       `${MANGADEX_BASE_URL}/manga/${mangadexId}/aggregate`,
-      { headers: { Accept: "application/json" } },
+      {
+        headers: { Accept: "application/json" },
+        signal: AbortSignal.timeout(MANGADEX_TIMEOUT_MS),
+      },
     );
     if (!res.ok) return null;
     const data: MangaDexAggregateResponse = await res.json();
@@ -235,6 +241,7 @@ async function fetchLastVolume(mangadexId: string): Promise<number | null> {
 // --- API functions ---
 
 const PAGE_SIZE = 10;
+const searchCache = new TTLCache<PaginatedSearchResult>(60_000); // 1 min TTL
 
 export async function searchMangaPaginated(
   query: string,
@@ -246,6 +253,10 @@ export async function searchMangaPaginated(
       pagination: { lastVisiblePage: 1, hasNextPage: false, currentPage: 1 },
     };
   }
+
+  const cacheKey = `${query}:${page}`;
+  const cached = searchCache.get(cacheKey);
+  if (cached) return cached;
 
   try {
     const offset = (page - 1) * PAGE_SIZE;
@@ -266,6 +277,7 @@ export async function searchMangaPaginated(
     await throttleMangadex();
     const response = await fetch(`${MANGADEX_BASE_URL}/manga?${params}`, {
       headers: { Accept: "application/json" },
+      signal: AbortSignal.timeout(MANGADEX_TIMEOUT_MS),
     });
 
     if (!response.ok) {
@@ -293,7 +305,10 @@ export async function searchMangaPaginated(
       try {
         const statsRes = await fetch(
           `${MANGADEX_BASE_URL}/statistics/manga?${statsParams}`,
-          { headers: { Accept: "application/json" } },
+          {
+            headers: { Accept: "application/json" },
+            signal: AbortSignal.timeout(MANGADEX_TIMEOUT_MS),
+          },
         );
 
         if (statsRes.ok) {
@@ -317,7 +332,7 @@ export async function searchMangaPaginated(
 
     const totalPages = Math.max(1, Math.ceil(raw.total / PAGE_SIZE));
 
-    return {
+    const result: PaginatedSearchResult = {
       data: results,
       pagination: {
         lastVisiblePage: totalPages,
@@ -325,8 +340,11 @@ export async function searchMangaPaginated(
         currentPage: page,
       },
     };
+
+    searchCache.set(cacheKey, result);
+    return result;
   } catch (error) {
-    console.error("Error searching manga:", error);
+    logger.error("Error searching manga", { error: error instanceof Error ? error.message : String(error) });
     return {
       data: [],
       pagination: { lastVisiblePage: 1, hasNextPage: false, currentPage: 1 },
@@ -374,7 +392,7 @@ export async function fetchVolumeCovers(
       };
     });
   } catch (error) {
-    console.error("Error fetching volume covers from MangaDex:", error);
+    logger.error("Error fetching volume covers from MangaDex", { error: error instanceof Error ? error.message : String(error) });
     return generatePlaceholderVolumes(totalVolumes);
   }
 }
@@ -393,7 +411,10 @@ async function fetchMangaDexCovers(
       await throttleMangadex();
       const response = await fetch(
         `${MANGADEX_BASE_URL}/cover?manga[]=${mangaId}&limit=${limit}&offset=${offset}&order[volume]=asc`,
-        { headers: { Accept: "application/json" } },
+        {
+          headers: { Accept: "application/json" },
+          signal: AbortSignal.timeout(MANGADEX_TIMEOUT_MS),
+        },
       );
 
       if (!response.ok) break;

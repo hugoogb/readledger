@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
+import { NotFoundError } from "@/lib/errors";
 import { revalidatePath } from "next/cache";
 
 export async function toggleWishlist(volumeId: string) {
@@ -13,7 +14,7 @@ export async function toggleWishlist(volumeId: string) {
   });
 
   if (!volume || volume.series.userId !== user.id) {
-    throw new Error("Volume not found");
+    throw new NotFoundError("Volume");
   }
 
   // Can't wishlist an already-owned volume

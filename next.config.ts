@@ -6,7 +6,8 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "**",
+        hostname: "uploads.mangadex.org",
+        pathname: "/covers/**",
       },
     ],
   },

@@ -49,6 +49,11 @@ export function ProgressBar({
       )}
       <div
         className={`w-full bg-background-tertiary rounded-full overflow-hidden ${sizes[size]}`}
+        role="progressbar"
+        aria-valuenow={Math.round(percentage)}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label={label || "Progress"}
       >
         <div
           className={`progress-bar ${sizes[size]} rounded-full ${variants[variant]}`}

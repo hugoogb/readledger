@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
+import { NotFoundError } from "@/lib/errors";
 import { revalidatePath } from "next/cache";
 
 export async function getStores() {
@@ -33,7 +34,7 @@ export async function updateStore(id: string, name: string) {
   const store = await prisma.userStore.findFirst({
     where: { id, userId: user.id },
   });
-  if (!store) throw new Error("Store not found");
+  if (!store) throw new NotFoundError("Store");
 
   const updated = await prisma.userStore.update({
     where: { id },
@@ -49,7 +50,7 @@ export async function deleteStore(id: string) {
   const store = await prisma.userStore.findFirst({
     where: { id, userId: user.id },
   });
-  if (!store) throw new Error("Store not found");
+  if (!store) throw new NotFoundError("Store");
 
   await prisma.userStore.delete({ where: { id } });
   revalidatePath("/dashboard");

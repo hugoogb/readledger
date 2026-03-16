@@ -19,8 +19,9 @@ export default function SeriesError({
         <div>
           <h1 className="text-2xl font-bold mb-2">Failed to Load Series</h1>
           <p className="text-foreground-muted">
-            {error.message ||
-              "Could not load your series. Please try again."}
+            {process.env.NODE_ENV === "development"
+              ? error.message || "Could not load your series. Please try again."
+              : "Could not load your series. Please try again."}
           </p>
         </div>
         <div className="flex gap-3 justify-center">

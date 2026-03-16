@@ -8,13 +8,13 @@ import {
 } from "@/actions/series";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
-import { SeriesStatus } from "@/lib/generated/prisma/enums";
 import { getVolumeCovers } from "@/actions/mangadex";
 import {
   generateVolumeEntries,
   type FormattedMangaData,
   type VolumeData,
 } from "@/lib/manga-api";
+import { getSeriesFormDefaults } from "@/lib/form-defaults";
 import { seriesSchema, type SeriesSchema } from "@/lib/validations";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { BookOpen, Edit3, Loader2, Plus, Search } from "lucide-react";
@@ -42,18 +42,7 @@ export function AddSeriesModal({ publishers = [] }: AddSeriesModalProps) {
 
   const methods = useForm<SeriesSchema>({
     resolver: zodResolver(seriesSchema),
-    defaultValues: {
-      status: SeriesStatus.READING,
-      publishing: false,
-      title: "",
-      author: "",
-      publisherId: "",
-      coverImage: "",
-      description: "",
-      totalVolumes: null,
-      retailPrice: null,
-      mangadexId: null,
-    },
+    defaultValues: getSeriesFormDefaults(),
   });
 
   const {

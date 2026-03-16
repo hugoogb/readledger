@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
+import { NotFoundError } from "@/lib/errors";
 import { revalidatePath } from "next/cache";
 
 export async function getPublishers() {
@@ -33,7 +34,7 @@ export async function updatePublisher(id: string, name: string) {
   const publisher = await prisma.publisher.findFirst({
     where: { id, userId: user.id },
   });
-  if (!publisher) throw new Error("Publisher not found");
+  if (!publisher) throw new NotFoundError("Publisher");
 
   const updated = await prisma.publisher.update({
     where: { id },
@@ -49,7 +50,7 @@ export async function deletePublisher(id: string) {
   const publisher = await prisma.publisher.findFirst({
     where: { id, userId: user.id },
   });
-  if (!publisher) throw new Error("Publisher not found");
+  if (!publisher) throw new NotFoundError("Publisher");
 
   await prisma.publisher.delete({ where: { id } });
   revalidatePath("/dashboard");

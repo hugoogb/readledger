@@ -2,10 +2,13 @@
 
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
+import { NotFoundError } from "@/lib/errors";
 import { revalidatePath } from "next/cache";
 import { Condition } from "@/lib/generated/prisma/enums";
 import { volumeSchema } from "@/lib/validations";
 import { checkUserActionLimit } from "@/lib/rate-limit";
+
+const MAX_BULK_SIZE = 500;
 
 export type CreateVolumeInput = {
   seriesId: string;
@@ -35,7 +38,7 @@ export async function createVolume(input: CreateVolumeInput) {
   });
 
   if (!series) {
-    throw new Error("Series not found");
+    throw new NotFoundError("Series");
   }
 
   const validated = volumeSchema.parse(input);
@@ -71,7 +74,7 @@ export async function updateVolume(id: string, input: UpdateVolumeInput) {
   });
 
   if (!volume || volume.series.userId !== user.id) {
-    throw new Error("Volume not found");
+    throw new NotFoundError("Volume");
   }
 
   const validated = volumeSchema.partial().parse(input);
@@ -101,7 +104,7 @@ export async function deleteVolume(id: string) {
   });
 
   if (!volume || volume.series.userId !== user.id) {
-    throw new Error("Volume not found");
+    throw new NotFoundError("Volume");
   }
 
   await prisma.volume.delete({
@@ -122,7 +125,7 @@ export async function toggleVolumeOwned(id: string) {
   });
 
   if (!volume || volume.series.userId !== user.id) {
-    throw new Error("Volume not found");
+    throw new NotFoundError("Volume");
   }
 
   const nowOwned = !volume.owned;
@@ -150,7 +153,7 @@ export async function toggleVolumeRead(id: string) {
   });
 
   if (!volume || volume.series.userId !== user.id) {
-    throw new Error("Volume not found");
+    throw new NotFoundError("Volume");
   }
 
   const updated = await prisma.volume.update({
@@ -178,7 +181,7 @@ export async function markVolumesOwned(
   });
 
   if (!series) {
-    throw new Error("Series not found");
+    throw new NotFoundError("Series");
   }
 
   await prisma.volume.updateMany({
@@ -210,7 +213,7 @@ export async function markVolumesRead(
   });
 
   if (!series) {
-    throw new Error("Series not found");
+    throw new NotFoundError("Series");
   }
 
   await prisma.volume.updateMany({
@@ -241,7 +244,7 @@ export async function markVolumesOwnedUpTo(
   });
 
   if (!series) {
-    throw new Error("Series not found");
+    throw new NotFoundError("Series");
   }
 
   await prisma.volume.updateMany({
@@ -269,7 +272,7 @@ export async function markAllOwnedAsRead(seriesId: string) {
   });
 
   if (!series) {
-    throw new Error("Series not found");
+    throw new NotFoundError("Series");
   }
 
   await prisma.volume.updateMany({
@@ -297,7 +300,7 @@ export async function getVolumeStats(seriesId: string) {
   });
 
   if (!series) {
-    throw new Error("Series not found");
+    throw new NotFoundError("Series");
   }
 
   const volumes = series.volumes;
@@ -339,6 +342,9 @@ export async function bulkMarkOwned(
     notes?: string;
   },
 ) {
+  if (volumeIds.length === 0) throw new Error("No volumes selected");
+  if (volumeIds.length > MAX_BULK_SIZE) throw new Error(`Cannot process more than ${MAX_BULK_SIZE} volumes at once`);
+
   const user = await requireUser();
   checkUserActionLimit(user.id);
 
@@ -348,7 +354,7 @@ export async function bulkMarkOwned(
   });
 
   if (volumes.length !== volumeIds.length) {
-    throw new Error("Some volumes not found");
+    throw new NotFoundError("Some volumes");
   }
 
   const seriesIds = new Set<string>();
@@ -380,6 +386,9 @@ export async function bulkMarkOwned(
 }
 
 export async function bulkSetRead(volumeIds: string[]) {
+  if (volumeIds.length === 0) throw new Error("No volumes selected");
+  if (volumeIds.length > MAX_BULK_SIZE) throw new Error(`Cannot process more than ${MAX_BULK_SIZE} volumes at once`);
+
   const user = await requireUser();
 
   const volumes = await prisma.volume.findMany({
@@ -388,7 +397,7 @@ export async function bulkSetRead(volumeIds: string[]) {
   });
 
   if (volumes.length !== volumeIds.length) {
-    throw new Error("Some volumes not found");
+    throw new NotFoundError("Some volumes");
   }
 
   const seriesIds = new Set<string>();

@@ -13,6 +13,7 @@ import type { Series } from "@/lib/generated/prisma/browser";
 import { Button } from "@/components/ui/button";
 import { useForm, FormProvider, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { getSeriesFormDefaults } from "@/lib/form-defaults";
 import { seriesSchema, type SeriesSchema } from "@/lib/validations";
 import { toast } from "sonner";
 import { SeriesFormFields } from "./series-form-fields";
@@ -32,36 +33,14 @@ export function EditSeriesModal({ series, publishers = [] }: EditSeriesModalProp
 
   const methods = useForm<SeriesSchema>({
     resolver: zodResolver(seriesSchema),
-    defaultValues: {
-      title: series.title,
-      author: series.author || "",
-      publisherId: series.publisherId || "",
-      status: series.status,
-      publishing: series.publishing,
-      totalVolumes: series.totalVolumes,
-      retailPrice: series.retailPrice,
-      coverImage: series.coverImage || "",
-      description: series.description || "",
-      mangadexId: series.mangadexId,
-    },
+    defaultValues: getSeriesFormDefaults(series),
   });
 
   const { handleSubmit, reset, formState: { isSubmitting } } = methods;
 
   useEffect(() => {
     if (isOpen) {
-      reset({
-        title: series.title,
-        author: series.author || "",
-        publisherId: series.publisherId || "",
-        status: series.status,
-        publishing: series.publishing,
-        totalVolumes: series.totalVolumes || null,
-        retailPrice: series.retailPrice,
-        coverImage: series.coverImage || "",
-        description: series.description || "",
-        mangadexId: series.mangadexId || null,
-      });
+      reset(getSeriesFormDefaults(series));
     }
   }, [isOpen, series, reset]);
 

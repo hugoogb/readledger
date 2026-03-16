@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
+import { NotFoundError } from "@/lib/errors";
 import { revalidatePath } from "next/cache";
 import { cache } from "react";
 import { SeriesStatus } from "@/lib/generated/prisma/enums";
@@ -95,7 +96,7 @@ export async function updateSeries(id: string, input: UpdateSeriesInput) {
   });
 
   if (!series) {
-    throw new Error("Series not found");
+    throw new NotFoundError("Series");
   }
 
   const validated = seriesSchema.partial().parse(input);
@@ -150,7 +151,7 @@ export async function deleteSeries(id: string) {
   });
 
   if (!series) {
-    throw new Error("Series not found");
+    throw new NotFoundError("Series");
   }
 
   await prisma.series.delete({

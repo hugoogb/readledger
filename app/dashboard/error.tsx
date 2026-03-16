@@ -19,7 +19,9 @@ export default function DashboardError({
         <div>
           <h1 className="text-2xl font-bold mb-2">Dashboard Error</h1>
           <p className="text-foreground-muted">
-            {error.message || "Failed to load the dashboard. Please try again."}
+            {process.env.NODE_ENV === "development"
+              ? error.message || "Failed to load the dashboard. Please try again."
+              : "Failed to load the dashboard. Please try again."}
           </p>
         </div>
         <div className="flex gap-3 justify-center">

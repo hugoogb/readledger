@@ -89,7 +89,7 @@ export default function RegisterPage() {
                   name="password"
                   type={showPassword ? "text" : "password"}
                   required
-                  minLength={6}
+                  minLength={8}
                   placeholder="••••••••"
                   icon={<Lock className="w-5 h-5" />}
                   endIcon={
@@ -108,7 +108,7 @@ export default function RegisterPage() {
                   }
                 />
                 <p className="text-[10px] text-foreground-muted uppercase font-bold tracking-wider pt-1">
-                  Minimum 6 characters
+                  Minimum 8 characters
                 </p>
               </div>
 

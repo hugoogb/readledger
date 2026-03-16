@@ -7,6 +7,11 @@ export function serializeCsv(
   rows: string[][],
 ): string {
   const escapeField = (field: string) => {
+    // Prevent CSV formula injection in spreadsheet applications
+    const formulaPrefixes = ["=", "+", "-", "@", "\t", "\r"];
+    if (formulaPrefixes.some((p) => field.startsWith(p))) {
+      field = `'${field}`;
+    }
     if (field.includes(",") || field.includes('"') || field.includes("\n")) {
       return `"${field.replace(/"/g, '""')}"`;
     }
@@ -32,15 +37,17 @@ export function parseCsv(text: string): { headers: string[]; rows: string[][] } 
 
     if (inQuotes) {
       if (char === '"' && next === '"') {
-        current += '"';
+        current += '""';
         i++;
       } else if (char === '"') {
+        current += char;
         inQuotes = false;
       } else {
         current += char;
       }
     } else {
       if (char === '"') {
+        current += char;
         inQuotes = true;
       } else if (char === "\n" || (char === "\r" && next === "\n")) {
         lines.push(current);

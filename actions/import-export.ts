@@ -6,6 +6,13 @@ import { Condition } from "@/lib/generated/prisma/enums";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 
+const VALID_CONDITIONS = new Set(Object.values(Condition));
+
+function parseCondition(value: string | null): Condition | null {
+  if (!value || !VALID_CONDITIONS.has(value as Condition)) return null;
+  return value as Condition;
+}
+
 const CSV_HEADERS = [
   "series_title",
   "volume_number",
@@ -22,6 +29,9 @@ const CSV_HEADERS = [
 ];
 
 type ExportFormat = "csv" | "json";
+
+const MAX_IMPORT_SIZE = 5 * 1024 * 1024; // 5 MB
+const MAX_IMPORT_ROWS = 10_000;
 
 export async function exportCollection(format: ExportFormat) {
   const user = await requireUser();
@@ -120,6 +130,10 @@ export async function previewImport(
   const rows: ImportRow[] = [];
   const errors: { row: number; message: string }[] = [];
 
+  if (data.length > MAX_IMPORT_SIZE) {
+    return { rows: [], errors: [{ row: 0, message: "File too large. Maximum size is 5 MB." }], seriesCount: 0, volumeCount: 0 };
+  }
+
   if (format === "json") {
     try {
       const parsed = JSON.parse(data);
@@ -197,6 +211,10 @@ export async function previewImport(
         isbn: getCol(row, "isbn") || null,
       });
     }
+  }
+
+  if (rows.length > MAX_IMPORT_ROWS) {
+    return { rows: [], errors: [{ row: 0, message: `Too many rows. Maximum is ${MAX_IMPORT_ROWS}.` }], seriesCount: 0, volumeCount: 0 };
   }
 
   const seriesNames = new Set(rows.map((r) => r.seriesTitle));
@@ -283,7 +301,7 @@ export async function importCollection(
             wishlist: vol.wishlist,
             pricePaid: vol.pricePaid,
             storeId: vol.store ? storeCache.get(vol.store) || null : null,
-            condition: vol.condition as Condition || null,
+            condition: parseCondition(vol.condition),
             purchaseDate: vol.purchaseDate ? new Date(vol.purchaseDate) : null,
             readDate: vol.readDate ? new Date(vol.readDate) : null,
             notes: vol.notes,
@@ -295,7 +313,7 @@ export async function importCollection(
             wishlist: vol.wishlist,
             pricePaid: vol.pricePaid,
             storeId: vol.store ? storeCache.get(vol.store) || null : null,
-            condition: vol.condition as Condition || null,
+            condition: parseCondition(vol.condition),
             purchaseDate: vol.purchaseDate ? new Date(vol.purchaseDate) : null,
             readDate: vol.readDate ? new Date(vol.readDate) : null,
             notes: vol.notes,

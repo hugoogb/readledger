@@ -19,8 +19,9 @@ export default function SeriesDetailError({
         <div>
           <h1 className="text-2xl font-bold mb-2">Failed to Load Series</h1>
           <p className="text-foreground-muted">
-            {error.message ||
-              "Could not load this series. It may have been deleted or you may not have access."}
+            {process.env.NODE_ENV === "development"
+              ? error.message || "Could not load this series. It may have been deleted or you may not have access."
+              : "Could not load this series. It may have been deleted or you may not have access."}
           </p>
         </div>
         <div className="flex gap-3 justify-center">

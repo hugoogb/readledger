@@ -1,3 +1,4 @@
+import { UnauthorizedError } from "@/lib/errors";
 import { prisma } from "@/lib/prisma";
 import { getUser } from "@/lib/supabase/server";
 
@@ -31,7 +32,7 @@ export async function requireUser() {
   const user = await getCurrentUser();
 
   if (!user) {
-    throw new Error("Unauthorized");
+    throw new UnauthorizedError();
   }
 
   return user;
