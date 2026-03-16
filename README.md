@@ -17,36 +17,56 @@ While building my **One Piece** collection, I wanted to answer questions like:
 - How much money have I spent in total?
 - How much have I saved buying second-hand?
 
-Existing tools didn’t fully address this workflow, so ReadLedger was built as a focused solution for manga collectors.
+Existing tools didn't fully address this workflow, so ReadLedger was built as a focused solution for manga collectors.
 
 ---
 
 ## 🚀 Features
 
-- 📚 Track owned volumes
-- ✅ Mark reading progress
-- 💰 Monitor total spending
-- 💸 Track second-hand savings
-- 📊 View collection statistics
-- ⚡ Fast, responsive UI
+- 📚 **Collection management** — Track owned volumes, reading progress, and condition
+- 🔍 **MangaDex integration** — Search and import series metadata and cover art
+- 💰 **Spending analytics** — Monitor total spending, savings, and average price per volume
+- 📊 **Statistics dashboard** — Visual breakdowns by publisher, store, status, and condition
+- 📋 **Wishlist** — Track volumes you want to buy with estimated cost
+- ⚡ **Bulk operations** — Mark multiple volumes as owned or read at once
+- 📥 **CSV import/export** — Back up or migrate your collection data
+- 🎨 **Dark/light theme** — System-aware with manual toggle
 
 ---
 
 ## 🧠 Tech Stack
 
-ReadLedger is a modern full-stack web application built with:
-
-- **Frontend:** Next.js + React
-- **Backend / Database:** Supabase
-- **ORM:** Prisma
+- **Framework:** [Next.js 16](https://nextjs.org/) (App Router, Server Components, Server Actions)
+- **UI:** [React 19](https://react.dev/) + [Tailwind CSS 4](https://tailwindcss.com/)
+- **Database:** PostgreSQL via [Supabase](https://supabase.com/)
+- **ORM:** [Prisma 7](https://www.prisma.io/)
+- **Auth:** Supabase Auth (email/password) with SSR session management
+- **Validation:** [Zod 4](https://zod.dev/)
+- **Charts:** [Recharts](https://recharts.org/)
 - **Language:** TypeScript
 
-This architecture provides:
+---
 
-- Real-time database capabilities
-- Type-safe data access
-- Scalable backend infrastructure
-- Optimized frontend performance
+## 🏗️ Architecture
+
+```
+app/                    # Next.js App Router pages and layouts
+actions/                # Server actions (thin wrappers: auth → validate → service → revalidate)
+services/               # Business logic layer (testable, framework-agnostic)
+components/             # React components (UI primitives, forms, charts, modals)
+lib/                    # Shared utilities (auth, cache, errors, logger, validations, manga API)
+hooks/                  # Custom React hooks
+utils/                  # Pure utility functions (currency, date formatting)
+__tests__/              # Vitest test suite
+```
+
+Key design decisions:
+- **Service layer** separates business logic from Next.js concerns (auth, caching, revalidation)
+- **Custom error classes** (`NotFoundError`, `UnauthorizedError`, `ValidationError`) for consistent error handling
+- **Structured JSON logging** via `lib/logger.ts`
+- **In-memory TTL cache** for MangaDex API responses
+- **Security headers** (CSP, HSTS, X-Frame-Options) applied via `proxy.ts` middleware
+- **Rate limiting** on mutation actions (30 requests/min per user)
 
 ---
 
@@ -83,9 +103,9 @@ pnpm install
 cp .env.example .env
 ```
 
-And update with your values
+Update with your Supabase project URL, anon key, and database connection string.
 
-### 4️⃣ Database Setup
+### 4️⃣ Database setup
 
 ```bash
 pnpm db:migrate
@@ -98,6 +118,15 @@ pnpm db:generate
 pnpm dev
 ```
 
+### 🧪 Running tests
+
+```bash
+pnpm test          # Watch mode
+pnpm test:run      # Single run
+```
+
+---
+
 ## 📊 Project Goals
 
 ReadLedger is designed to evolve into:
@@ -107,14 +136,18 @@ ReadLedger is designed to evolve into:
 - Advanced statistics & visualizations
 - Improved UX & performance
 
+---
+
 ## 🤝 Contributions
 
 Feedback, ideas, and contributions are welcome.
-If you’d like to improve ReadLedger:
+If you'd like to improve ReadLedger:
 
 1. Fork the repo
 2. Create a feature branch
 3. Open a pull request
+
+---
 
 ## 📄 License
 
