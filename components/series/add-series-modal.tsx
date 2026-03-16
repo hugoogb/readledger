@@ -118,10 +118,10 @@ export function AddSeriesModal({ publishers = [] }: AddSeriesModalProps) {
         publisherId: data.publisherId || undefined,
         status: data.status,
         publishing: data.publishing,
-        totalVolumes: data.totalVolumes || undefined,
+        totalVolumes: data.totalVolumes ?? null,
         coverImage: data.coverImage,
         description: data.description || undefined,
-        retailPrice: data.retailPrice || undefined,
+        retailPrice: data.retailPrice ?? null,
         mangadexId: data.mangadexId || undefined,
       };
 

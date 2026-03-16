@@ -1,60 +1,23 @@
 "use server";
 
-import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
-import { NotFoundError } from "@/lib/errors";
 import { revalidatePath } from "next/cache";
 import { Condition } from "@/lib/generated/prisma/enums";
 import { volumeSchema } from "@/lib/validations";
 import { checkUserActionLimit } from "@/lib/rate-limit";
+import * as volumeService from "@/services/volumes";
 
-const MAX_BULK_SIZE = 500;
+export type { CreateVolumeInput, UpdateVolumeInput } from "@/services/volumes";
 
-export type CreateVolumeInput = {
-  seriesId: string;
-  volumeNumber: number;
-  isbn?: string;
-  coverImage?: string;
-  owned?: boolean;
-  read?: boolean;
-  wishlist?: boolean;
-  pricePaid?: number;
-  condition?: Condition;
-  storeId?: string;
-  purchaseDate?: Date;
-  readDate?: Date;
-  notes?: string;
-};
-
-export type UpdateVolumeInput = Partial<{
-  [K in keyof Omit<CreateVolumeInput, "seriesId">]: Omit<CreateVolumeInput, "seriesId">[K] | null;
-}>;
-
-export async function createVolume(input: CreateVolumeInput) {
+export async function createVolume(input: volumeService.CreateVolumeInput) {
   const user = await requireUser();
-
-  const series = await prisma.series.findFirst({
-    where: { id: input.seriesId, userId: user.id },
-  });
-
-  if (!series) {
-    throw new NotFoundError("Series");
-  }
-
   const validated = volumeSchema.parse(input);
 
-  const volume = await prisma.volume.create({
-    data: {
-      ...validated,
-      seriesId: input.seriesId,
-      volumeNumber: input.volumeNumber,
-      purchaseDate: validated.owned
-        ? (validated.purchaseDate ?? new Date())
-        : null,
-      readDate: validated.read ? (validated.readDate ?? new Date()) : null,
-      storeId: validated.storeId || null,
-      condition: (validated.condition as Condition) || null,
-    },
+  const volume = await volumeService.createVolume(user.id, {
+    ...validated,
+    seriesId: input.seriesId,
+    volumeNumber: input.volumeNumber,
+    condition: validated.condition as Condition | undefined,
   });
 
   revalidatePath("/dashboard");
@@ -64,33 +27,15 @@ export async function createVolume(input: CreateVolumeInput) {
   return volume;
 }
 
-export async function updateVolume(id: string, input: UpdateVolumeInput) {
+export async function updateVolume(id: string, input: volumeService.UpdateVolumeInput) {
   const user = await requireUser();
   checkUserActionLimit(user.id);
-
-  const volume = await prisma.volume.findFirst({
-    where: { id },
-    include: { series: true },
-  });
-
-  if (!volume || volume.series.userId !== user.id) {
-    throw new NotFoundError("Volume");
-  }
-
   const validated = volumeSchema.partial().parse(input);
 
-  const updated = await prisma.volume.update({
-    where: { id },
-    data: {
-      ...validated,
-      storeId: validated.storeId !== undefined ? (validated.storeId || null) : undefined,
-      condition: validated.condition ? (validated.condition as Condition) : validated.condition === null ? null : undefined,
-    },
-  });
+  const updated = await volumeService.updateVolume(user.id, id, validated);
 
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/series");
-  revalidatePath(`/dashboard/series/${volume.seriesId}`);
 
   return updated;
 }
@@ -98,48 +43,19 @@ export async function updateVolume(id: string, input: UpdateVolumeInput) {
 export async function deleteVolume(id: string) {
   const user = await requireUser();
 
-  const volume = await prisma.volume.findFirst({
-    where: { id },
-    include: { series: true },
-  });
-
-  if (!volume || volume.series.userId !== user.id) {
-    throw new NotFoundError("Volume");
-  }
-
-  await prisma.volume.delete({
-    where: { id },
-  });
+  const seriesId = await volumeService.deleteVolume(user.id, id);
 
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/series");
-  revalidatePath(`/dashboard/series/${volume.seriesId}`);
+  revalidatePath(`/dashboard/series/${seriesId}`);
 }
 
 export async function toggleVolumeOwned(id: string) {
   const user = await requireUser();
 
-  const volume = await prisma.volume.findFirst({
-    where: { id },
-    include: { series: true },
-  });
+  const { updated, seriesId } = await volumeService.toggleVolumeOwned(user.id, id);
 
-  if (!volume || volume.series.userId !== user.id) {
-    throw new NotFoundError("Volume");
-  }
-
-  const nowOwned = !volume.owned;
-  const updated = await prisma.volume.update({
-    where: { id },
-    data: {
-      owned: nowOwned,
-      purchaseDate: nowOwned ? new Date() : null,
-      // Auto-clear wishlist when marking as owned
-      ...(nowOwned ? { wishlist: false } : {}),
-    },
-  });
-
-  revalidatePath(`/dashboard/series/${volume.seriesId}`);
+  revalidatePath(`/dashboard/series/${seriesId}`);
 
   return updated;
 }
@@ -147,24 +63,9 @@ export async function toggleVolumeOwned(id: string) {
 export async function toggleVolumeRead(id: string) {
   const user = await requireUser();
 
-  const volume = await prisma.volume.findFirst({
-    where: { id },
-    include: { series: true },
-  });
+  const { updated, seriesId } = await volumeService.toggleVolumeRead(user.id, id);
 
-  if (!volume || volume.series.userId !== user.id) {
-    throw new NotFoundError("Volume");
-  }
-
-  const updated = await prisma.volume.update({
-    where: { id },
-    data: {
-      read: !volume.read,
-      readDate: !volume.read ? new Date() : null,
-    },
-  });
-
-  revalidatePath(`/dashboard/series/${volume.seriesId}`);
+  revalidatePath(`/dashboard/series/${seriesId}`);
 
   return updated;
 }
@@ -176,25 +77,7 @@ export async function markVolumesOwned(
 ) {
   const user = await requireUser();
 
-  const series = await prisma.series.findFirst({
-    where: { id: seriesId, userId: user.id },
-  });
-
-  if (!series) {
-    throw new NotFoundError("Series");
-  }
-
-  await prisma.volume.updateMany({
-    where: {
-      seriesId,
-      volumeNumber: { in: volumeNumbers },
-    },
-    data: {
-      owned,
-      purchaseDate: owned ? new Date() : null,
-      ...(owned ? { wishlist: false } : { read: false, readDate: null }),
-    },
-  });
+  await volumeService.markVolumesOwned(user.id, seriesId, volumeNumbers, owned);
 
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/series");
@@ -208,25 +91,7 @@ export async function markVolumesRead(
 ) {
   const user = await requireUser();
 
-  const series = await prisma.series.findFirst({
-    where: { id: seriesId, userId: user.id },
-  });
-
-  if (!series) {
-    throw new NotFoundError("Series");
-  }
-
-  await prisma.volume.updateMany({
-    where: {
-      seriesId,
-      volumeNumber: { in: volumeNumbers },
-      owned: true,
-    },
-    data: {
-      read,
-      readDate: read ? new Date() : null,
-    },
-  });
+  await volumeService.markVolumesRead(user.id, seriesId, volumeNumbers, read);
 
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/series");
@@ -239,25 +104,7 @@ export async function markVolumesOwnedUpTo(
 ) {
   const user = await requireUser();
 
-  const series = await prisma.series.findFirst({
-    where: { id: seriesId, userId: user.id },
-  });
-
-  if (!series) {
-    throw new NotFoundError("Series");
-  }
-
-  await prisma.volume.updateMany({
-    where: {
-      seriesId,
-      volumeNumber: { lte: upToVolume },
-    },
-    data: {
-      owned: true,
-      purchaseDate: new Date(),
-      wishlist: false,
-    },
-  });
+  await volumeService.markVolumesOwnedUpTo(user.id, seriesId, upToVolume);
 
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/series");
@@ -267,24 +114,7 @@ export async function markVolumesOwnedUpTo(
 export async function markAllOwnedAsRead(seriesId: string) {
   const user = await requireUser();
 
-  const series = await prisma.series.findFirst({
-    where: { id: seriesId, userId: user.id },
-  });
-
-  if (!series) {
-    throw new NotFoundError("Series");
-  }
-
-  await prisma.volume.updateMany({
-    where: {
-      seriesId,
-      owned: true,
-    },
-    data: {
-      read: true,
-      readDate: new Date(),
-    },
-  });
+  await volumeService.markAllOwnedAsRead(user.id, seriesId);
 
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/series");
@@ -293,43 +123,7 @@ export async function markAllOwnedAsRead(seriesId: string) {
 
 export async function getVolumeStats(seriesId: string) {
   const user = await requireUser();
-
-  const series = await prisma.series.findFirst({
-    where: { id: seriesId, userId: user.id },
-    include: { volumes: true },
-  });
-
-  if (!series) {
-    throw new NotFoundError("Series");
-  }
-
-  const volumes = series.volumes;
-  const owned = volumes.filter((v) => v.owned).length;
-  const read = volumes.filter((v) => v.read).length;
-  const wishlisted = volumes.filter((v) => v.wishlist).length;
-  const totalSpent = volumes.reduce((acc, v) => acc + (v.pricePaid || 0), 0);
-  const retailPricePerVolume = series.retailPrice || 0;
-  const totalRetailValue = owned * retailPricePerVolume;
-  const averagePrice = owned > 0 ? totalSpent / owned : 0;
-  const total = series.totalVolumes || volumes.length;
-  const missing = total - owned;
-  const savings = totalRetailValue - totalSpent;
-
-  return {
-    owned,
-    read,
-    missing,
-    total,
-    wishlisted,
-    totalSpent,
-    totalRetailValue,
-    averagePrice,
-    savings,
-    savingsPercentage:
-      totalRetailValue > 0 ? (savings / totalRetailValue) * 100 : 0,
-    ownedProgress: total > 0 ? (owned / total) * 100 : 0,
-    readProgress: owned > 0 ? (read / owned) * 100 : 0,
-  };
+  return volumeService.getVolumeStats(user.id, seriesId);
 }
 
 export async function bulkMarkOwned(
@@ -342,41 +136,10 @@ export async function bulkMarkOwned(
     notes?: string;
   },
 ) {
-  if (volumeIds.length === 0) throw new Error("No volumes selected");
-  if (volumeIds.length > MAX_BULK_SIZE) throw new Error(`Cannot process more than ${MAX_BULK_SIZE} volumes at once`);
-
   const user = await requireUser();
   checkUserActionLimit(user.id);
 
-  const volumes = await prisma.volume.findMany({
-    where: { id: { in: volumeIds } },
-    include: { series: true },
-  });
-
-  if (volumes.length !== volumeIds.length) {
-    throw new NotFoundError("Some volumes");
-  }
-
-  const seriesIds = new Set<string>();
-  for (const volume of volumes) {
-    if (volume.series.userId !== user.id) {
-      throw new Error("Unauthorized");
-    }
-    seriesIds.add(volume.seriesId);
-  }
-
-  await prisma.volume.updateMany({
-    where: { id: { in: volumeIds } },
-    data: {
-      owned: true,
-      wishlist: false,
-      pricePaid: data.pricePaid ?? null,
-      storeId: data.storeId || null,
-      condition: data.condition,
-      purchaseDate: data.purchaseDate ?? new Date(),
-      notes: data.notes ?? null,
-    },
-  });
+  const seriesIds = await volumeService.bulkMarkOwned(user.id, volumeIds, data);
 
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/series");
@@ -386,35 +149,9 @@ export async function bulkMarkOwned(
 }
 
 export async function bulkSetRead(volumeIds: string[]) {
-  if (volumeIds.length === 0) throw new Error("No volumes selected");
-  if (volumeIds.length > MAX_BULK_SIZE) throw new Error(`Cannot process more than ${MAX_BULK_SIZE} volumes at once`);
-
   const user = await requireUser();
 
-  const volumes = await prisma.volume.findMany({
-    where: { id: { in: volumeIds } },
-    include: { series: true },
-  });
-
-  if (volumes.length !== volumeIds.length) {
-    throw new NotFoundError("Some volumes");
-  }
-
-  const seriesIds = new Set<string>();
-  for (const volume of volumes) {
-    if (volume.series.userId !== user.id) {
-      throw new Error("Unauthorized");
-    }
-    seriesIds.add(volume.seriesId);
-  }
-
-  await prisma.volume.updateMany({
-    where: { id: { in: volumeIds }, owned: true },
-    data: {
-      read: true,
-      readDate: new Date(),
-    },
-  });
+  const seriesIds = await volumeService.bulkSetRead(user.id, volumeIds);
 
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/series");
