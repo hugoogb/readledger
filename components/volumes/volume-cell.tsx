@@ -75,12 +75,19 @@ export const VolumeCell = memo(function VolumeCell({
 
   return (
     <>
-      <button
-        type="button"
+      <div
+        role="button"
+        tabIndex={0}
         onClick={handleOpenModal}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            handleOpenModal(e as unknown as React.MouseEvent);
+          }
+        }}
         className={`
           group relative aspect-3/4 rounded-xl overflow-hidden cursor-pointer
-          transition-all duration-200 w-full text-left appearance-none bg-transparent p-0
+          transition-all duration-200 w-full text-left bg-transparent p-0
           ${isPending ? "opacity-50" : ""}
           ${
             isOwned
@@ -247,7 +254,7 @@ export const VolumeCell = memo(function VolumeCell({
             </Button>
           )}
         </div>
-      </button>
+      </div>
 
       {showModal && (
         <VolumeDetailsModal

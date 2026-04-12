@@ -2,6 +2,7 @@
 
 import { requireUser } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
+import { cache } from "react";
 import { Condition } from "@/lib/generated/prisma/enums";
 import { volumeSchema } from "@/lib/validations";
 import { checkUserActionLimit } from "@/lib/rate-limit";
@@ -121,10 +122,10 @@ export async function markAllOwnedAsRead(seriesId: string) {
   revalidatePath(`/dashboard/series/${seriesId}`);
 }
 
-export async function getVolumeStats(seriesId: string) {
+export const getVolumeStats = cache(async function getVolumeStats(seriesId: string) {
   const user = await requireUser();
   return volumeService.getVolumeStats(user.id, seriesId);
-}
+});
 
 export async function bulkMarkOwned(
   volumeIds: string[],

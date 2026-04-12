@@ -63,10 +63,10 @@ export async function deleteSeries(id: string) {
   revalidatePath("/dashboard/series");
 }
 
-export async function getSeries(id: string) {
+export const getSeries = cache(async function getSeries(id: string) {
   const user = await requireUser();
   return seriesService.getSeries(user.id, id);
-}
+});
 
 export async function getAllSeries(status?: SeriesStatus, sort?: seriesService.SortOption) {
   const user = await requireUser();

@@ -4,14 +4,15 @@ import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
 import { NotFoundError } from "@/lib/errors";
 import { revalidatePath } from "next/cache";
+import { cache } from "react";
 
-export async function getPublishers() {
+export const getPublishers = cache(async function getPublishers() {
   const user = await requireUser();
   return prisma.publisher.findMany({
     where: { userId: user.id },
     orderBy: { name: "asc" },
   });
-}
+});
 
 export async function createPublisher(name: string) {
   const user = await requireUser();
