@@ -5,10 +5,7 @@ import { getVolumeStats } from "@/actions/volumes";
 import { EditSeriesModal } from "@/components/series/edit-series-modal";
 import { Badge } from "@/components/ui/badge";
 import { ProgressBar } from "@/components/ui/progress-bar";
-import {
-  StatsCardSkeleton,
-  VolumeGridSkeleton,
-} from "@/components/ui/skeletons";
+import { StatsCardSkeleton } from "@/components/ui/skeletons";
 import { StatsCard } from "@/components/ui/stats-card";
 import { BulkMarkOwnedModal } from "@/components/volumes/bulk-mark-owned-modal";
 import { BulkSetReadModal } from "@/components/volumes/bulk-set-read-modal";
@@ -314,16 +311,14 @@ export default async function SeriesDetailPage({ params }: Props) {
           </div>
         </div>
 
-        <Suspense fallback={<VolumeGridSkeleton />}>
-          <VolumeGrid
-            volumes={series.volumes}
-            totalVolumes={series.totalVolumes}
-            seriesDefaults={{
-              retailPrice: series.retailPrice,
-            }}
-            stores={stores}
-          />
-        </Suspense>
+        <VolumeGrid
+          volumes={series.volumes}
+          totalVolumes={series.totalVolumes}
+          seriesDefaults={{
+            retailPrice: series.retailPrice,
+          }}
+          stores={stores}
+        />
       </div>
     </div>
   );
