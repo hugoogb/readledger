@@ -109,11 +109,11 @@ export const VolumeCell = memo(function VolumeCell({
         {/* Cover Image */}
         {hasCover && (
           <Image
-            width={192}
-            height={256}
+            fill
             src={volume.coverImage!}
             alt={`Volume ${volume.volumeNumber}`}
-            className="absolute inset-0 object-cover w-full h-full group-hover:scale-105 transition-transform"
+            sizes="(max-width: 640px) 33vw, (max-width: 1024px) 11vw, 11vw"
+            className="object-cover group-hover:scale-105 transition-transform"
             loading="lazy"
           />
         )}
