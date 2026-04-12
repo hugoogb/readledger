@@ -8,6 +8,7 @@ import {
 } from "@/actions/publishers";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Check, Loader2, Pencil, Plus, Trash2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -24,6 +25,7 @@ export function PublisherList({ publishers }: PublisherListProps) {
   const [editName, setEditName] = useState("");
   const [newName, setNewName] = useState("");
   const [loading, setLoading] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
 
   const handleCreate = async () => {
     const trimmed = newName.trim();
@@ -63,17 +65,12 @@ export function PublisherList({ publishers }: PublisherListProps) {
     }
   };
 
-  const handleDelete = async (id: string, name: string) => {
-    if (
-      !confirm(
-        `Delete "${name}"? Series using this publisher will lose the association.`,
-      )
-    )
-      return;
-
-    setLoading(id);
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setLoading(deleteTarget.id);
     try {
-      await deletePublisher(id);
+      await deletePublisher(deleteTarget.id);
+      setDeleteTarget(null);
       toast.success("Publisher deleted");
       router.refresh();
     } catch (err) {
@@ -86,6 +83,16 @@ export function PublisherList({ publishers }: PublisherListProps) {
   };
 
   return (
+    <>
+    <ConfirmDialog
+      isOpen={!!deleteTarget}
+      onClose={() => setDeleteTarget(null)}
+      onConfirm={handleDelete}
+      title="Delete publisher"
+      description={`Delete "${deleteTarget?.name}"? Series using this publisher will lose the association.`}
+      confirmLabel="Delete"
+      isLoading={!!loading}
+    />
     <div className="space-y-3">
       {publishers.length === 0 && (
         <p className="text-sm text-foreground-muted py-2">
@@ -118,6 +125,7 @@ export function PublisherList({ publishers }: PublisherListProps) {
                 size="icon"
                 onClick={() => handleUpdate(pub.id)}
                 disabled={loading === pub.id}
+                aria-label="Save changes"
               >
                 {loading === pub.id ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -129,6 +137,7 @@ export function PublisherList({ publishers }: PublisherListProps) {
                 variant="ghost"
                 size="icon"
                 onClick={() => setEditingId(null)}
+                aria-label="Cancel editing"
               >
                 <X className="w-4 h-4" />
               </Button>
@@ -143,15 +152,17 @@ export function PublisherList({ publishers }: PublisherListProps) {
                   setEditingId(pub.id);
                   setEditName(pub.name);
                 }}
+                aria-label={`Edit ${pub.name}`}
               >
                 <Pencil className="w-4 h-4" />
               </Button>
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => handleDelete(pub.id, pub.name)}
+                onClick={() => setDeleteTarget({ id: pub.id, name: pub.name })}
                 disabled={loading === pub.id}
                 className="text-foreground-muted hover:text-error hover:bg-error/10"
+                aria-label={`Delete ${pub.name}`}
               >
                 {loading === pub.id ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -191,5 +202,6 @@ export function PublisherList({ publishers }: PublisherListProps) {
         </Button>
       </div>
     </div>
+    </>
   );
 }

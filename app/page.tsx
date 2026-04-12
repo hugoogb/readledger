@@ -72,7 +72,8 @@ export default function Home() {
           </div>
 
           {/* Features */}
-          <div className="mt-24 grid sm:grid-cols-3 gap-6">
+          <h2 className="mt-24 text-2xl font-bold text-center mb-8">Features</h2>
+          <div className="grid sm:grid-cols-3 gap-6">
             <div className="glass rounded-2xl p-6 animate-fade-in stagger-1">
               <div className="w-12 h-12 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center mb-4">
                 <Library className="w-6 h-6 text-accent" />

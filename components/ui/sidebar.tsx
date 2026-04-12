@@ -42,7 +42,7 @@ export function SidebarNav() {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-4">
+      <nav aria-label="Main navigation" className="flex-1 p-4">
         <ul className="space-y-1">
           {navItems.map((item) => {
             const isActive =

@@ -256,7 +256,7 @@ export function VolumeDetailsModal({
                   size="sm"
                   onClick={handleToggleRead}
                   variant={isRead ? "success" : "secondary"}
-                  className={`rounded-md ${!isRead ? "bg-white text-background hover:bg-white/90" : ""}`}
+                  className="rounded-md"
                   aria-label={`Mark volume ${volume.volumeNumber} as ${isRead ? "unread" : "read"}`}
                 >
                   <Check className="w-3.5 h-3.5" />
@@ -269,7 +269,7 @@ export function VolumeDetailsModal({
                   size="sm"
                   onClick={handleToggleWishlist}
                   variant="secondary"
-                  className={`rounded-md ${isWishlisted ? "bg-error text-white hover:bg-error/90" : "bg-white text-background hover:bg-white/90"}`}
+                  className={`rounded-md ${isWishlisted ? "bg-error text-white hover:bg-error/90" : ""}`}
                   aria-label={`${isWishlisted ? "Remove" : "Add"} volume ${volume.volumeNumber} ${isWishlisted ? "from" : "to"} wishlist`}
                 >
                   <Heart

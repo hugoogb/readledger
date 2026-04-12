@@ -44,7 +44,7 @@ export function SeriesCardSkeleton() {
 
 export function VolumeGridSkeleton() {
   return (
-    <div className="grid grid-cols-5 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2">
+    <div className="grid grid-cols-3 sm:grid-cols-6 lg:grid-cols-9 gap-2">
       {Array.from({ length: 20 }).map((_, i) => (
         <Skeleton key={i} className="aspect-3/4" />
       ))}
@@ -79,8 +79,8 @@ export function ProgressSectionSkeleton() {
 
 export function DashboardStatsSkeleton() {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
-      {Array.from({ length: 5 }).map((_, i) => (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      {Array.from({ length: 4 }).map((_, i) => (
         <StatsCardSkeleton key={i} />
       ))}
     </div>

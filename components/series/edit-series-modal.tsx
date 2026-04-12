@@ -91,6 +91,7 @@ export function EditSeriesModal({ series, publishers = [] }: EditSeriesModalProp
         size="icon"
         onClick={() => setIsOpen(true)}
         className="text-foreground-muted hover:text-foreground"
+        aria-label="Edit series settings"
         title="Edit series"
       >
         <Settings className="w-5 h-5" />

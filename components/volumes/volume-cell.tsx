@@ -204,6 +204,9 @@ export const VolumeCell = memo(function VolumeCell({
           </div>
         )}
 
+        {/* Mobile tap hint */}
+        <div className="sm:hidden absolute inset-x-0 bottom-0 h-6 bg-gradient-to-t from-black/30 to-transparent rounded-b-xl pointer-events-none" />
+
         {/* Action Buttons - Bottom Right */}
         <div className="hidden sm:flex absolute bottom-1 right-1 z-20 items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
           {!isOwned ? (
@@ -213,7 +216,7 @@ export const VolumeCell = memo(function VolumeCell({
                 onClick={handleToggleWishlist}
                 disabled={isPending}
                 variant="secondary"
-                className={`rounded-md ${isWishlisted ? "bg-error text-white hover:bg-error/90" : "bg-white text-background hover:bg-white/90"}`}
+                className={`rounded-md ${isWishlisted ? "bg-error text-white hover:bg-error/90" : ""}`}
                 aria-label={`${isWishlisted ? "Remove" : "Add"} volume ${volume.volumeNumber} ${isWishlisted ? "from" : "to"} wishlist`}
               >
                 <Heart
@@ -225,7 +228,7 @@ export const VolumeCell = memo(function VolumeCell({
                 onClick={handleOpenModal}
                 disabled={isPending}
                 variant="secondary"
-                className="rounded-md bg-white text-background hover:bg-white/90"
+                className="rounded-md"
                 aria-label={`Mark volume ${volume.volumeNumber} as owned`}
               >
                 <Package className="w-3.5 h-3.5" />
@@ -237,7 +240,7 @@ export const VolumeCell = memo(function VolumeCell({
               onClick={handleToggleRead}
               disabled={isPending}
               variant={isRead ? "success" : "secondary"}
-              className={`rounded-md ${!isRead ? "bg-white text-background hover:bg-white/90" : ""}`}
+              className="rounded-md"
               aria-label={`Mark volume ${volume.volumeNumber} as ${isRead ? "unread" : "read"}`}
             >
               <Check className="w-3.5 h-3.5" />

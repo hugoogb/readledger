@@ -89,8 +89,17 @@ export function ImportModal() {
         <div className="space-y-4">
           {/* File Upload */}
           <div
+            role="button"
+            tabIndex={0}
+            aria-label="Upload CSV or JSON file"
             className="border-2 border-dashed border-border rounded-xl p-8 text-center cursor-pointer hover:border-accent/50 hover:bg-accent/5 transition-colors"
             onClick={() => fileInputRef.current?.click()}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                fileInputRef.current?.click();
+              }
+            }}
           >
             <FileUp className="w-10 h-10 text-foreground-muted mx-auto mb-3" />
             <p className="font-medium">

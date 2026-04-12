@@ -17,7 +17,7 @@ const buttonVariants = cva(
           "hover:bg-background-tertiary hover:text-foreground text-foreground-muted",
         link: "text-accent underline-offset-4 hover:underline",
         success: "bg-success text-white hover:bg-success/90 shadow-sm",
-        warning: "bg-warning text-white hover:bg-warning/90 shadow-sm",
+        warning: "bg-warning text-black hover:bg-warning/90 shadow-sm",
       },
       size: {
         default: "h-11 px-4 py-2",

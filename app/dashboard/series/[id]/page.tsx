@@ -194,7 +194,7 @@ export default async function SeriesDetailPage({ params }: Props) {
 
           {/* Info */}
           <div className="flex-1">
-            <div className="flex items-start justify-between gap-4 mb-4">
+            <div className="flex items-start justify-between gap-4 mb-4 flex-wrap">
               <div>
                 <h1 className="text-3xl font-bold mb-2">{series.title}</h1>
                 <div className="flex flex-wrap items-center gap-4 text-foreground-muted">

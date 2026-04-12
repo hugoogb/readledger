@@ -35,6 +35,7 @@ export function WishlistActions({ volume }: WishlistActionsProps) {
       type="button"
       onClick={handleRemove}
       disabled={isPending}
+      aria-label={`Remove volume ${volume.volumeNumber} from wishlist`}
       className="group relative flex items-center gap-2 px-3 py-2 rounded-lg bg-background-tertiary/50 border border-border hover:border-error/50 hover:bg-error/5 transition-all cursor-pointer disabled:opacity-50"
     >
       {isPending ? (

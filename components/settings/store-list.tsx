@@ -4,6 +4,7 @@ import { useState } from "react";
 import { createStore, updateStore, deleteStore } from "@/actions/stores";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Check, Loader2, Pencil, Plus, Trash2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -20,6 +21,7 @@ export function StoreList({ stores }: StoreListProps) {
   const [editName, setEditName] = useState("");
   const [newName, setNewName] = useState("");
   const [loading, setLoading] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
 
   const handleCreate = async () => {
     const trimmed = newName.trim();
@@ -59,17 +61,12 @@ export function StoreList({ stores }: StoreListProps) {
     }
   };
 
-  const handleDelete = async (id: string, name: string) => {
-    if (
-      !confirm(
-        `Delete "${name}"? Volumes using this store will lose the association.`,
-      )
-    )
-      return;
-
-    setLoading(id);
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setLoading(deleteTarget.id);
     try {
-      await deleteStore(id);
+      await deleteStore(deleteTarget.id);
+      setDeleteTarget(null);
       toast.success("Store deleted");
       router.refresh();
     } catch (err) {
@@ -82,6 +79,16 @@ export function StoreList({ stores }: StoreListProps) {
   };
 
   return (
+    <>
+    <ConfirmDialog
+      isOpen={!!deleteTarget}
+      onClose={() => setDeleteTarget(null)}
+      onConfirm={handleDelete}
+      title="Delete store"
+      description={`Delete "${deleteTarget?.name}"? Volumes using this store will lose the association.`}
+      confirmLabel="Delete"
+      isLoading={!!loading}
+    />
     <div className="space-y-3">
       {stores.length === 0 && (
         <p className="text-sm text-foreground-muted py-2">
@@ -114,6 +121,7 @@ export function StoreList({ stores }: StoreListProps) {
                 size="icon"
                 onClick={() => handleUpdate(store.id)}
                 disabled={loading === store.id}
+                aria-label="Save changes"
               >
                 {loading === store.id ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -125,6 +133,7 @@ export function StoreList({ stores }: StoreListProps) {
                 variant="ghost"
                 size="icon"
                 onClick={() => setEditingId(null)}
+                aria-label="Cancel editing"
               >
                 <X className="w-4 h-4" />
               </Button>
@@ -139,15 +148,17 @@ export function StoreList({ stores }: StoreListProps) {
                   setEditingId(store.id);
                   setEditName(store.name);
                 }}
+                aria-label={`Edit ${store.name}`}
               >
                 <Pencil className="w-4 h-4" />
               </Button>
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => handleDelete(store.id, store.name)}
+                onClick={() => setDeleteTarget({ id: store.id, name: store.name })}
                 disabled={loading === store.id}
                 className="text-foreground-muted hover:text-error hover:bg-error/10"
+                aria-label={`Delete ${store.name}`}
               >
                 {loading === store.id ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -187,5 +198,6 @@ export function StoreList({ stores }: StoreListProps) {
         </Button>
       </div>
     </div>
+    </>
   );
 }
