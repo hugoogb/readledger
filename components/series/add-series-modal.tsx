@@ -315,14 +315,10 @@ export function AddSeriesModal({ publishers = [] }: AddSeriesModalProps) {
                 </Button>
                 <Button
                   type="submit"
-                  disabled={isSubmitting}
+                  loading={isSubmitting}
                   className="flex-1 gap-2"
                 >
-                  {isSubmitting ? (
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                  ) : (
-                    "Add Series"
-                  )}
+                  Add Series
                 </Button>
               </div>
             </form>

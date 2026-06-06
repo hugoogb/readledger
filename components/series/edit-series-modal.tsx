@@ -6,7 +6,7 @@ import {
   deleteSeries,
   type UpdateSeriesInput,
 } from "@/actions/series";
-import { Loader2, Settings, Trash2 } from "lucide-react";
+import { Settings, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Modal } from "@/components/ui/modal";
 import type { Series } from "@/lib/generated/prisma/browser";
@@ -122,17 +122,11 @@ export function EditSeriesModal({ series, publishers = [] }: EditSeriesModalProp
               <Button
                 variant="destructive"
                 onClick={handleDelete}
-                disabled={isDeleting}
+                loading={isDeleting}
                 className="flex-1 gap-2"
               >
-                {isDeleting ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                  <>
-                    <Trash2 className="w-4 h-4" />
-                    Delete
-                  </>
-                )}
+                {!isDeleting && <Trash2 className="w-4 h-4" />}
+                Delete
               </Button>
             </div>
           </div>
@@ -159,12 +153,8 @@ export function EditSeriesModal({ series, publishers = [] }: EditSeriesModalProp
                 >
                   Cancel
                 </Button>
-                <Button type="submit" disabled={isSubmitting} className="flex-1">
-                  {isSubmitting ? (
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                  ) : (
-                    "Save Changes"
-                  )}
+                <Button type="submit" loading={isSubmitting} className="flex-1">
+                  Save Changes
                 </Button>
               </div>
             </form>

@@ -25,7 +25,6 @@ import {
   Calendar,
   Check,
   Euro,
-  Loader2,
   Package,
   Sparkles,
   StickyNote,
@@ -329,17 +328,12 @@ export function BulkMarkOwnedModal({
             </Button>
             <Button
               type="submit"
-              disabled={isSubmitting || selectedCount === 0}
+              loading={isSubmitting}
+              disabled={selectedCount === 0}
               className="flex-1 gap-2"
             >
-              {isSubmitting ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
-              ) : (
-                <>
-                  <Check className="w-4 h-4" />
-                  Mark {selectedCount} as Owned
-                </>
-              )}
+              {!isSubmitting && <Check className="w-4 h-4" />}
+              Mark {selectedCount} as Owned
             </Button>
           </div>
         </form>

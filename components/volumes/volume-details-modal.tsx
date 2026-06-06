@@ -28,7 +28,6 @@ import {
   Euro,
   Heart,
   ImageIcon,
-  Loader2,
   Package,
   Sparkles,
   StickyNote,
@@ -441,26 +440,17 @@ export function VolumeDetailsModal({
           </Button>
           <Button
             type="submit"
-            disabled={isSubmitting || isActionPending}
+            loading={isSubmitting}
+            disabled={isActionPending}
             className="flex-1 gap-2"
           >
-            {isSubmitting ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
-            ) : (
-              <>
-                {volume.owned ? (
-                  <>
-                    <Sparkles className="w-4 h-4" />
-                    Save Changes
-                  </>
-                ) : (
-                  <>
-                    <Package className="w-4 h-4" />
-                    Add to Collection
-                  </>
-                )}
-              </>
-            )}
+            {!isSubmitting &&
+              (volume.owned ? (
+                <Sparkles className="w-4 h-4" />
+              ) : (
+                <Package className="w-4 h-4" />
+              ))}
+            {volume.owned ? "Save Changes" : "Add to Collection"}
           </Button>
         </div>
       </form>

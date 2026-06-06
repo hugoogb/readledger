@@ -78,6 +78,19 @@ export function ImportModal() {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
+  // Adapt the import button to the current state so it never reads
+  // "Import 0 Volumes" when there's simply no valid file selected yet.
+  const hasErrors = (preview?.errors.length ?? 0) > 0;
+  const volumeCount = preview?.volumeCount ?? 0;
+  const canImport = !!preview && !hasErrors && preview.rows.length > 0;
+  const importLabel = !preview
+    ? "Select a file to import"
+    : hasErrors
+      ? "Resolve errors to import"
+      : preview.rows.length === 0
+        ? "Nothing to import"
+        : `Import ${volumeCount} ${volumeCount === 1 ? "Volume" : "Volumes"}`;
+
   return (
     <>
       <Button onClick={() => setIsOpen(true)} variant="outline" className="gap-2">
@@ -204,22 +217,12 @@ export function ImportModal() {
             </Button>
             <Button
               onClick={handleImport}
-              disabled={
-                isImporting ||
-                !preview ||
-                preview.errors.length > 0 ||
-                preview.rows.length === 0
-              }
+              loading={isImporting}
+              disabled={!canImport}
               className="flex-1 gap-2"
             >
-              {isImporting ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
-              ) : (
-                <>
-                  <Check className="w-4 h-4" />
-                  Import {preview?.volumeCount || 0} Volumes
-                </>
-              )}
+              {!isImporting && canImport && <Check className="w-4 h-4" />}
+              {importLabel}
             </Button>
           </div>
         </div>
