@@ -11,6 +11,8 @@ import {
   YAxis,
 } from "recharts";
 import { BaseTooltipProps } from "./types/shared.types";
+import { ShoppingBag } from "lucide-react";
+import { ChartEmpty } from "./chart-empty";
 
 type StoreBreakdownProps = {
   data: { name: string; count: number; spent: number }[];
@@ -52,11 +54,7 @@ function StoreTooltip({ active, payload, label }: BaseTooltipProps) {
 
 export function StoreBreakdown({ data }: StoreBreakdownProps) {
   if (data.length === 0) {
-    return (
-      <p className="text-sm text-foreground-muted text-center py-8">
-        No store data yet
-      </p>
-    );
+    return <ChartEmpty label="store data" icon={ShoppingBag} />;
   }
 
   return (

@@ -12,6 +12,8 @@ import {
 } from "recharts";
 import { formatCurrency } from "@/utils/currency";
 import { formatChartMonth, formatChartMonthShort } from "@/utils/date";
+import { Wallet } from "lucide-react";
+import { ChartEmpty } from "./chart-empty";
 
 type SpendingOverTimeProps = {
   data: { month: string; amount: number; cumulative: number }[];
@@ -19,11 +21,7 @@ type SpendingOverTimeProps = {
 
 export function SpendingOverTime({ data }: SpendingOverTimeProps) {
   if (data.length === 0) {
-    return (
-      <p className="text-sm text-foreground-muted text-center py-8">
-        No spending data yet
-      </p>
-    );
+    return <ChartEmpty label="spending data" icon={Wallet} />;
   }
 
   return (

@@ -2,6 +2,8 @@
 
 import { Pie, PieChart, ResponsiveContainer, Sector, Tooltip } from "recharts";
 import { BaseTooltipProps } from "./types/shared.types";
+import { BookOpen } from "lucide-react";
+import { ChartEmpty } from "./chart-empty";
 
 type StatusDistributionProps = {
   data: { status: keyof typeof STATUS_CONFIG; count: number }[];
@@ -73,11 +75,7 @@ function StatusTooltip({ active, payload }: BaseTooltipProps) {
 
 export function StatusDistribution({ data }: StatusDistributionProps) {
   if (data.length === 0) {
-    return (
-      <p className="text-sm text-foreground-muted text-center py-8">
-        No series data yet
-      </p>
-    );
+    return <ChartEmpty label="series data" icon={BookOpen} />;
   }
 
   const total = data.reduce((sum, d) => sum + d.count, 0);

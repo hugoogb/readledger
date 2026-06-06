@@ -2,6 +2,8 @@
 
 import { Pie, PieChart, ResponsiveContainer, Sector, Tooltip } from "recharts";
 import { BaseTooltipProps } from "./types/shared.types";
+import { Package } from "lucide-react";
+import { ChartEmpty } from "./chart-empty";
 
 type ConditionDistributionProps = {
   data: { condition: keyof typeof CONDITION_CONFIG; count: number }[];
@@ -77,11 +79,7 @@ function ConditionTooltip({ active, payload }: BaseTooltipProps) {
 
 export function ConditionDistribution({ data }: ConditionDistributionProps) {
   if (data.length === 0) {
-    return (
-      <p className="text-sm text-foreground-muted text-center py-8">
-        No condition data yet
-      </p>
-    );
+    return <ChartEmpty label="condition data" icon={Package} />;
   }
 
   const total = data.reduce((sum, d) => sum + d.count, 0);

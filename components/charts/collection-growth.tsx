@@ -12,6 +12,8 @@ import {
   YAxis,
 } from "recharts";
 import { formatChartMonth, formatChartMonthShort } from "@/utils/date";
+import { TrendingUp } from "lucide-react";
+import { ChartEmpty } from "./chart-empty";
 
 type CollectionGrowthProps = {
   data: { month: string; added: number; total: number }[];
@@ -19,11 +21,7 @@ type CollectionGrowthProps = {
 
 export function CollectionGrowth({ data }: CollectionGrowthProps) {
   if (data.length === 0) {
-    return (
-      <p className="text-sm text-foreground-muted text-center py-8">
-        No collection data yet
-      </p>
-    );
+    return <ChartEmpty label="collection data" icon={TrendingUp} />;
   }
 
   return (

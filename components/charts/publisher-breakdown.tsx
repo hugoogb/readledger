@@ -11,6 +11,8 @@ import {
   YAxis,
 } from "recharts";
 import { BaseTooltipProps } from "./types/shared.types";
+import { Building2 } from "lucide-react";
+import { ChartEmpty } from "./chart-empty";
 
 type PublisherBreakdownProps = {
   data: { name: string; volumes: number; spent: number }[];
@@ -52,11 +54,7 @@ function PublisherTooltip({ active, payload, label }: BaseTooltipProps) {
 
 export function PublisherBreakdown({ data }: PublisherBreakdownProps) {
   if (data.length === 0) {
-    return (
-      <p className="text-sm text-foreground-muted text-center py-8">
-        No publisher data yet
-      </p>
-    );
+    return <ChartEmpty label="publisher data" icon={Building2} />;
   }
 
   return (
