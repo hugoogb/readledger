@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Modal } from "@/components/ui/modal";
 import { useToggleSet } from "@/hooks/use-toggle-set";
 import type { Volume } from "@/lib/generated/prisma/browser";
-import { BookMarked, Check, Loader2, Sparkles } from "lucide-react";
+import { BookMarked, Check, Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -193,17 +193,12 @@ export function BulkSetReadModal({ volumes }: BulkSetReadModalProps) {
             <Button
               type="submit"
               variant="success"
-              disabled={isLoading || selectedCount === 0}
+              loading={isLoading}
+              disabled={selectedCount === 0}
               className="flex-1 gap-2"
             >
-              {isLoading ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
-              ) : (
-                <>
-                  <Check className="w-4 h-4" />
-                  Mark {selectedCount} as Read
-                </>
-              )}
+              {!isLoading && <Check className="w-4 h-4" />}
+              Mark {selectedCount} as Read
             </Button>
           </div>
         </form>

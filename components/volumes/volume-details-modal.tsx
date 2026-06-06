@@ -36,7 +36,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useTransition } from "react";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -58,6 +58,9 @@ export function VolumeDetailsModal({
   onClose,
 }: VolumeDetailsModalProps) {
   const router = useRouter();
+  // Pending state for the secondary actions (toggle read / wishlist / remove)
+  // which run outside react-hook-form's submit lifecycle.
+  const [isActionPending, startAction] = useTransition();
 
   const {
     register,
@@ -135,55 +138,61 @@ export function VolumeDetailsModal({
     }
   };
 
-  const handleRemoveOwned = async () => {
-    try {
-      const input: UpdateVolumeInput = {
-        owned: false,
-        read: false,
-        pricePaid: null,
-        condition: null,
-        storeId: null,
-        purchaseDate: null,
-        readDate: null,
-      };
+  const handleRemoveOwned = () => {
+    startAction(async () => {
+      try {
+        const input: UpdateVolumeInput = {
+          owned: false,
+          read: false,
+          pricePaid: null,
+          condition: null,
+          storeId: null,
+          purchaseDate: null,
+          readDate: null,
+        };
 
-      await updateVolume(volume.id, input);
-      toast.success(`Volume ${volume.volumeNumber} removed from collection`);
-      router.refresh();
-      onClose();
-    } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Failed to remove volume",
-      );
-    }
+        await updateVolume(volume.id, input);
+        toast.success(`Volume ${volume.volumeNumber} removed from collection`);
+        router.refresh();
+        onClose();
+      } catch (err) {
+        toast.error(
+          err instanceof Error ? err.message : "Failed to remove volume",
+        );
+      }
+    });
   };
 
-  const handleToggleRead = async (e: React.MouseEvent) => {
+  const handleToggleRead = (e: React.MouseEvent) => {
     e.preventDefault();
-    try {
-      await toggleVolumeRead(volume.id);
-      toast.success(`Volume ${volume.volumeNumber} updated`);
-      router.refresh();
-      onClose();
-    } catch {
-      toast.error("Failed to update volume");
-    }
+    startAction(async () => {
+      try {
+        await toggleVolumeRead(volume.id);
+        toast.success(`Volume ${volume.volumeNumber} updated`);
+        router.refresh();
+        onClose();
+      } catch {
+        toast.error("Failed to update volume");
+      }
+    });
   };
 
-  const handleToggleWishlist = async (e: React.MouseEvent) => {
+  const handleToggleWishlist = (e: React.MouseEvent) => {
     e.preventDefault();
-    try {
-      await toggleWishlist(volume.id);
-      toast.success(
-        volume.wishlist
-          ? `Volume ${volume.volumeNumber} removed from wishlist`
-          : `Volume ${volume.volumeNumber} added to wishlist`,
-      );
-      router.refresh();
-      onClose();
-    } catch {
-      toast.error("Failed to update wishlist");
-    }
+    startAction(async () => {
+      try {
+        await toggleWishlist(volume.id);
+        toast.success(
+          volume.wishlist
+            ? `Volume ${volume.volumeNumber} removed from wishlist`
+            : `Volume ${volume.volumeNumber} added to wishlist`,
+        );
+        router.refresh();
+        onClose();
+      } catch {
+        toast.error("Failed to update wishlist");
+      }
+    });
   };
 
   // eslint-disable-next-line react-hooks/incompatible-library
@@ -255,6 +264,7 @@ export function VolumeDetailsModal({
                 <Button
                   size="sm"
                   onClick={handleToggleRead}
+                  loading={isActionPending}
                   variant={isRead ? "success" : "secondary"}
                   className="rounded-md"
                   aria-label={`Mark volume ${volume.volumeNumber} as ${isRead ? "unread" : "read"}`}
@@ -268,6 +278,7 @@ export function VolumeDetailsModal({
                 <Button
                   size="sm"
                   onClick={handleToggleWishlist}
+                  loading={isActionPending}
                   variant="secondary"
                   className={`rounded-md ${isWishlisted ? "bg-error text-white hover:bg-error/90" : ""}`}
                   aria-label={`${isWishlisted ? "Remove" : "Add"} volume ${volume.volumeNumber} ${isWishlisted ? "from" : "to"} wishlist`}
@@ -411,24 +422,26 @@ export function VolumeDetailsModal({
               variant="destructive"
               type="button"
               onClick={handleRemoveOwned}
+              loading={isActionPending}
               disabled={isSubmitting}
               className="px-3"
               aria-label="Remove from collection"
             >
-              <Trash2 className="w-5 h-5" />
+              {!isActionPending && <Trash2 className="w-5 h-5" />}
             </Button>
           )}
           <Button
             variant="outline"
             type="button"
             onClick={onClose}
+            disabled={isSubmitting || isActionPending}
             className="flex-1"
           >
             Cancel
           </Button>
           <Button
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || isActionPending}
             className="flex-1 gap-2"
           >
             {isSubmitting ? (

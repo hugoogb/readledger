@@ -4,8 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { statusOptions } from "@/lib/constants";
-import { Search } from "lucide-react";
+import { Loader2, Search } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useRef, useTransition } from "react";
 
 const statusFilters = [
   { value: "", label: "All" },
@@ -28,6 +29,9 @@ export function SeriesFilters() {
   const currentSearch = searchParams.get("q") || "";
   const currentSort = searchParams.get("sort") || "";
 
+  const [isPending, startTransition] = useTransition();
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   function updateParams(key: string, value: string) {
     const params = new URLSearchParams(searchParams.toString());
     if (value) {
@@ -39,8 +43,24 @@ export function SeriesFilters() {
     if (key !== "page") {
       params.delete("page");
     }
-    router.push(`/dashboard/series?${params.toString()}`);
+    startTransition(() => {
+      router.push(`/dashboard/series?${params.toString()}`);
+    });
   }
+
+  // Debounce the free-text search so we don't navigate on every keystroke.
+  function handleSearchChange(value: string) {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      updateParams("q", value);
+    }, 350);
+  }
+
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, []);
 
   return (
     <div className="flex flex-col gap-4">
@@ -48,9 +68,15 @@ export function SeriesFilters() {
         {/* Search */}
         <Input
           id="series-search"
-          icon={<Search className="w-5 h-5" />}
+          icon={
+            isPending ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : (
+              <Search className="w-5 h-5" />
+            )
+          }
           defaultValue={currentSearch}
-          onChange={(e) => updateParams("q", e.target.value)}
+          onChange={(e) => handleSearchChange(e.target.value)}
           placeholder="Search series..."
           className="flex-1"
         />
@@ -71,17 +97,21 @@ export function SeriesFilters() {
       </div>
 
       {/* Status Filter */}
-      <div className="flex gap-2 overflow-x-auto no-scrollbar">
-        {statusFilters.map((filter) => (
-          <Button
-            key={filter.value}
-            variant={currentStatus === filter.value ? "default" : "secondary"}
-            onClick={() => updateParams("status", filter.value)}
-            className="whitespace-nowrap h-10"
-          >
-            {filter.label}
-          </Button>
-        ))}
+      <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-1 px-1">
+        {statusFilters.map((filter) => {
+          const isActive = currentStatus === filter.value;
+          return (
+            <Button
+              key={filter.value}
+              variant={isActive ? "default" : "secondary"}
+              onClick={() => updateParams("status", filter.value)}
+              aria-pressed={isActive}
+              className="whitespace-nowrap h-10 transition-all"
+            >
+              {filter.label}
+            </Button>
+          );
+        })}
       </div>
     </div>
   );
