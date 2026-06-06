@@ -76,12 +76,16 @@ export function Modal({
         aria-hidden="true"
       />
 
-      {/* Modal — full-width bottom sheet on mobile, centered card on sm+ */}
+      {/* Modal — full-width bottom sheet on mobile, centered card on sm+.
+          Flex column: fixed header + single vertically-scrolling body. The
+          panel clips its own overflow so neither axis can spawn a scrollbar
+          on the panel itself (`overflow-y-auto` alone would force
+          `overflow-x: auto`, producing a stray horizontal scrollbar). */}
       <div
-        className={`relative w-full ${maxWidthClasses[maxWidth]} bg-background-secondary border border-border max-h-[92vh] sm:max-h-[90vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl pb-[max(1.5rem,env(safe-area-inset-bottom))] animate-slide-up sm:animate-scale-in`}
+        className={`relative flex w-full ${maxWidthClasses[maxWidth]} flex-col bg-background-secondary border border-border max-h-[92dvh] sm:max-h-[90dvh] overflow-hidden rounded-t-2xl sm:rounded-2xl animate-slide-up sm:animate-scale-in`}
       >
-        {/* Sticky header (with mobile drag-handle affordance) */}
-        <div className="sticky top-0 z-10 bg-background-secondary border-b border-border/60">
+        {/* Header (with mobile drag-handle affordance) */}
+        <div className="shrink-0 bg-background-secondary border-b border-border/60">
           <div className="sm:hidden flex justify-center pt-3 pb-1">
             <span
               className="h-1.5 w-10 rounded-full bg-border-hover"
@@ -104,7 +108,11 @@ export function Modal({
             </button>
           </div>
         </div>
-        <div className="px-6 pt-5">{children}</div>
+        {/* Scrollable body — vertical only; horizontal overflow is clipped so
+            wide children never produce a horizontal scrollbar. */}
+        <div className="flex-1 overflow-y-auto overflow-x-hidden px-6 pt-5 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+          {children}
+        </div>
       </div>
     </div>,
     document.body,
