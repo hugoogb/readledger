@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useTransition } from "react";
 
 type PaginationProps = {
   currentPage: number;
@@ -19,6 +20,7 @@ export function Pagination({
 }: PaginationProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [isPending, startTransition] = useTransition();
 
   function goToPage(page: number) {
     const params = new URLSearchParams(searchParams.toString());
@@ -27,7 +29,9 @@ export function Pagination({
     } else {
       params.set("page", String(page));
     }
-    router.push(`/dashboard/series?${params.toString()}`);
+    startTransition(() => {
+      router.push(`/dashboard/series?${params.toString()}`);
+    });
   }
 
   const start = (currentPage - 1) * pageSize + 1;
@@ -56,12 +60,15 @@ export function Pagination({
       <p className="text-sm text-foreground-muted">
         Showing {start}-{end} of {totalCount} series
       </p>
-      <div className="flex items-center gap-1">
+      <div
+        className={`flex items-center gap-1 transition-opacity ${isPending ? "opacity-60" : ""}`}
+        aria-busy={isPending || undefined}
+      >
         <Button
           variant="outline"
           size="icon"
           onClick={() => goToPage(currentPage - 1)}
-          disabled={currentPage <= 1}
+          disabled={currentPage <= 1 || isPending}
           className="w-9 h-9"
           aria-label="Previous page"
         >
@@ -81,6 +88,8 @@ export function Pagination({
               key={page}
               variant={page === currentPage ? "default" : "outline"}
               onClick={() => goToPage(page)}
+              disabled={isPending}
+              aria-current={page === currentPage ? "page" : undefined}
               className="w-9 h-9 p-0"
             >
               {page}
@@ -92,7 +101,7 @@ export function Pagination({
           variant="outline"
           size="icon"
           onClick={() => goToPage(currentPage + 1)}
-          disabled={currentPage >= totalPages}
+          disabled={currentPage >= totalPages || isPending}
           className="w-9 h-9"
           aria-label="Next page"
         >
