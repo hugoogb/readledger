@@ -3,7 +3,7 @@
 import { toggleWishlist } from "@/actions/wishlist";
 import { Heart, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
 type WishlistActionsProps = {
@@ -17,8 +17,12 @@ type WishlistActionsProps = {
 export function WishlistActions({ volume }: WishlistActionsProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  // Optimistically collapse the chip on click; the server revalidation then
+  // removes it for good. Restored only if the action fails.
+  const [removing, setRemoving] = useState(false);
 
   const handleRemove = () => {
+    setRemoving(true);
     startTransition(async () => {
       try {
         await toggleWishlist(volume.id);
@@ -26,6 +30,7 @@ export function WishlistActions({ volume }: WishlistActionsProps) {
         router.refresh();
       } catch {
         toast.error("Failed to update wishlist");
+        setRemoving(false);
       }
     });
   };
@@ -36,7 +41,9 @@ export function WishlistActions({ volume }: WishlistActionsProps) {
       onClick={handleRemove}
       disabled={isPending}
       aria-label={`Remove volume ${volume.volumeNumber} from wishlist`}
-      className="group relative flex items-center gap-2 px-3 py-2 rounded-lg bg-background-tertiary/50 border border-border hover:border-error/50 hover:bg-error/5 transition-all cursor-pointer disabled:opacity-50"
+      className={`group relative flex items-center gap-2 px-3 py-2 rounded-lg bg-background-tertiary/50 border border-border hover:border-error/50 hover:bg-error/5 transition-all duration-200 cursor-pointer disabled:cursor-default ${
+        removing ? "opacity-0 scale-90 pointer-events-none" : "opacity-100"
+      }`}
     >
       {isPending ? (
         <Loader2 className="w-3.5 h-3.5 animate-spin text-foreground-muted" />

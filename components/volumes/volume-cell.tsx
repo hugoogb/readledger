@@ -1,9 +1,7 @@
 "use client";
 
-import { memo, useState, useTransition } from "react";
+import { memo, useState } from "react";
 
-import { toggleVolumeRead } from "@/actions/volumes";
-import { toggleWishlist } from "@/actions/wishlist";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { SeriesDefaults, VolumeWithStore } from "@/types";
@@ -16,7 +14,6 @@ import {
   ShoppingBag,
 } from "lucide-react";
 import Image from "next/image";
-import { toast } from "sonner";
 import { VolumeDetailsModal } from "./volume-details-modal";
 
 type UserStore = { id: string; name: string };
@@ -25,42 +22,27 @@ type VolumeCellProps = {
   volume: VolumeWithStore;
   seriesDefaults?: SeriesDefaults;
   stores?: UserStore[];
+  onToggleRead: (volume: VolumeWithStore) => void;
+  onToggleWishlist: (volume: VolumeWithStore) => void;
 };
 
 export const VolumeCell = memo(function VolumeCell({
   volume,
   seriesDefaults,
   stores,
+  onToggleRead,
+  onToggleWishlist,
 }: VolumeCellProps) {
-  const [isPending, startTransition] = useTransition();
   const [showModal, setShowModal] = useState(false);
 
   const handleToggleRead = (e: React.MouseEvent) => {
     e.stopPropagation();
-    startTransition(async () => {
-      try {
-        await toggleVolumeRead(volume.id);
-        toast.success(`Volume ${volume.volumeNumber} updated`);
-      } catch {
-        toast.error("Failed to update volume");
-      }
-    });
+    onToggleRead(volume);
   };
 
   const handleToggleWishlist = (e: React.MouseEvent) => {
     e.stopPropagation();
-    startTransition(async () => {
-      try {
-        await toggleWishlist(volume.id);
-        toast.success(
-          volume.wishlist
-            ? `Volume ${volume.volumeNumber} removed from wishlist`
-            : `Volume ${volume.volumeNumber} added to wishlist`,
-        );
-      } catch {
-        toast.error("Failed to update wishlist");
-      }
-    });
+    onToggleWishlist(volume);
   };
 
   const handleOpenModal = (e: React.MouseEvent) => {
@@ -88,7 +70,7 @@ export const VolumeCell = memo(function VolumeCell({
         className={`
           group relative aspect-3/4 rounded-xl overflow-hidden cursor-pointer
           transition-all duration-200 w-full text-left bg-transparent p-0
-          ${isPending ? "opacity-50" : ""}
+          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background
           ${
             isOwned
               ? isRead
@@ -211,17 +193,16 @@ export const VolumeCell = memo(function VolumeCell({
           </div>
         )}
 
-        {/* Mobile tap hint */}
-        <div className="sm:hidden absolute inset-x-0 bottom-0 h-6 bg-gradient-to-t from-black/30 to-transparent rounded-b-xl pointer-events-none" />
-
-        {/* Action Buttons - Bottom Right */}
-        <div className="hidden sm:flex absolute bottom-1 right-1 z-20 items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+        {/* Action Buttons - Bottom Right.
+            On touch devices there's no hover, so the buttons are always
+            visible; on sm+ pointers they reveal on hover/focus to keep covers
+            clean. */}
+        <div className="flex absolute bottom-1 right-1 z-20 items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-within:opacity-100 transition-opacity">
           {!isOwned ? (
             <>
               <Button
                 size="icon-sm"
                 onClick={handleToggleWishlist}
-                disabled={isPending}
                 variant="secondary"
                 className={`rounded-md ${isWishlisted ? "bg-error text-white hover:bg-error/90" : ""}`}
                 aria-label={`${isWishlisted ? "Remove" : "Add"} volume ${volume.volumeNumber} ${isWishlisted ? "from" : "to"} wishlist`}
@@ -233,7 +214,6 @@ export const VolumeCell = memo(function VolumeCell({
               <Button
                 size="icon-sm"
                 onClick={handleOpenModal}
-                disabled={isPending}
                 variant="secondary"
                 className="rounded-md"
                 aria-label={`Mark volume ${volume.volumeNumber} as owned`}
@@ -245,7 +225,6 @@ export const VolumeCell = memo(function VolumeCell({
             <Button
               size="icon-sm"
               onClick={handleToggleRead}
-              disabled={isPending}
               variant={isRead ? "success" : "secondary"}
               className="rounded-md"
               aria-label={`Mark volume ${volume.volumeNumber} as ${isRead ? "unread" : "read"}`}
