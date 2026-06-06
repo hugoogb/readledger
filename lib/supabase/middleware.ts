@@ -46,13 +46,16 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Redirect authenticated users away from auth pages
-  const authRoutes = ["/login", "/register"];
-  const isAuthRoute = authRoutes.some(
-    (route) => request.nextUrl.pathname === route,
+  // Redirect authenticated users away from the public landing and auth pages
+  // straight to their dashboard. The landing page only serves logged-out
+  // visitors; a signed-in user opening "/" should land in the app, not on a
+  // marketing page that asks them to sign in again.
+  const publicEntryRoutes = ["/", "/login", "/register"];
+  const isPublicEntryRoute = publicEntryRoutes.includes(
+    request.nextUrl.pathname,
   );
 
-  if (isAuthRoute && user) {
+  if (isPublicEntryRoute && user) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);
