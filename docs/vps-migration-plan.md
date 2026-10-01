@@ -180,7 +180,7 @@ UPDATE users SET email = lower(trim(email)) WHERE email <> lower(trim(email));
 New env vars:
 - `AUTH_SECRET` (32+ random bytes, the HMAC key)
 - `BREVO_API_KEY`
-- `EMAIL_FROM` (e.g. `ReadLedger <login@readledger.app>`)
+- `EMAIL_FROM` (e.g. `ReadLedger <hello@readledger.app>`)
 - `DATABASE_URL`: the only DB URL left. `DIRECT_URL` is removed from `lib/prisma.ts` and `prisma.config.ts`.
 
 ### Hosting-related code changes (details deferred to the deploy discussion)
@@ -190,7 +190,7 @@ New env vars:
 ### Email provider: Brevo
 - **Free plan:** 300 emails/day. Check that against your real login volume.
 - **Sending:** use the transactional HTTP API (`POST https://api.brevo.com/v3/smtp/email`, `api-key` header) through a plain `fetch` in `lib/email.ts`, so no SDK is needed. Their SMTP relay would also work, but the API is simpler and gives clearer errors.
-- **Domain:** authenticate `readledger.app` in Brevo with its DKIM record and verification code, plus SPF and a DMARC record (`p=none` to start). Send from something like `ReadLedger <login@readledger.app>`.
+- **Domain:** authenticate `readledger.app` in Brevo with its DKIM record and verification code, plus SPF and a DMARC record (`p=none` to start). Send from something like `ReadLedger <hello@readledger.app>`.
 - **Before the migration:** confirm the Brevo account has transactional sending activated.
 - **Don't self-host SMTP.** VPS IPs have poor sending reputation.
 
@@ -337,9 +337,10 @@ Nothing open.
 - [x] **Containerised**: standalone image, `/health`, migrations via `/migrate`, deploy workflow; `vercel.json` disables Vercel git deploys
 - [x] **VPS app created**: `new-app.sh readledger --host readledger.app --pages --no-caddy --no-dns`; `.env` has `AUTH_SECRET`, `EMAIL_FROM`, `TZ`
 - [x] **Rehearsal on real data**: Supabase dump restored into the VPS DB (RLS policies, `ROW SECURITY` and `rls_auto_enable()` excluded from the TOC); counts and per-user aggregates identical; auth migration applied; container healthy (not yet routed)
-- [ ] Cloudflare zone `readledger.app` + Vercel nameservers → Cloudflare (same pattern as `hugoogb.dev`)
+- [x] Cloudflare zone `readledger.app` active, Vercel nameservers → Cloudflare. Temporary DNS-only apex A → Vercel (76.76.21.21) until cutover; `cf_add_record` replaces it in place
 - [ ] Origin certificate → `/srv/edge/certs/readledger.app.{pem,key}`
-- [ ] Brevo: authenticate `readledger.app`, sender `login@readledger.app`, dedicated API key in `/srv/apps/readledger/.env`
+- [x] Brevo: `readledger.app` authenticated (DKIM, brevo-code, SPF, DMARC); sender `ReadLedger <hello@readledger.app>` active
+- [ ] Brevo API key in `/srv/apps/readledger/.env`
 - [ ] GitHub secrets `TS_OAUTH_CLIENT_ID`, `TS_OAUTH_SECRET`, `VPS_HOST` (= 100.118.87.75)
 - [ ] Cutover (runbook below)
 
