@@ -340,7 +340,8 @@ Nothing open.
 - [x] Cloudflare zone `readledger.app` active, Vercel nameservers → Cloudflare. Temporary DNS-only apex A → Vercel (76.76.21.21) until cutover; `cf_add_record` replaces it in place
 - [ ] Origin certificate → `/srv/edge/certs/readledger.app.{pem,key}`
 - [x] Brevo: `readledger.app` authenticated (DKIM, brevo-code, SPF, DMARC); sender `ReadLedger <hello@readledger.app>` active
-- [ ] Brevo API key in `/srv/apps/readledger/.env`
+- [x] Brevo API key in `/srv/apps/readledger/.env`
+- [x] **End-to-end on the VPS** (2026-10-01): real code emailed via Brevo from `hello@readledger.app` → received → logged into a migrated account with its data intact
 - [ ] GitHub secrets `TS_OAUTH_CLIENT_ID`, `TS_OAUTH_SECRET`, `VPS_HOST` (= 100.118.87.75)
 - [ ] Cutover (runbook below)
 
