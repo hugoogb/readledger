@@ -346,8 +346,19 @@ Nothing open.
 - [x] Brevo: `readledger.app` authenticated (DKIM, brevo-code, SPF, DMARC); sender `ReadLedger <hello@readledger.app>` active
 - [x] Brevo API key in `/srv/apps/readledger/.env`
 - [x] **End-to-end on the VPS** (2026-10-01): real code emailed via Brevo from `hello@readledger.app` → received → logged into a migrated account with its data intact
-- [ ] GitHub secrets `TS_OAUTH_CLIENT_ID`, `TS_OAUTH_SECRET`, `VPS_HOST` (= 100.118.87.75)
-- [ ] Cutover (runbook below)
+- [x] GitHub secrets `TS_OAUTH_CLIENT_ID`, `TS_OAUTH_SECRET`, `VPS_HOST`
+- [x] **Cutover done 2026-10-01** (~80 s downtime: Vercel paused 18:59:06 UTC, live on the VPS 19:00:27 UTC)
+  - Final dump restored. Counts, per-user aggregates and every user row are identical to Supabase.
+  - The apex record was flipped with `cf_add_record`. A production login with a real emailed code worked.
+  - PR #5 merged. The first CI deploy (run 36911337291) passed on the first try; the VPS runs the GHCR image.
+  - All dumps (which contain user emails) were deleted locally and on the VPS.
+
+### After cutover
+- [ ] Day 0–2: watch `docker logs readledger` and the Brevo delivery stats
+- [ ] Confirm the nightly backup includes the `readledger` DB, and restore it once to a scratch DB
+- [ ] Day 30 (≈ 2026-10-31): take a final archive dump of Supabase (`public` + `auth`), then delete the Supabase project; delete the Vercel project (currently **paused**, which shows a 503 to anyone still resolving old DNS); remove Supabase credentials from local `.env`
+- [ ] Rewrite `DEPLOYMENT.md` for the VPS platform (it still describes Vercel/Supabase)
+- [ ] Optional: "sign out of all devices" in Settings
 
 ### Cutover runbook (≈15 min)
 1. Caddy block for `readledger.app` (+ `www` redirect) with `header_up X-Real-IP {client_ip}`; validate and reload.
