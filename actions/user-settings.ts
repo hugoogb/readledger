@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
+import { displayNameSchema } from "@/lib/validations";
 
 export async function getUserSettings() {
   const user = await requireUser();
@@ -24,4 +25,23 @@ export async function updateCurrency(currency: string) {
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/series");
   revalidatePath("/dashboard/profile");
+}
+
+/**
+ * `null` means "never asked" (shows the first-login prompt); an empty string
+ * means the user chose not to set a name, so the prompt stays dismissed.
+ */
+export async function updateDisplayName(name: string) {
+  const user = await requireUser();
+  const parsed = displayNameSchema.safeParse(name);
+  if (!parsed.success) {
+    throw new Error(parsed.error.issues[0].message);
+  }
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { name: parsed.data },
+  });
+
+  revalidatePath("/dashboard", "layout");
 }

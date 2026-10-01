@@ -38,9 +38,9 @@ Existing tools didn't fully address this workflow, so ReadLedger was built as a 
 
 - **Framework:** [Next.js 16](https://nextjs.org/) (App Router, Server Components, Server Actions)
 - **UI:** [React 19](https://react.dev/) + [Tailwind CSS 4](https://tailwindcss.com/)
-- **Database:** PostgreSQL via [Supabase](https://supabase.com/)
+- **Database:** PostgreSQL (self-hosted)
+- **Auth:** passwordless email codes (custom, see `lib/auth/`)
 - **ORM:** [Prisma 7](https://www.prisma.io/)
-- **Auth:** Supabase Auth (email/password) with SSR session management
 - **Validation:** [Zod 4](https://zod.dev/)
 - **Charts:** [Recharts](https://recharts.org/)
 - **Language:** TypeScript

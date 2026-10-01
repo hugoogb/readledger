@@ -41,22 +41,20 @@ export const bulkSetReadSchema = z.object({
   volumeIds: z.array(z.string()).min(1, "Select at least one volume"),
 });
 
-export const signUpSchema = z.object({
-  name: z.string().trim().min(1, "Name is required").max(100),
-  email: z.string().email("Invalid email address"),
-  password: z
-    .string()
-    .min(8, "Password must be at least 8 characters")
-    .max(72, "Password is too long"),
-});
+export const emailSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .max(254, "Email is too long")
+  .pipe(z.email("Enter a valid email address"));
 
-export const signInSchema = z.object({
-  email: z.string().email("Invalid email address"),
-  password: z.string().min(1, "Password is required"),
-});
+export const otpSchema = z.string().regex(/^\d{6}$/, "Enter the 6-digit code");
 
-export type SignUpSchema = z.infer<typeof signUpSchema>;
-export type SignInSchema = z.infer<typeof signInSchema>;
+export const displayNameSchema = z
+  .string()
+  .trim()
+  .max(100, "Name must be 100 characters or less");
+
 export type SeriesSchema = z.infer<typeof seriesSchema>;
 export type VolumeSchema = z.infer<typeof volumeSchema>;
 export type BulkMarkOwnedSchema = z.infer<typeof bulkMarkOwnedSchema>;

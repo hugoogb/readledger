@@ -1,0 +1,152 @@
+# Deploy: GitHub Actions builds, GHCR stores, the VPS pulls.
+# Platform contract: infra-setup/github-workflow/README.md.
+#
+# Pushing to master deploys. `workflow_dispatch` with a tag rolls back to an image
+# that already exists, without building.
+#
+# Repository secrets required:
+#   TS_OAUTH_CLIENT_ID / TS_OAUTH_SECRET   join the tailnet as tag:ci
+#   VPS_HOST                               the server's tailnet IP (100.x.y.z)
+#
+# There is deliberately NO SSH key: the server runs Tailscale SSH and admits tag:ci
+# by tailnet identity.
+name: deploy
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Roll back to an existing image tag (a commit SHA). Leave empty to build and deploy this ref."
+        required: false
+        type: string
+
+# One deploy at a time, never cancelled: a half-applied migration is worse than
+# waiting for the run in front to finish.
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  # Must match the name passed to new-app.sh: container, compose project,
+  # database and image name at once.
+  APP_NAME: readledger
+  APP_DIR: /srv/apps/readledger
+  IMAGE: ghcr.io/${{ github.repository_owner }}/readledger
+  PUBLIC_URL: https://readledger.app
+  DEPLOY_TAG: ${{ inputs.tag || github.sha }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      # DEPLOY_TAG ends up in a remote shell; only accept a commit SHA.
+      - name: Validate the tag
+        env:
+          TAG: ${{ env.DEPLOY_TAG }}
+        run: |
+          [[ "$TAG" =~ ^[0-9a-f]{7,40}$ ]] || { echo "::error::tag must be a commit SHA"; exit 1; }
+
+      - uses: actions/checkout@v4
+
+      # Cheap gate before anything ships. Skipped for rollbacks, which redeploy
+      # bytes that already passed.
+      - if: ${{ !inputs.tag }}
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11
+      - if: ${{ !inputs.tag }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Unit tests
+        if: ${{ !inputs.tag }}
+        run: |
+          pnpm install --frozen-lockfile
+          DIRECT_URL=postgresql://ci@localhost/ci pnpm db:generate
+          pnpm test:run
+
+      - if: ${{ !inputs.tag }}
+        uses: docker/setup-buildx-action@v3
+
+      - if: ${{ !inputs.tag }}
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Native amd64, same architecture as the VPS.
+      - name: Build and push the image
+        if: ${{ !inputs.tag }}
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ env.IMAGE }}:${{ env.DEPLOY_TAG }}
+            ${{ env.IMAGE }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - uses: tailscale/github-action@v3
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:ci
+
+      # The action exits 0 even when `tailscale up` failed, which would surface
+      # later as an unexplained SSH timeout. Fail here while the cause is visible.
+      - name: Verify the tailnet join
+        run: |
+          if ! tailscale status; then
+            echo "::error::Not on the tailnet. Check TS_OAUTH_CLIENT_ID / TS_OAUTH_SECRET."
+            exit 1
+          fi
+
+      # accept-new is acceptable only because the connection rides inside
+      # WireGuard between two authenticated tailnet peers.
+      - name: Roll the container
+        env:
+          SSH_OPTS: -o StrictHostKeyChecking=accept-new -o ConnectTimeout=30
+        run: |
+          set -euo pipefail
+          # The remote script arrives on ssh's stdin (`bash -s`): any command that
+          # reads stdin would swallow the rest of the script and bash would exit 0.
+          # Hence `-T` and `</dev/null` on `compose run`, and the completion marker.
+          ssh $SSH_OPTS "hugo@${{ secrets.VPS_HOST }}" bash -s <<REMOTE | tee /tmp/roll.log
+          set -euo pipefail
+          cd "${APP_DIR}"
+          echo "TAG=${DEPLOY_TAG}" > .tag
+
+          docker compose --env-file .env --env-file .tag pull
+
+          # Migrations before the new container starts, against DIRECT_URL:
+          # PgBouncer's transaction pooling cannot run them.
+          docker compose --env-file .env --env-file .tag run --rm -T \
+            --entrypoint "" ${APP_NAME} \
+            sh -c 'cd /migrate && node node_modules/prisma/build/index.js migrate deploy' </dev/null
+
+          # --wait blocks on /health, which checks Postgres.
+          docker compose --env-file .env --env-file .tag up -d --wait
+
+          docker image prune -f
+          echo "___ROLL_COMPLETED___"
+          REMOTE
+
+          grep -q '___ROLL_COMPLETED___' /tmp/roll.log || {
+            echo "::error::The remote script stopped before its last line."
+            exit 1
+          }
+
+      - name: Assert the app answers through Cloudflare
+        run: curl -fsS --retry 12 --retry-delay 5 --retry-all-errors "${PUBLIC_URL}/health"

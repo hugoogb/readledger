@@ -18,8 +18,40 @@ model User {
   series     Series[]
   publishers Publisher[]
   stores     UserStore[]
+  sessions   Session[]
 
   @@map("users")
+}
+
+/// One-time login codes. Only an HMAC of the code is stored. `consumedAt` is
+/// set when a code is used *or* superseded by a newer one, so at most one
+/// code per email is ever live. Rows are kept ~1 day for send throttling.
+model OtpCode {
+  id         String    @id @default(uuid())
+  email      String
+  codeHash   String
+  attempts   Int       @default(0)
+  expiresAt  DateTime
+  consumedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([email, createdAt])
+  @@map("otp_codes")
+}
+
+/// Login sessions. The cookie holds a random token; only its SHA-256 is stored.
+model Session {
+  id         String   @id @default(uuid())
+  tokenHash  String   @unique
+  userId     String
+  expiresAt  DateTime
+  lastSeenAt DateTime @default(now())
+  userAgent  String?
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("sessions")
 }
 
 model Publisher {
