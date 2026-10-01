@@ -338,7 +338,10 @@ Nothing open.
 - [x] **VPS app created**: `new-app.sh readledger --host readledger.app --pages --no-caddy --no-dns`; `.env` has `AUTH_SECRET`, `EMAIL_FROM`, `TZ`
 - [x] **Rehearsal on real data**: Supabase dump restored into the VPS DB (RLS policies, `ROW SECURITY` and `rls_auto_enable()` excluded from the TOC); counts and per-user aggregates identical; auth migration applied; container healthy (not yet routed)
 - [x] Cloudflare zone `readledger.app` active, Vercel nameservers → Cloudflare. Temporary DNS-only apex A → Vercel (76.76.21.21) until cutover; `cf_add_record` replaces it in place
-- [ ] Origin certificate → `/srv/edge/certs/readledger.app.{pem,key}`
+- [x] Origin certificate (CSR generated on the box, key never left it) → `/srv/edge/certs/readledger.app.{pem,key}`, valid to 2041
+- [x] Platform scripts synced to the VPS (box was behind infra-setup master); Caddy block for `readledger.app` + `www.readledger.app` added with `caddy_add_site`; app redirects www → apex (308)
+- [ ] Cloudflare token (account-owned, id 89f785d1…) Zone Resources += `readledger.app` (dashboard only; MCP cannot manage tokens)
+- [ ] `www` A record via `cf_add_record` (needs the token scope)
 - [x] Brevo: `readledger.app` authenticated (DKIM, brevo-code, SPF, DMARC); sender `ReadLedger <hello@readledger.app>` active
 - [x] Brevo API key in `/srv/apps/readledger/.env`
 - [x] **End-to-end on the VPS** (2026-10-01): real code emailed via Brevo from `hello@readledger.app` → received → logged into a migrated account with its data intact
