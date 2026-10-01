@@ -77,20 +77,8 @@ function withCookies(response: NextResponse, request: NextRequest, session: Sess
 }
 
 export async function proxy(request: NextRequest) {
-  // Canonical host: the edge Caddy routes www.readledger.app here too (and
-  // passes the original Host through), so redirect it to the apex before
-  // doing any work. Exact match and a fixed target: never derive the
-  // destination from request input. Set fields on a cloned URL rather than
-  // building one from a string: `new URL("//evil.com/x", base)` would resolve
-  // a protocol-relative path to another site.
-  if ((request.headers.get("host") ?? "").toLowerCase() === "www.readledger.app") {
-    const url = request.nextUrl.clone();
-    url.protocol = "https:";
-    url.host = "readledger.app";
-    url.port = "";
-    return NextResponse.redirect(url, 308);
-  }
-
+  // www -> apex is a Cloudflare Redirect Rule on the readledger.app zone, so
+  // www requests never reach this server.
   const session = await resolveSession(request);
   const { pathname } = request.nextUrl;
 
