@@ -26,11 +26,15 @@ import { emailSchema, otpSchema } from "@/lib/validations";
 export type SendOtpResult = { email: string; error?: never } | { error: string; email?: never };
 
 /**
- * The reverse proxy must overwrite X-Real-IP with the connecting address.
- * X-Forwarded-For is not used: its left-most entry is client-controlled.
+ * Client IP for rate limiting. On the VPS platform the origin firewall only
+ * admits Cloudflare, which overwrites CF-Connecting-IP on every request, and
+ * the edge Caddy passes it through untouched, so it cannot be spoofed.
+ * X-Real-IP is the fallback for a proxy that sets it. X-Forwarded-For is never
+ * used: its left-most entry is client-controlled.
  */
 async function clientIp(): Promise<string> {
-  return (await headers()).get("x-real-ip") ?? "unknown";
+  const h = await headers();
+  return h.get("cf-connecting-ip") ?? h.get("x-real-ip") ?? "unknown";
 }
 
 export async function sendOtp(formData: FormData): Promise<SendOtpResult> {
