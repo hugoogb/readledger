@@ -43,10 +43,15 @@ FROM node:22-alpine AS runtime
 
 # Stored timestamps are UTC; keep server-side date formatting on UTC as it was
 # on Vercel.
+#
+# HOSTNAME=:: listens dual-stack. The platform's compose healthcheck probes
+# http://localhost:3000, and inside Alpine `localhost` resolves to ::1 first;
+# with 0.0.0.0 (IPv4 only) that probe is refused and the container never
+# turns healthy even though the app is fine.
 ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \
     PORT=3000 \
-    HOSTNAME=0.0.0.0 \
+    HOSTNAME=:: \
     TZ=UTC
 
 WORKDIR /app
