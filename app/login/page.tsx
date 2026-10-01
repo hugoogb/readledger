@@ -1,9 +1,9 @@
 "use client";
 
-import { signIn } from "@/actions/auth";
-import { BookOpen, Mail, Lock, ArrowRight, Loader2, Eye, EyeOff } from "lucide-react";
-import Link from "next/link";
-import { useActionState } from "react";
+import { sendOtp, verifyOtp } from "@/actions/auth";
+import { ArrowLeft, ArrowRight, BookOpen, KeyRound, Mail } from "lucide-react";
+import { useActionState, useEffect, useRef, useState, useTransition } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,24 +15,18 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-import { toast } from "sonner";
-import { useEffect, useState } from "react";
+const RESEND_COOLDOWN_S = 30;
 
 export default function LoginPage() {
-  const [showPassword, setShowPassword] = useState(false);
-  const [state, formAction, isPending] = useActionState(
-    async (_: { error?: string } | null, formData: FormData) => {
-      const result = await signIn(formData);
-      return result || null;
-    },
-    null,
-  );
+  // Set once a code has been sent; switches the form to the code step.
+  const [email, setEmail] = useState<string | null>(null);
+  const [cooldown, setCooldown] = useState(0);
 
   useEffect(() => {
-    if (state?.error) {
-      toast.error(state.error);
-    }
-  }, [state]);
+    if (cooldown <= 0) return;
+    const timer = setTimeout(() => setCooldown((s) => s - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [cooldown]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4 relative overflow-hidden">
@@ -56,88 +50,224 @@ export default function LoginPage() {
           </p>
         </div>
 
-        {/* Login form */}
         <Card className="animate-fade-in stagger-1 shadow-2xl shadow-accent/5">
-          <CardHeader>
-            <CardTitle className="text-2xl">Welcome back</CardTitle>
-            <CardDescription>
-              Enter your credentials to access your account
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form action={formAction} className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  required
-                  placeholder="you@example.com"
-                  icon={<Mail className="w-5 h-5" />}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  name="password"
-                  type={showPassword ? "text" : "password"}
-                  required
-                  placeholder="••••••••"
-                  icon={<Lock className="w-5 h-5" />}
-                  endIcon={
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="cursor-pointer hover:text-foreground transition-colors"
-                      aria-label={showPassword ? "Hide password" : "Show password"}
-                    >
-                      {showPassword ? (
-                        <EyeOff className="w-5 h-5" />
-                      ) : (
-                        <Eye className="w-5 h-5" />
-                      )}
-                    </button>
-                  }
-                />
-              </div>
-
-              {state?.error && (
-                <div className="p-4 bg-error/10 border border-error/20 rounded-xl text-error text-sm animate-in fade-in slide-in-from-top-2 duration-300">
-                  {state.error}
-                </div>
-              )}
-
-              <Button
-                type="submit"
-                disabled={isPending}
-                className="w-full h-12 text-lg shadow-lg shadow-accent/20"
-              >
-                {isPending ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                  <>
-                    Sign in
-                    <ArrowRight className="w-5 h-5 ml-2" />
-                  </>
-                )}
-              </Button>
-            </form>
-
-            <div className="mt-8 text-center text-sm text-foreground-muted">
-              Don&apos;t have an account?{" "}
-              <Link
-                href="/register"
-                className="text-accent hover:text-accent-hover font-semibold transition-colors underline-offset-4 hover:underline"
-              >
-                Sign up
-              </Link>
-            </div>
-          </CardContent>
+          {email === null ? (
+            <EmailStep
+              onSent={(sentTo) => {
+                setEmail(sentTo);
+                setCooldown(RESEND_COOLDOWN_S);
+              }}
+            />
+          ) : (
+            <CodeStep
+              email={email}
+              cooldown={cooldown}
+              onResent={() => setCooldown(RESEND_COOLDOWN_S)}
+              onChangeEmail={() => setEmail(null)}
+            />
+          )}
         </Card>
       </div>
     </div>
+  );
+}
+
+function ErrorBox({ message }: { message?: string }) {
+  if (!message) return null;
+  return (
+    <div
+      role="alert"
+      className="p-4 bg-error/10 border border-error/20 rounded-xl text-error text-sm animate-in fade-in slide-in-from-top-2 duration-300"
+    >
+      {message}
+    </div>
+  );
+}
+
+function EmailStep({ onSent }: { onSent: (email: string) => void }) {
+  const [state, formAction, isPending] = useActionState(
+    async (_: { error?: string } | null, formData: FormData) => {
+      const result = await sendOtp(formData);
+      if (result.email) {
+        onSent(result.email);
+        return null;
+      }
+      return { error: result.error };
+    },
+    null,
+  );
+
+  return (
+    <>
+      <CardHeader>
+        <CardTitle className="text-2xl">Sign in</CardTitle>
+        <CardDescription>
+          Enter your email and we&apos;ll send you a 6-digit code. New here? Your
+          account is created automatically.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form action={formAction} className="space-y-6">
+          <div className="space-y-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              name="email"
+              type="email"
+              inputMode="email"
+              autoComplete="email"
+              autoCapitalize="none"
+              spellCheck={false}
+              autoFocus
+              required
+              placeholder="you@example.com"
+              icon={<Mail className="w-5 h-5" />}
+            />
+          </div>
+
+          <ErrorBox message={state?.error} />
+
+          <Button
+            type="submit"
+            loading={isPending}
+            className="w-full h-12 text-lg shadow-lg shadow-accent/20"
+          >
+            Send code
+            {!isPending && <ArrowRight className="w-5 h-5" />}
+          </Button>
+        </form>
+
+        {/* Transition notice for users who signed up with a password. */}
+        <p className="mt-6 text-center text-xs text-foreground-muted">
+          ReadLedger no longer uses passwords. Your collection is still here,
+          just sign in with the code we email you.
+        </p>
+      </CardContent>
+    </>
+  );
+}
+
+function CodeStep({
+  email,
+  cooldown,
+  onResent,
+  onChangeEmail,
+}: {
+  email: string;
+  cooldown: number;
+  onResent: () => void;
+  onChangeEmail: () => void;
+}) {
+  const formRef = useRef<HTMLFormElement>(null);
+  const [code, setCode] = useState("");
+  const [isResending, startResend] = useTransition();
+  const [state, formAction, isPending] = useActionState(
+    async (_: { error?: string } | null, formData: FormData) => {
+      const result = await verifyOtp(formData);
+      // On success verifyOtp redirects and this never returns.
+      setCode("");
+      return result ?? null;
+    },
+    null,
+  );
+
+  function handleCodeChange(value: string) {
+    const digits = value.replace(/\D/g, "").slice(0, 6);
+    setCode(digits);
+    // Auto-submit on the 6th digit (typed, pasted or autofilled).
+    if (digits.length === 6 && !isPending) {
+      queueMicrotask(() => formRef.current?.requestSubmit());
+    }
+  }
+
+  function handleResend() {
+    startResend(async () => {
+      const formData = new FormData();
+      formData.set("email", email);
+      const result = await sendOtp(formData);
+      if (result.error) {
+        toast.error(result.error);
+      } else {
+        toast.success("New code sent");
+        onResent();
+      }
+    });
+  }
+
+  return (
+    <>
+      <CardHeader>
+        <CardTitle className="text-2xl">Check your email</CardTitle>
+        <CardDescription>
+          We sent a 6-digit code to{" "}
+          <span className="font-medium text-foreground [overflow-wrap:anywhere]">{email}</span>.
+          It expires in 10 minutes.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form ref={formRef} action={formAction} className="space-y-6">
+          <input type="hidden" name="email" value={email} />
+          <div className="space-y-2">
+            <Label htmlFor="code">Code</Label>
+            <Input
+              id="code"
+              name="code"
+              type="text"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              pattern="\d{6}"
+              maxLength={6}
+              autoFocus
+              required
+              value={code}
+              onChange={(e) => handleCodeChange(e.target.value)}
+              placeholder="123456"
+              aria-describedby="code-hint"
+              className="text-center text-2xl tracking-[0.5em] font-mono"
+              icon={<KeyRound className="w-5 h-5" />}
+            />
+            <p id="code-hint" className="text-xs text-foreground-muted">
+              Can&apos;t find it? Check your spam folder.
+            </p>
+          </div>
+
+          <ErrorBox message={state?.error} />
+
+          <Button
+            type="submit"
+            loading={isPending}
+            disabled={code.length !== 6}
+            className="w-full h-12 text-lg shadow-lg shadow-accent/20"
+          >
+            Sign in
+            {!isPending && <ArrowRight className="w-5 h-5" />}
+          </Button>
+        </form>
+
+        <div className="mt-6 flex items-center justify-between gap-2 text-sm">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={onChangeEmail}
+            className="-ml-3"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Different email
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={handleResend}
+            loading={isResending}
+            disabled={cooldown > 0}
+            className="-mr-3"
+          >
+            {cooldown > 0 ? `Resend in ${cooldown}s` : "Resend code"}
+          </Button>
+        </div>
+      </CardContent>
+    </>
   );
 }

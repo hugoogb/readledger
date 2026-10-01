@@ -1,11 +1,15 @@
+import { NamePrompt } from "@/components/account/name-prompt";
 import { MobileHeader } from "@/components/ui/mobile-header";
 import { SidebarFooter, SidebarNav } from "@/components/ui/sidebar";
+import { getCurrentUser } from "@/lib/auth";
 
-export default function DashboardLayout({
+export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const user = await getCurrentUser();
+
   return (
     <div className="min-h-screen bg-background">
       <a
@@ -25,7 +29,10 @@ export default function DashboardLayout({
       </aside>
 
       {/* Main content */}
-      <main id="main-content" className="pt-14 lg:pt-0 lg:ml-64 min-h-screen">{children}</main>
+      <main id="main-content" className="pt-14 lg:pt-0 lg:ml-64 min-h-screen">
+        {user?.name === null && <NamePrompt />}
+        {children}
+      </main>
     </div>
   );
 }

@@ -2,6 +2,7 @@ import { getPublishers } from "@/actions/publishers";
 import { getStores } from "@/actions/stores";
 import { PublisherList } from "@/components/settings/publisher-list";
 import { StoreList } from "@/components/settings/store-list";
+import { DisplayNameForm } from "@/components/account/display-name-form";
 import {
   Card,
   CardContent,
@@ -9,10 +10,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Building2, Store } from "lucide-react";
+import { requireUser } from "@/lib/auth";
+import { Building2, Store, UserRound } from "lucide-react";
 
 export default async function SettingsPage() {
-  const [publishers, stores] = await Promise.all([
+  const [user, publishers, stores] = await Promise.all([
+    requireUser(),
     getPublishers(),
     getStores(),
   ]);
@@ -22,11 +25,24 @@ export default async function SettingsPage() {
       <div className="mb-8 animate-fade-in">
         <h1 className="text-3xl font-bold">Settings</h1>
         <p className="text-foreground-muted mt-1">
-          Manage your publishers and stores
+          Manage your account, publishers and stores
         </p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-4xl">
+        <Card className="animate-fade-in lg:col-span-2">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <UserRound className="w-5 h-5" />
+              Account
+            </CardTitle>
+            <CardDescription>How your name appears in ReadLedger</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <DisplayNameForm initialName={user.name} />
+          </CardContent>
+        </Card>
+
         <Card className="animate-fade-in stagger-1">
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">

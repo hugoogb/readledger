@@ -64,7 +64,7 @@ export default function Home() {
               Sign in
             </Link>
             <Link
-              href="/register"
+              href="/login"
               className="bg-accent hover:bg-accent-hover text-white text-sm font-medium py-2 px-3 sm:px-4 rounded-xl transition-colors"
             >
               Get started
@@ -92,7 +92,7 @@ export default function Home() {
             </p>
             <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-3">
               <Link
-                href="/register"
+                href="/login"
                 className="w-full sm:w-auto bg-accent hover:bg-accent-hover text-white font-medium py-3 px-6 rounded-xl transition-colors flex items-center justify-center gap-2 shadow-lg shadow-accent/20"
               >
                 Start tracking — it&apos;s free
@@ -275,7 +275,7 @@ export default function Home() {
                   a few taps.
                 </p>
                 <Link
-                  href="/register"
+                  href="/login"
                   className="mt-8 inline-flex items-center justify-center gap-2 bg-accent hover:bg-accent-hover text-white font-medium py-3 px-6 rounded-xl transition-colors shadow-lg shadow-accent/20"
                 >
                   Create your free account
@@ -306,7 +306,7 @@ export default function Home() {
               Sign in
             </Link>
             <Link
-              href="/register"
+              href="/login"
               className="hover:text-foreground transition-colors"
             >
               Get started
