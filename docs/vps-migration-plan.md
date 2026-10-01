@@ -333,7 +333,25 @@ Nothing open.
 
 ## 9. Progress
 
-- [x] **Phase B.1: auth swap** (branch `feature/otp-auth`). Covered by unit tests, plus an end-to-end run on Postgres 17 (legacy user matched by email with the same id; new-user sign-up; name prompt; attempt cap; non-UTC DB timezone; stale-cookie handling)
-- [ ] Deploy design (Dockerfile, compose service, GitHub Actions, reverse-proxy `X-Real-IP`/`Host` headers), plus rewriting `DEPLOYMENT.md`
-- [ ] Brevo domain authentication
-- [ ] Phases C–F
+- [x] **Auth swap** (branch `feature/otp-auth`): unit tests, plus end-to-end runs on Postgres 17 and on a local Postgres + PgBouncer (transaction mode) replica of the platform
+- [x] **Containerised**: standalone image, `/health`, migrations via `/migrate`, deploy workflow; `vercel.json` disables Vercel git deploys
+- [x] **VPS app created**: `new-app.sh readledger --host readledger.app --pages --no-caddy --no-dns`; `.env` has `AUTH_SECRET`, `EMAIL_FROM`, `TZ`
+- [x] **Rehearsal on real data**: Supabase dump restored into the VPS DB (RLS policies, `ROW SECURITY` and `rls_auto_enable()` excluded from the TOC); counts and per-user aggregates identical; auth migration applied; container healthy (not yet routed)
+- [ ] Cloudflare zone `readledger.app` + Vercel nameservers → Cloudflare (same pattern as `hugoogb.dev`)
+- [ ] Origin certificate → `/srv/edge/certs/readledger.app.{pem,key}`
+- [ ] Brevo: authenticate `readledger.app`, sender `login@readledger.app`, dedicated API key in `/srv/apps/readledger/.env`
+- [ ] GitHub secrets `TS_OAUTH_CLIENT_ID`, `TS_OAUTH_SECRET`, `VPS_HOST` (= 100.118.87.75)
+- [ ] Cutover (runbook below)
+
+### Cutover runbook (≈15 min)
+1. Caddy block for `readledger.app` (+ `www` redirect) with `header_up X-Real-IP {client_ip}`; validate and reload.
+2. Freeze: pause the Vercel project.
+3. Final dump (`pg_dump --schema=public -Fc`) → drop/recreate `public` in the VPS DB → `pg_restore -L` with the filtered TOC → `migrate deploy` → restart.
+4. Verify: counts + per-user aggregates rounded to cents (`round(sum(...)::numeric, 2)`; raw float sums differ by summation order).
+5. DNS: apex A → VPS, proxied; `www` proxied. Log in with a real emailed code.
+6. Merge `feature/otp-auth` → `master` (CI deploy takes over).
+7. Day 30: archive a final Supabase dump, delete the Supabase project, remove the domain from the Vercel project.
+
+**Gotchas found during the rehearsal:**
+- The platform's compose healthcheck probes `localhost`, which resolves to `::1` in Alpine. The image therefore sets `HOSTNAME=::`; with `0.0.0.0` the container never goes healthy.
+- `pg_restore` must skip the `POLICY`, `ROW SECURITY`, `rls_auto_enable` and `SCHEMA public` entries.
