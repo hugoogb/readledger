@@ -77,6 +77,18 @@ function withCookies(response: NextResponse, request: NextRequest, session: Sess
 }
 
 export async function proxy(request: NextRequest) {
+  // Canonical host: the edge Caddy routes www.readledger.app here too (and
+  // passes the original Host through), so redirect it to the apex before
+  // doing any work.
+  const host = request.headers.get("host") ?? "";
+  if (host.startsWith("www.")) {
+    const { pathname, search } = request.nextUrl;
+    return NextResponse.redirect(
+      new URL(`${pathname}${search}`, `https://${host.slice(4)}`),
+      308,
+    );
+  }
+
   const session = await resolveSession(request);
   const { pathname } = request.nextUrl;
 
