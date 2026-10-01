@@ -68,4 +68,11 @@ export async function sendOtpEmail(to: string, code: string): Promise<void> {
     const body = await response.text().catch(() => "");
     throw new Error(`Brevo responded ${response.status}: ${body.slice(0, 300)}`);
   }
+
+  // The message ID is what Brevo's logs are searchable by; without this a
+  // successful send leaves no trace on our side.
+  const { messageId } = (await response.json().catch(() => ({}))) as {
+    messageId?: string;
+  };
+  logger.info("OTP email accepted by Brevo", { messageId });
 }
