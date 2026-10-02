@@ -5,6 +5,7 @@ import {
   getPublisherBreakdown,
   getStoreBreakdown,
   getConditionDistribution,
+  getUndatedOwnedCount,
 } from "@/actions/statistics";
 import { SpendingOverTime } from "@/components/charts/spending-over-time";
 import { StatusDistribution } from "@/components/charts/status-distribution";
@@ -20,13 +21,14 @@ export const metadata: Metadata = {
 };
 
 export default async function StatisticsPage() {
-  const [spending, statusDist, growth, publishers, stores, conditions] = await Promise.all([
+  const [spending, statusDist, growth, publishers, stores, conditions, undated] = await Promise.all([
     getSpendingOverTime(),
     getStatusDistribution(),
     getCollectionGrowth(),
     getPublisherBreakdown(),
     getStoreBreakdown(),
     getConditionDistribution(),
+    getUndatedOwnedCount(),
   ]);
 
   return (
@@ -44,6 +46,7 @@ export default async function StatisticsPage() {
         <div className="glass rounded-2xl p-6 animate-fade-in stagger-1">
           <h2 className="text-lg font-semibold mb-4">Spending Over Time</h2>
           <SpendingOverTime data={spending} />
+          <UndatedNote count={undated} />
         </div>
 
         {/* Status Distribution */}
@@ -56,6 +59,7 @@ export default async function StatisticsPage() {
         <div className="glass rounded-2xl p-6 animate-fade-in stagger-3">
           <h2 className="text-lg font-semibold mb-4">Collection Growth</h2>
           <CollectionGrowth data={growth} />
+          <UndatedNote count={undated} />
         </div>
 
         {/* Publisher Breakdown */}
@@ -77,5 +81,15 @@ export default async function StatisticsPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+function UndatedNote({ count }: { count: number }) {
+  if (count === 0) return null;
+  return (
+    <p className="text-xs text-foreground-muted mt-3">
+      {count} owned volume{count !== 1 ? "s have" : " has"} no purchase date
+      and {count !== 1 ? "aren't" : "isn't"} shown here.
+    </p>
   );
 }

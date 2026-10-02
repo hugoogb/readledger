@@ -17,6 +17,7 @@ import {
   PiggyBank,
   TrendingUp,
   Wallet,
+  XCircle,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -181,6 +182,13 @@ async function StatusAndRecentSection() {
               <span className="text-sm">On Hold</span>
             </div>
             <span className="font-semibold">{stats.byStatus.onHold}</span>
+          </div>
+          <div className="flex items-center justify-between py-2 border-b border-border">
+            <div className="flex items-center gap-2">
+              <XCircle className="w-4 h-4 text-error" />
+              <span className="text-sm">Dropped</span>
+            </div>
+            <span className="font-semibold">{stats.byStatus.dropped}</span>
           </div>
           <div className="flex items-center justify-between py-2">
             <div className="flex items-center gap-2">

@@ -23,6 +23,7 @@ import type { SeriesDefaults } from "@/types";
 import { formatDateForInput } from "@/utils/date";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
+  BookMarked,
   Calendar,
   Check,
   Euro,
@@ -86,6 +87,9 @@ export function VolumeDetailsModal({
       purchaseDate: (volume.owned
         ? formatDateForInput(volume.purchaseDate)
         : new Date().toISOString().split("T")[0]) as unknown as Date,
+      readDate: (volume.readDate
+        ? formatDateForInput(volume.readDate)
+        : undefined) as unknown as Date,
     },
   });
 
@@ -107,6 +111,9 @@ export function VolumeDetailsModal({
         purchaseDate: (volume.owned
           ? formatDateForInput(volume.purchaseDate)
           : new Date().toISOString().split("T")[0]) as unknown as Date,
+        readDate: (volume.readDate
+          ? formatDateForInput(volume.readDate)
+          : undefined) as unknown as Date,
       });
     }
   }, [isOpen, volume, seriesDefaults, reset]);
@@ -398,6 +405,24 @@ export function VolumeDetailsModal({
               />
             </FormField>
           </FormSection>
+
+          {isRead && (
+            <FormField
+              label="Read On"
+              htmlFor="readDate"
+              error={errors.readDate?.message}
+            >
+              <Input
+                id="readDate"
+                type="date"
+                {...register("readDate", {
+                  setValueAs: (v: string) => (v ? new Date(v) : null),
+                })}
+                icon={<BookMarked className="w-4 h-4" />}
+                error={!!errors.readDate}
+              />
+            </FormField>
+          )}
 
           <FormField
             label="Notes"

@@ -157,3 +157,16 @@ export async function getStoreBreakdown() {
     .map(([name, data]) => ({ name, ...data }))
     .sort((a, b) => b.count - a.count);
 }
+
+/** Owned volumes the date-based charts can't place (no purchaseDate). */
+export async function getUndatedOwnedCount() {
+  const user = await requireUser();
+
+  return prisma.volume.count({
+    where: {
+      series: { userId: user.id },
+      owned: true,
+      purchaseDate: null,
+    },
+  });
+}

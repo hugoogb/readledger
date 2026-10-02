@@ -3,14 +3,18 @@
 import { bulkSetRead } from "@/actions/volumes";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { FormField } from "@/components/ui/form-field";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Modal } from "@/components/ui/modal";
 import { useToggleSet } from "@/hooks/use-toggle-set";
 import type { Volume } from "@/lib/generated/prisma/browser";
-import { BookMarked, Check, Sparkles } from "lucide-react";
+import { BookMarked, Calendar, Check, Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
+
+const today = () => new Date().toISOString().split("T")[0];
 
 type BulkSetReadModalProps = {
   volumes: Volume[];
@@ -20,6 +24,7 @@ export function BulkSetReadModal({ volumes }: BulkSetReadModalProps) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [readDate, setReadDate] = useState(today);
 
   const unreadVolumes = volumes.filter((v) => v.owned && !v.read);
   const {
@@ -34,7 +39,9 @@ export function BulkSetReadModal({ volumes }: BulkSetReadModalProps) {
 
   const handleOpenChange = (open: boolean) => {
     setIsOpen(open);
-    if (!open) {
+    if (open) {
+      setReadDate(today());
+    } else {
       clear();
     }
   };
@@ -57,7 +64,7 @@ export function BulkSetReadModal({ volumes }: BulkSetReadModalProps) {
     setIsLoading(true);
 
     try {
-      await bulkSetRead(ids);
+      await bulkSetRead(ids, readDate ? new Date(readDate) : undefined);
       toast.success(`${ids.length} volumes marked as read`);
       router.refresh();
       handleOpenChange(false);
@@ -179,6 +186,23 @@ export function BulkSetReadModal({ volumes }: BulkSetReadModalProps) {
               </div>
             </div>
           )}
+
+          <FormField
+            label="Read On"
+            htmlFor="bulkReadDate"
+          >
+            <Input
+              id="bulkReadDate"
+              type="date"
+              value={readDate}
+              onChange={(e) => setReadDate(e.target.value)}
+              icon={<Calendar className="w-4 h-4" />}
+            />
+            <p className="text-xs text-foreground-muted mt-1">
+              Backdate this if you read them earlier — it keeps your reading
+              history accurate.
+            </p>
+          </FormField>
 
           {/* Actions */}
           <div className="flex gap-3 pt-2">

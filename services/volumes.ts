@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { NotFoundError } from "@/lib/errors";
 import { Condition } from "@/lib/generated/prisma/enums";
 import type { VolumeSchema } from "@/lib/validations";
+import { comparableSavings } from "@/lib/savings";
 
 export const MAX_BULK_SIZE = 500;
 
@@ -48,8 +49,23 @@ export async function updateVolume(userId: string, id: string, validated: Update
       ...validated,
       storeId: validated.storeId !== undefined ? (validated.storeId || null) : undefined,
       condition: validated.condition ? (validated.condition as Condition) : validated.condition === null ? null : undefined,
+      readDate: resolveReadDate(validated, volume.readDate),
     },
   });
+}
+
+// Keep readDate consistent with the read flag: unread volumes have no date,
+// and a read volume always has one (an explicit date wins, then the stored
+// one, then today). `undefined` leaves the column untouched.
+function resolveReadDate(
+  input: Pick<UpdateVolumeInput, "read" | "readDate">,
+  current: Date | null,
+): Date | null | undefined {
+  if (input.read === false) return null;
+  const isRead = input.read === true;
+  if (input.readDate) return input.readDate;
+  if (isRead) return current ?? new Date();
+  return undefined;
 }
 
 export async function deleteVolume(userId: string, id: string) {
@@ -67,29 +83,6 @@ export async function deleteVolume(userId: string, id: string) {
   });
 
   return volume.seriesId;
-}
-
-export async function toggleVolumeOwned(userId: string, id: string) {
-  const volume = await prisma.volume.findFirst({
-    where: { id },
-    include: { series: true },
-  });
-
-  if (!volume || volume.series.userId !== userId) {
-    throw new NotFoundError("Volume");
-  }
-
-  const nowOwned = !volume.owned;
-  const updated = await prisma.volume.update({
-    where: { id },
-    data: {
-      owned: nowOwned,
-      purchaseDate: nowOwned ? new Date() : null,
-      ...(nowOwned ? { wishlist: false } : {}),
-    },
-  });
-
-  return { updated, seriesId: volume.seriesId };
 }
 
 export async function toggleVolumeRead(userId: string, id: string) {
@@ -113,107 +106,6 @@ export async function toggleVolumeRead(userId: string, id: string) {
   return { updated, seriesId: volume.seriesId };
 }
 
-export async function markVolumesOwned(
-  userId: string,
-  seriesId: string,
-  volumeNumbers: number[],
-  owned: boolean,
-) {
-  const series = await prisma.series.findFirst({
-    where: { id: seriesId, userId },
-  });
-
-  if (!series) {
-    throw new NotFoundError("Series");
-  }
-
-  await prisma.volume.updateMany({
-    where: {
-      seriesId,
-      volumeNumber: { in: volumeNumbers },
-    },
-    data: {
-      owned,
-      purchaseDate: owned ? new Date() : null,
-      ...(owned ? { wishlist: false } : { read: false, readDate: null }),
-    },
-  });
-}
-
-export async function markVolumesRead(
-  userId: string,
-  seriesId: string,
-  volumeNumbers: number[],
-  read: boolean,
-) {
-  const series = await prisma.series.findFirst({
-    where: { id: seriesId, userId },
-  });
-
-  if (!series) {
-    throw new NotFoundError("Series");
-  }
-
-  await prisma.volume.updateMany({
-    where: {
-      seriesId,
-      volumeNumber: { in: volumeNumbers },
-      owned: true,
-    },
-    data: {
-      read,
-      readDate: read ? new Date() : null,
-    },
-  });
-}
-
-export async function markVolumesOwnedUpTo(
-  userId: string,
-  seriesId: string,
-  upToVolume: number,
-) {
-  const series = await prisma.series.findFirst({
-    where: { id: seriesId, userId },
-  });
-
-  if (!series) {
-    throw new NotFoundError("Series");
-  }
-
-  await prisma.volume.updateMany({
-    where: {
-      seriesId,
-      volumeNumber: { lte: upToVolume },
-    },
-    data: {
-      owned: true,
-      purchaseDate: new Date(),
-      wishlist: false,
-    },
-  });
-}
-
-export async function markAllOwnedAsRead(userId: string, seriesId: string) {
-  const series = await prisma.series.findFirst({
-    where: { id: seriesId, userId },
-  });
-
-  if (!series) {
-    throw new NotFoundError("Series");
-  }
-
-  await prisma.volume.updateMany({
-    where: {
-      seriesId,
-      owned: true,
-    },
-    data: {
-      read: true,
-      readDate: new Date(),
-    },
-  });
-}
-
 export async function getVolumeStats(userId: string, seriesId: string) {
   const series = await prisma.series.findFirst({
     where: { id: seriesId, userId },
@@ -229,12 +121,13 @@ export async function getVolumeStats(userId: string, seriesId: string) {
   const read = volumes.filter((v) => v.read).length;
   const wishlisted = volumes.filter((v) => v.wishlist).length;
   const totalSpent = volumes.reduce((acc, v) => acc + (v.pricePaid || 0), 0);
-  const retailPricePerVolume = series.retailPrice || 0;
-  const totalRetailValue = owned * retailPricePerVolume;
+  const { retailValue: totalRetailValue, savings } = comparableSavings(
+    volumes,
+    series.retailPrice,
+  );
   const averagePrice = owned > 0 ? totalSpent / owned : 0;
   const total = series.totalVolumes || volumes.length;
   const missing = total - owned;
-  const savings = totalRetailValue - totalSpent;
 
   return {
     owned,
@@ -300,7 +193,11 @@ export async function bulkMarkOwned(
   return seriesIds;
 }
 
-export async function bulkSetRead(userId: string, volumeIds: string[]) {
+export async function bulkSetRead(
+  userId: string,
+  volumeIds: string[],
+  readDate?: Date,
+) {
   if (volumeIds.length === 0) throw new Error("No volumes selected");
   if (volumeIds.length > MAX_BULK_SIZE) throw new Error(`Cannot process more than ${MAX_BULK_SIZE} volumes at once`);
 
@@ -322,10 +219,10 @@ export async function bulkSetRead(userId: string, volumeIds: string[]) {
   }
 
   await prisma.volume.updateMany({
-    where: { id: { in: volumeIds }, owned: true },
+    where: { id: { in: volumeIds }, owned: true, read: false },
     data: {
       read: true,
-      readDate: new Date(),
+      readDate: readDate ?? new Date(),
     },
   });
 
