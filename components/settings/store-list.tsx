@@ -8,6 +8,7 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Check, Loader2, Pencil, Plus, Trash2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { unwrap } from "@/lib/unwrap";
 
 type Store = { id: string; name: string };
 
@@ -29,7 +30,7 @@ export function StoreList({ stores }: StoreListProps) {
 
     setLoading("create");
     try {
-      await createStore(trimmed);
+      unwrap(await createStore(trimmed));
       setNewName("");
       toast.success("Store created");
       router.refresh();
@@ -48,7 +49,7 @@ export function StoreList({ stores }: StoreListProps) {
 
     setLoading(id);
     try {
-      await updateStore(id, trimmed);
+      unwrap(await updateStore(id, trimmed));
       setEditingId(null);
       toast.success("Store updated");
       router.refresh();
@@ -65,7 +66,7 @@ export function StoreList({ stores }: StoreListProps) {
     if (!deleteTarget) return;
     setLoading(deleteTarget.id);
     try {
-      await deleteStore(deleteTarget.id);
+      unwrap(await deleteStore(deleteTarget.id));
       setDeleteTarget(null);
       toast.success("Store deleted");
       router.refresh();
@@ -113,7 +114,8 @@ export function StoreList({ stores }: StoreListProps) {
                   }
                   if (e.key === "Escape") setEditingId(null);
                 }}
-                className="h-9 flex-1"
+                className="flex-1"
+                aria-label="Store name"
                 autoFocus
               />
               <Button
@@ -182,6 +184,7 @@ export function StoreList({ stores }: StoreListProps) {
             }
           }}
           placeholder="New store name..."
+          aria-label="New store name"
           className="flex-1"
         />
         <Button

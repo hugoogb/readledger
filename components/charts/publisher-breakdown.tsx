@@ -1,6 +1,6 @@
 "use client";
 
-import { formatCurrency } from "@/utils/currency";
+import { useFormatCurrency } from "@/components/providers/currency-provider";
 import {
   Bar,
   BarChart,
@@ -24,6 +24,7 @@ type PublisherTooltipData = {
 };
 
 function PublisherTooltip({ active, payload, label }: BaseTooltipProps) {
+  const formatCurrency = useFormatCurrency();
   if (!active || !payload || payload.length === 0) return null;
 
   const data = payload[0].payload as PublisherTooltipData;

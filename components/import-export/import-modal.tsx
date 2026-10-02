@@ -18,6 +18,8 @@ import {
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
+import { MAX_IMPORT_SIZE } from "@/lib/import";
+import { unwrap } from "@/lib/unwrap";
 
 export function ImportModal() {
   const router = useRouter();
@@ -35,6 +37,12 @@ export function ImportModal() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    if (file.size > MAX_IMPORT_SIZE) {
+      toast.error("File too large. Maximum size is 5 MB.");
+      e.target.value = "";
+      return;
+    }
+
     const format = file.name.endsWith(".json") ? "json" : "csv";
     const content = await file.text();
 
@@ -42,10 +50,10 @@ export function ImportModal() {
     setIsPreviewing(true);
 
     try {
-      const result = await previewImport(content, format);
+      const result = unwrap(await previewImport(content, format));
       setPreview(result);
-    } catch {
-      toast.error("Failed to parse file");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to parse file");
     } finally {
       setIsPreviewing(false);
     }
@@ -56,7 +64,7 @@ export function ImportModal() {
 
     setIsImporting(true);
     try {
-      const result = await importCollection(fileData.content, fileData.format);
+      const result = unwrap(await importCollection(fileData.content, fileData.format));
       toast.success(
         `Imported ${result.volumeCount} volumes across ${result.seriesCount} series`,
       );

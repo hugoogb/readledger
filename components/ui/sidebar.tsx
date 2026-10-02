@@ -54,6 +54,7 @@ export function SidebarNav() {
               <li key={item.href}>
                 <Link
                   href={item.href}
+                  aria-current={isActive ? "page" : undefined}
                   className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${
                     isActive
                       ? "bg-accent/10 text-accent"

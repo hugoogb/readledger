@@ -1,7 +1,7 @@
 import { ThemeProvider } from "@/components/providers/theme-provider";
-import type { Metadata } from "next";
+import { Toaster } from "@/components/ui/toaster";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { Toaster } from "sonner";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -43,8 +43,19 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: "/readledger-logo.webp",
-    apple: "/readledger-logo.webp",
   },
+  appleWebApp: {
+    title: "ReadLedger",
+    statusBarStyle: "default",
+  },
+};
+
+export const viewport: Viewport = {
+  // Matches --background in globals.css, so the browser chrome blends in.
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f8f8fc" },
+    { media: "(prefers-color-scheme: dark)", color: "#0a0a0c" },
+  ],
 };
 
 export default function RootLayout({
@@ -59,7 +70,7 @@ export default function RootLayout({
       >
         <ThemeProvider>
           {children}
-          <Toaster position="bottom-right" richColors />
+          <Toaster />
         </ThemeProvider>
       </body>
     </html>

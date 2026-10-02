@@ -25,6 +25,7 @@ import { FormProvider, useForm, type SubmitHandler } from "react-hook-form";
 import { toast } from "sonner";
 import { MangaSearch } from "./manga-search";
 import { SeriesFormFields } from "./series-form-fields";
+import { unwrap } from "@/lib/unwrap";
 
 type Publisher = { id: string; name: string };
 
@@ -126,19 +127,19 @@ export function AddSeriesModal({ publishers = [] }: AddSeriesModalProps) {
       };
 
       if (volumeData.length > 0) {
-        await createSeriesWithVolumes(
+        unwrap(await createSeriesWithVolumes(
           input,
           volumeData.map((v) => ({
             volumeNumber: v.volumeNumber,
             title: v.title,
             coverImage: v.coverImage,
           })),
-        );
+        ));
       } else if (input.totalVolumes && input.totalVolumes > 0) {
         const volumes = generateVolumeEntries(input.totalVolumes);
-        await createSeriesWithVolumes(input, volumes);
+        unwrap(await createSeriesWithVolumes(input, volumes));
       } else {
-        await createSeries(input);
+        unwrap(await createSeries(input));
       }
 
       toast.success(`${data.title} added to your collection`);

@@ -22,7 +22,7 @@ export async function getSpendingOverTime() {
   const monthlyMap = new Map<string, number>();
   for (const vol of volumes) {
     if (!vol.purchaseDate) continue;
-    const key = `${vol.purchaseDate.getFullYear()}-${String(vol.purchaseDate.getMonth() + 1).padStart(2, "0")}`;
+    const key = `${vol.purchaseDate.getUTCFullYear()}-${String(vol.purchaseDate.getUTCMonth() + 1).padStart(2, "0")}`;
     monthlyMap.set(key, (monthlyMap.get(key) || 0) + (vol.pricePaid || 0));
   }
 
@@ -68,7 +68,7 @@ export async function getCollectionGrowth() {
   const monthlyMap = new Map<string, number>();
   for (const vol of volumes) {
     if (!vol.purchaseDate) continue;
-    const key = `${vol.purchaseDate.getFullYear()}-${String(vol.purchaseDate.getMonth() + 1).padStart(2, "0")}`;
+    const key = `${vol.purchaseDate.getUTCFullYear()}-${String(vol.purchaseDate.getUTCMonth() + 1).padStart(2, "0")}`;
     monthlyMap.set(key, (monthlyMap.get(key) || 0) + 1);
   }
 
@@ -88,9 +88,9 @@ export async function getPublisherBreakdown() {
 
   const series = await prisma.series.findMany({
     where: { userId: user.id },
-    include: {
-      publisher: true,
-      volumes: { where: { owned: true } },
+    select: {
+      publisher: { select: { name: true } },
+      volumes: { where: { owned: true }, select: { pricePaid: true } },
     },
   });
 
@@ -134,22 +134,32 @@ export async function getConditionDistribution() {
 export async function getStoreBreakdown() {
   const user = await requireUser();
 
-  const volumes = await prisma.volume.findMany({
-    where: {
-      series: { userId: user.id },
-      owned: true,
-    },
-    include: { store: true },
-  });
+  // Aggregate in the database instead of loading every owned volume.
+  const [groups, stores] = await Promise.all([
+    prisma.volume.groupBy({
+      by: ["storeId"],
+      where: {
+        series: { userId: user.id },
+        owned: true,
+      },
+      _count: { _all: true },
+      _sum: { pricePaid: true },
+    }),
+    prisma.userStore.findMany({
+      where: { userId: user.id },
+      select: { id: true, name: true },
+    }),
+  ]);
 
+  const storeNames = new Map(stores.map((s) => [s.id, s.name]));
   const storeMap = new Map<string, { count: number; spent: number }>();
 
-  for (const vol of volumes) {
-    const name = vol.store?.name || "Unknown";
+  for (const g of groups) {
+    const name = (g.storeId && storeNames.get(g.storeId)) || "Unknown";
     const existing = storeMap.get(name) || { count: 0, spent: 0 };
     storeMap.set(name, {
-      count: existing.count + 1,
-      spent: Math.round((existing.spent + (vol.pricePaid || 0)) * 100) / 100,
+      count: existing.count + g._count._all,
+      spent: Math.round((existing.spent + (g._sum.pricePaid || 0)) * 100) / 100,
     });
   }
 

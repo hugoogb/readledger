@@ -52,7 +52,7 @@ describe("seriesSchema", () => {
   it("accepts publisherId as string", () => {
     const result = seriesSchema.safeParse({
       ...validSeries,
-      publisherId: "some-uuid",
+      publisherId: "3f1c2b4a-8d6e-4f7a-9b2c-1d3e5f7a9b0c",
     });
     expect(result.success).toBe(true);
   });
@@ -103,12 +103,30 @@ describe("seriesSchema", () => {
     expect(result.success).toBe(false);
   });
 
-  it("accepts valid coverImage URL", () => {
+  it("accepts a MangaDex coverImage URL", () => {
+    const result = seriesSchema.safeParse({
+      ...validSeries,
+      coverImage: "https://uploads.mangadex.org/covers/abc/def.jpg",
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects a coverImage from another host (next/image would crash)", () => {
     const result = seriesSchema.safeParse({
       ...validSeries,
       coverImage: "https://example.com/cover.jpg",
     });
-    expect(result.success).toBe(true);
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects a non-uuid publisherId", () => {
+    const result = seriesSchema.safeParse({ ...validSeries, publisherId: "pub-1" });
+    expect(result.success).toBe(false);
+  });
+
+  it("caps totalVolumes", () => {
+    expect(seriesSchema.safeParse({ ...validSeries, totalVolumes: 1000 }).success).toBe(true);
+    expect(seriesSchema.safeParse({ ...validSeries, totalVolumes: 1001 }).success).toBe(false);
   });
 
   it("rejects invalid coverImage URL", () => {
@@ -195,7 +213,7 @@ describe("volumeSchema", () => {
   it("accepts storeId as string", () => {
     const result = volumeSchema.safeParse({
       ...validVolume,
-      storeId: "some-store-uuid",
+      storeId: "3f1c2b4a-8d6e-4f7a-9b2c-1d3e5f7a9b0c",
     });
     expect(result.success).toBe(true);
   });
@@ -272,7 +290,7 @@ describe("bulkMarkOwnedSchema", () => {
   it("accepts storeId as string", () => {
     const result = bulkMarkOwnedSchema.safeParse({
       ...valid,
-      storeId: "some-store-id",
+      storeId: "3f1c2b4a-8d6e-4f7a-9b2c-1d3e5f7a9b0c",
     });
     expect(result.success).toBe(true);
   });

@@ -1,4 +1,5 @@
 import { NamePrompt } from "@/components/account/name-prompt";
+import { CurrencyProvider } from "@/components/providers/currency-provider";
 import { MobileHeader } from "@/components/ui/mobile-header";
 import { SidebarFooter, SidebarNav } from "@/components/ui/sidebar";
 import { getCurrentUser } from "@/lib/auth";
@@ -11,28 +12,33 @@ export default async function DashboardLayout({
   const user = await getCurrentUser();
 
   return (
-    <div className="min-h-screen bg-background">
-      <a
-        href="#main-content"
-        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[10000] focus:bg-accent focus:text-white focus:px-4 focus:py-2 focus:rounded-xl focus:shadow-lg"
-      >
-        Skip to main content
-      </a>
+    <CurrencyProvider currency={user?.currency ?? "EUR"}>
+      <div className="min-h-screen bg-background">
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[10000] focus:bg-accent focus:text-white focus:px-4 focus:py-2 focus:rounded-xl focus:shadow-lg"
+        >
+          Skip to main content
+        </a>
 
-      {/* Mobile header */}
-      <MobileHeader />
+        {/* Mobile header */}
+        <MobileHeader />
 
-      {/* Desktop sidebar */}
-      <aside aria-label="Main sidebar" className="hidden lg:flex fixed left-0 top-0 h-screen w-64 bg-background-secondary border-r border-border flex-col">
-        <SidebarNav />
-        <SidebarFooter />
-      </aside>
+        {/* Desktop sidebar */}
+        <aside
+          aria-label="Main sidebar"
+          className="hidden lg:flex fixed left-0 top-0 h-screen w-64 bg-background-secondary border-r border-border flex-col"
+        >
+          <SidebarNav />
+          <SidebarFooter />
+        </aside>
 
-      {/* Main content */}
-      <main id="main-content" className="pt-14 lg:pt-0 lg:ml-64 min-h-screen">
-        {user?.name === null && <NamePrompt />}
-        {children}
-      </main>
-    </div>
+        {/* Main content */}
+        <main id="main-content" className="pt-14 lg:pt-0 lg:ml-64 min-h-screen">
+          {user?.name === null && <NamePrompt />}
+          {children}
+        </main>
+      </div>
+    </CurrencyProvider>
   );
 }

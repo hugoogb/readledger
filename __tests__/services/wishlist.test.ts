@@ -4,7 +4,7 @@ import { NotFoundError } from "@/lib/errors";
 import {
   toggleWishlist,
   getWishlistVolumes,
-  getWishlistStats,
+  wishlistStats,
 } from "@/services/wishlist";
 
 const baseSeries = {
@@ -130,43 +130,35 @@ describe("getWishlistVolumes", () => {
   });
 });
 
-describe("getWishlistStats", () => {
-  it("calculates count, estimatedCost, and seriesCount", async () => {
-    prismaMock.volume.count.mockResolvedValue(3);
+describe("wishlistStats", () => {
+  it("calculates count, estimatedCost, and seriesCount from the groups", async () => {
     prismaMock.volume.findMany.mockResolvedValue([
       { ...baseVolume, wishlist: true, series: baseSeries },
       {
-        id: "vol-2",
-        seriesId: "s-2",
-        owned: false,
-        wishlist: true,
-        series: { ...baseSeries, id: "s-2", retailPrice: 12.99 },
-      },
-      {
         id: "vol-3",
         seriesId: "s-1",
-        owned: false,
-        wishlist: true,
+        volumeNumber: 3,
         series: baseSeries,
       },
-    ]);
+      {
+        id: "vol-2",
+        seriesId: "s-2",
+        volumeNumber: 2,
+        series: { ...baseSeries, id: "s-2", retailPrice: 12.99 },
+      },
+    ] as never);
 
-    const result = await getWishlistStats("user-1");
+    const groups = await getWishlistVolumes("user-1");
 
-    expect(result).toEqual({
+    expect(wishlistStats(groups)).toEqual({
       count: 3,
-      estimatedCost: 9.99 + 12.99 + 9.99,
+      estimatedCost: 9.99 + 9.99 + 12.99,
       seriesCount: 2,
     });
   });
 
-  it("handles empty wishlist", async () => {
-    prismaMock.volume.count.mockResolvedValue(0);
-    prismaMock.volume.findMany.mockResolvedValue([]);
-
-    const result = await getWishlistStats("user-1");
-
-    expect(result).toEqual({
+  it("handles empty wishlist", () => {
+    expect(wishlistStats([])).toEqual({
       count: 0,
       estimatedCost: 0,
       seriesCount: 0,

@@ -13,6 +13,7 @@ import type { SeriesSchema } from "@/lib/validations";
 import { useRouter } from "next/navigation";
 import { useFormContext } from "react-hook-form";
 import { toast } from "sonner";
+import { unwrap } from "@/lib/unwrap";
 
 type Publisher = { id: string; name: string };
 
@@ -79,7 +80,7 @@ export function SeriesFormFields({ publishers = [] }: SeriesFormFieldsProps) {
             onChange={(val) => setValue("publisherId", val || undefined)}
             onCreate={async (name) => {
               try {
-                const pub = await createPublisher(name);
+                const pub = unwrap(await createPublisher(name));
                 toast.success(`Publisher "${pub.name}" created`);
                 router.refresh();
                 return pub;
@@ -109,7 +110,9 @@ export function SeriesFormFields({ publishers = [] }: SeriesFormFieldsProps) {
           <Input
             id="totalVolumes"
             type="number"
+            inputMode="numeric"
             min="0"
+            max="1000"
             {...register("totalVolumes", { valueAsNumber: true })}
             placeholder="100"
             error={!!errors.totalVolumes}
@@ -125,7 +128,8 @@ export function SeriesFormFields({ publishers = [] }: SeriesFormFieldsProps) {
           <Input
             id="retailPrice"
             type="number"
-            step="0.10"
+            inputMode="decimal"
+            step="0.01"
             min="0"
             {...register("retailPrice", { valueAsNumber: true })}
             placeholder="9.95"

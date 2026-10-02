@@ -5,6 +5,7 @@ import { Heart, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
+import { unwrap } from "@/lib/unwrap";
 
 type WishlistActionsProps = {
   volume: {
@@ -25,11 +26,25 @@ export function WishlistActions({ volume }: WishlistActionsProps) {
     setRemoving(true);
     startTransition(async () => {
       try {
-        await toggleWishlist(volume.id);
-        toast.success(`Volume ${volume.volumeNumber} removed from wishlist`);
+        unwrap(await toggleWishlist(volume.id));
+        // One tap removes the chip, so a mis-tap while scrolling is easy:
+        // offer an undo that toggles it back.
+        toast.success(`Volume ${volume.volumeNumber} removed from wishlist`, {
+          action: {
+            label: "Undo",
+            onClick: async () => {
+              try {
+                unwrap(await toggleWishlist(volume.id));
+                router.refresh();
+              } catch (err) {
+                toast.error(err instanceof Error ? err.message : "Failed to undo");
+              }
+            },
+          },
+        });
         router.refresh();
-      } catch {
-        toast.error("Failed to update wishlist");
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Failed to update wishlist");
         setRemoving(false);
       }
     });
@@ -41,7 +56,7 @@ export function WishlistActions({ volume }: WishlistActionsProps) {
       onClick={handleRemove}
       disabled={isPending}
       aria-label={`Remove volume ${volume.volumeNumber} from wishlist`}
-      className={`group relative flex items-center gap-2 px-3 py-2 rounded-lg bg-background-tertiary/50 border border-border hover:border-error/50 hover:bg-error/5 transition-all duration-200 cursor-pointer disabled:cursor-default ${
+      className={`group relative flex min-h-11 items-center gap-2 px-3 py-2 rounded-lg bg-background-tertiary/50 border border-border hover:border-error/50 hover:bg-error/5 transition-all duration-200 cursor-pointer disabled:cursor-default ${
         removing ? "opacity-0 scale-90 pointer-events-none" : "opacity-100"
       }`}
     >

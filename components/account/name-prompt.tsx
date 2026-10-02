@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Sparkles } from "lucide-react";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
+import { unwrap } from "@/lib/unwrap";
 
 /** Shown once to users who have never set a name (e.g. right after sign-up). */
 export function NamePrompt() {
@@ -18,7 +19,7 @@ export function NamePrompt() {
     startTransition(async () => {
       try {
         // Saving "" records that the user skipped, so the prompt won't return.
-        await updateDisplayName(value);
+        unwrap(await updateDisplayName(value));
         if (action === "save") toast.success(`Nice to meet you, ${value.trim()}!`);
       } catch (err) {
         toast.error(err instanceof Error ? err.message : "Failed to save name");
@@ -35,7 +36,7 @@ export function NamePrompt() {
           e.preventDefault();
           if (name.trim()) submit(name, "save");
         }}
-        className="glass rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center gap-3 animate-fade-in"
+        className="glass rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center gap-3"
       >
         <div className="flex items-center gap-3 sm:flex-1 min-w-0">
           <div className="w-10 h-10 shrink-0 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center">
