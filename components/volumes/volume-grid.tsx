@@ -4,9 +4,10 @@ import { toggleVolumeRead } from "@/actions/volumes";
 import { toggleWishlist } from "@/actions/wishlist";
 import type { SeriesDefaults, VolumeWithStore } from "@/types";
 import { BookOpen } from "lucide-react";
-import { useCallback, useOptimistic, useTransition } from "react";
+import { useCallback, useOptimistic, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { VolumeCell } from "./volume-cell";
+import { VolumeDetailsModal } from "./volume-details-modal";
 
 type UserStore = { id: string; name: string };
 
@@ -18,6 +19,8 @@ type VolumeGridProps = {
 };
 
 type OptimisticAction = { id: string; field: "read" | "wishlist" };
+
+type EditingState = { id: string; focusField?: "readDate" } | null;
 
 function EmptyVolumeCell({ volumeNumber }: { volumeNumber: number }) {
   return (
@@ -43,6 +46,13 @@ export function VolumeGrid({
   stores,
 }: VolumeGridProps) {
   const [, startTransition] = useTransition();
+  // One modal for the whole grid, so a toast action can open any volume.
+  const [editing, setEditing] = useState<EditingState>(null);
+
+  const openVolume = useCallback(
+    (volume: VolumeWithStore) => setEditing({ id: volume.id }),
+    [],
+  );
 
   // Optimistic layer over the server-provided volumes. Both this reducer and
   // the server action toggle the boolean, so the UI updates instantly on click
@@ -64,6 +74,15 @@ export function VolumeGrid({
           await toggleVolumeRead(volume.id);
           toast.success(
             `Volume ${volume.volumeNumber} marked as ${willBeRead ? "read" : "unread"}`,
+            willBeRead
+              ? {
+                  action: {
+                    label: "Change date",
+                    onClick: () =>
+                      setEditing({ id: volume.id, focusField: "readDate" }),
+                  },
+                }
+              : undefined,
           );
         } catch {
           toast.error("Failed to update volume");
@@ -117,16 +136,30 @@ export function VolumeGrid({
     );
   }
 
+  const editingVolume = editing
+    ? optimisticVolumes.find((v) => v.id === editing.id)
+    : undefined;
+
   return (
     <div>
+      {editingVolume && (
+        <VolumeDetailsModal
+          key={editingVolume.id}
+          volume={editingVolume}
+          seriesDefaults={seriesDefaults}
+          stores={stores}
+          isOpen
+          focusField={editing?.focusField}
+          onClose={() => setEditing(null)}
+        />
+      )}
       <div className="grid grid-cols-3 sm:grid-cols-6 lg:grid-cols-9 gap-2">
         {volumeSlots.map((volume, index) =>
           volume ? (
             <VolumeCell
               key={volume.id}
               volume={volume}
-              seriesDefaults={seriesDefaults}
-              stores={stores}
+              onOpen={openVolume}
               onToggleRead={handleToggleRead}
               onToggleWishlist={handleToggleWishlist}
             />
