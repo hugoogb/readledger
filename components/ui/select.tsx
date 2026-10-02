@@ -5,12 +5,14 @@ import { ChevronDown } from "lucide-react";
 export interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
   icon?: React.ReactNode;
   error?: boolean;
+  /** Classes for the wrapper; put width constraints here so the chevron stays inside the field. */
+  containerClassName?: string;
 }
 
 const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
-  ({ className, children, icon, error, ...props }, ref) => {
+  ({ className, containerClassName, children, icon, error, ...props }, ref) => {
     return (
-      <div className="relative group/select">
+      <div className={cn("relative group/select", containerClassName)}>
         <select
           className={cn(
             "flex h-12 w-full rounded-xl border border-border bg-background-tertiary px-4 py-3 text-base sm:text-sm text-foreground ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-50 transition-colors appearance-none cursor-pointer pr-10 hover:border-border-hover",
