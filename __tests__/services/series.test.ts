@@ -343,6 +343,31 @@ describe("getAllSeries", () => {
 // ---- getSeriesStats -------------------------------------------------------
 
 describe("getSeriesStats", () => {
+  it("ignores unpriced volumes and series without retail in savings", async () => {
+    prismaMock.series.findMany.mockResolvedValue([
+      makeSeries({
+        id: "s1",
+        retailPrice: 10.0,
+        volumes: [
+          makeVolume({ id: "v1", volumeNumber: 1, owned: true, pricePaid: 8.0 }),
+          makeVolume({ id: "v2", volumeNumber: 2, owned: true, pricePaid: null }),
+        ],
+      }),
+      makeSeries({
+        id: "s2",
+        retailPrice: null,
+        volumes: [makeVolume({ id: "v3", volumeNumber: 1, owned: true, pricePaid: 15.0 })],
+      }),
+    ]);
+
+    const stats = await getSeriesStats(USER_ID);
+
+    expect(stats.totalSpent).toBe(23);
+    expect(stats.totalRetailValue).toBe(10);
+    expect(stats.totalSavings).toBe(2);
+    expect(stats.savingsPercentage).toBe(20);
+  });
+
   it("calculates all stats correctly", async () => {
     const series = [
       makeSeries({

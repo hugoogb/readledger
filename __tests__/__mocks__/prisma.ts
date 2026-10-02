@@ -18,6 +18,11 @@ export const prismaMock = {
     delete: vi.fn(),
     count: vi.fn(),
   },
+  readingGoal: {
+    findMany: vi.fn(),
+    upsert: vi.fn(),
+    deleteMany: vi.fn(),
+  },
   user: {
     findUnique: vi.fn(),
     upsert: vi.fn(),

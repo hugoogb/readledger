@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { NotFoundError } from "@/lib/errors";
 import { SeriesStatus } from "@/lib/generated/prisma/enums";
 import type { SeriesSchema } from "@/lib/validations";
+import { comparableSavings } from "@/lib/savings";
 
 export type CreateSeriesInput = SeriesSchema;
 export type UpdateSeriesInput = Partial<SeriesSchema>;
@@ -205,10 +206,13 @@ export async function getSeriesStats(userId: string) {
     0,
   );
 
-  const totalRetailValue = series.reduce((acc, s) => {
-    const ownedCount = s.volumes.filter((v) => v.owned).length;
-    return acc + ownedCount * (s.retailPrice || 0);
-  }, 0);
+  let totalRetailValue = 0;
+  let totalSavings = 0;
+  for (const s of series) {
+    const { retailValue, savings } = comparableSavings(s.volumes, s.retailPrice);
+    totalRetailValue += retailValue;
+    totalSavings += savings;
+  }
 
   const totalExpectedVolumes = series.reduce(
     (acc, s) => acc + (s.totalVolumes || s.volumes.length),
@@ -217,8 +221,6 @@ export async function getSeriesStats(userId: string) {
 
   const averagePrice =
     totalVolumesOwned > 0 ? totalSpent / totalVolumesOwned : 0;
-
-  const totalSavings = totalRetailValue - totalSpent;
 
   const byStatus = {
     reading: series.filter((s) => s.status === "READING").length,

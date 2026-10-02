@@ -5,10 +5,7 @@ import {
   createVolume,
   updateVolume,
   deleteVolume,
-  toggleVolumeOwned,
   toggleVolumeRead,
-  markVolumesOwned,
-  markVolumesRead,
   getVolumeStats,
   bulkMarkOwned,
   bulkSetRead,
@@ -141,6 +138,55 @@ describe("updateVolume", () => {
       updateVolume("user-1", "vol-1", { pricePaid: 7.5 }),
     ).rejects.toThrow(NotFoundError);
   });
+
+  it("keeps an explicitly edited read date", async () => {
+    prismaMock.volume.findFirst.mockResolvedValue(
+      makeVolumeWithSeries({ owned: true, read: true, readDate: now }),
+    );
+    prismaMock.volume.update.mockResolvedValue(makeVolume());
+    const readDate = new Date("2024-03-10");
+
+    await updateVolume("user-1", "vol-1", { read: true, readDate });
+
+    const call = prismaMock.volume.update.mock.calls[0][0];
+    expect(call.data.readDate).toBe(readDate);
+  });
+
+  it("keeps the stored read date when saving a read volume without one", async () => {
+    prismaMock.volume.findFirst.mockResolvedValue(
+      makeVolumeWithSeries({ owned: true, read: true, readDate: now }),
+    );
+    prismaMock.volume.update.mockResolvedValue(makeVolume());
+
+    await updateVolume("user-1", "vol-1", { read: true });
+
+    const call = prismaMock.volume.update.mock.calls[0][0];
+    expect(call.data.readDate).toBe(now);
+  });
+
+  it("clears the read date when marked unread", async () => {
+    prismaMock.volume.findFirst.mockResolvedValue(
+      makeVolumeWithSeries({ owned: true, read: true, readDate: now }),
+    );
+    prismaMock.volume.update.mockResolvedValue(makeVolume());
+
+    await updateVolume("user-1", "vol-1", { read: false, readDate: now });
+
+    const call = prismaMock.volume.update.mock.calls[0][0];
+    expect(call.data.readDate).toBeNull();
+  });
+
+  it("leaves the read date untouched when read is not part of the update", async () => {
+    prismaMock.volume.findFirst.mockResolvedValue(
+      makeVolumeWithSeries({ owned: true }),
+    );
+    prismaMock.volume.update.mockResolvedValue(makeVolume());
+
+    await updateVolume("user-1", "vol-1", { pricePaid: 7.5 });
+
+    const call = prismaMock.volume.update.mock.calls[0][0];
+    expect(call.data.readDate).toBeUndefined();
+  });
 });
 
 // --- deleteVolume ---
@@ -162,58 +208,6 @@ describe("deleteVolume", () => {
     prismaMock.volume.findFirst.mockResolvedValue(null);
 
     await expect(deleteVolume("user-1", "vol-1")).rejects.toThrow(
-      NotFoundError,
-    );
-  });
-});
-
-// --- toggleVolumeOwned ---
-
-describe("toggleVolumeOwned", () => {
-  it("toggles to owned: clears wishlist, sets purchaseDate", async () => {
-    prismaMock.volume.findFirst.mockResolvedValue(
-      makeVolumeWithSeries({ owned: false, wishlist: true }),
-    );
-    const updated = makeVolume({ owned: true, wishlist: false });
-    prismaMock.volume.update.mockResolvedValue(updated);
-
-    const result = await toggleVolumeOwned("user-1", "vol-1");
-
-    expect(prismaMock.volume.update).toHaveBeenCalledWith({
-      where: { id: "vol-1" },
-      data: expect.objectContaining({
-        owned: true,
-        wishlist: false,
-      }),
-    });
-    const updateCall = prismaMock.volume.update.mock.calls[0][0];
-    expect(updateCall.data.purchaseDate).toBeInstanceOf(Date);
-    expect(result).toEqual({ updated, seriesId: "series-1" });
-  });
-
-  it("toggles to not owned: clears purchaseDate", async () => {
-    prismaMock.volume.findFirst.mockResolvedValue(
-      makeVolumeWithSeries({ owned: true, purchaseDate: now }),
-    );
-    const updated = makeVolume({ owned: false, purchaseDate: null });
-    prismaMock.volume.update.mockResolvedValue(updated);
-
-    const result = await toggleVolumeOwned("user-1", "vol-1");
-
-    expect(prismaMock.volume.update).toHaveBeenCalledWith({
-      where: { id: "vol-1" },
-      data: expect.objectContaining({
-        owned: false,
-        purchaseDate: null,
-      }),
-    });
-    expect(result).toEqual({ updated, seriesId: "series-1" });
-  });
-
-  it("throws NotFoundError for unauthorized user", async () => {
-    prismaMock.volume.findFirst.mockResolvedValue(null);
-
-    await expect(toggleVolumeOwned("user-1", "vol-1")).rejects.toThrow(
       NotFoundError,
     );
   });
@@ -253,62 +247,6 @@ describe("toggleVolumeRead", () => {
   });
 });
 
-// --- markVolumesOwned ---
-
-describe("markVolumesOwned", () => {
-  it("marks volumes as owned and clears wishlist", async () => {
-    prismaMock.series.findFirst.mockResolvedValue(makeSeries());
-    prismaMock.volume.updateMany.mockResolvedValue({ count: 3 });
-
-    await markVolumesOwned("user-1", "series-1", [1, 2, 3], true);
-
-    expect(prismaMock.volume.updateMany).toHaveBeenCalledWith({
-      where: {
-        seriesId: "series-1",
-        volumeNumber: { in: [1, 2, 3] },
-      },
-      data: expect.objectContaining({
-        owned: true,
-        wishlist: false,
-      }),
-    });
-    const updateCall = prismaMock.volume.updateMany.mock.calls[0][0];
-    expect(updateCall.data.purchaseDate).toBeInstanceOf(Date);
-  });
-
-  it("throws NotFoundError if series not found", async () => {
-    prismaMock.series.findFirst.mockResolvedValue(null);
-
-    await expect(
-      markVolumesOwned("user-1", "series-1", [1, 2], true),
-    ).rejects.toThrow(NotFoundError);
-  });
-});
-
-// --- markVolumesRead ---
-
-describe("markVolumesRead", () => {
-  it("only marks owned volumes as read", async () => {
-    prismaMock.series.findFirst.mockResolvedValue(makeSeries());
-    prismaMock.volume.updateMany.mockResolvedValue({ count: 2 });
-
-    await markVolumesRead("user-1", "series-1", [1, 2, 3], true);
-
-    expect(prismaMock.volume.updateMany).toHaveBeenCalledWith({
-      where: {
-        seriesId: "series-1",
-        volumeNumber: { in: [1, 2, 3] },
-        owned: true,
-      },
-      data: expect.objectContaining({
-        read: true,
-      }),
-    });
-    const updateCall = prismaMock.volume.updateMany.mock.calls[0][0];
-    expect(updateCall.data.readDate).toBeInstanceOf(Date);
-  });
-});
-
 // --- getVolumeStats ---
 
 describe("getVolumeStats", () => {
@@ -338,6 +276,34 @@ describe("getVolumeStats", () => {
     );
     expect(stats.ownedProgress).toBe(20);
     expect(stats.readProgress).toBe(50);
+  });
+
+  it("excludes owned volumes without a price from savings", async () => {
+    const volumes = [
+      makeVolume({ id: "v1", owned: true, pricePaid: 8.0 }),
+      makeVolume({ id: "v2", volumeNumber: 2, owned: true, pricePaid: null }),
+    ];
+    prismaMock.series.findFirst.mockResolvedValue(
+      makeSeries({ volumes, retailPrice: 10 }),
+    );
+
+    const stats = await getVolumeStats("user-1", "series-1");
+
+    expect(stats.totalRetailValue).toBe(10);
+    expect(stats.savings).toBe(2);
+    expect(stats.savingsPercentage).toBe(20);
+  });
+
+  it("reports no savings when the series has no retail price", async () => {
+    const volumes = [makeVolume({ id: "v1", owned: true, pricePaid: 8.0 })];
+    prismaMock.series.findFirst.mockResolvedValue(
+      makeSeries({ volumes, retailPrice: null }),
+    );
+
+    const stats = await getVolumeStats("user-1", "series-1");
+
+    expect(stats.totalSpent).toBe(8);
+    expect(stats.savings).toBe(0);
   });
 
   it("throws NotFoundError if series not found", async () => {
@@ -397,10 +363,23 @@ describe("bulkSetRead", () => {
     const result = await bulkSetRead("user-1", ["vol-1", "vol-2"]);
 
     expect(prismaMock.volume.updateMany).toHaveBeenCalledWith({
-      where: { id: { in: ["vol-1", "vol-2"] }, owned: true },
+      where: { id: { in: ["vol-1", "vol-2"] }, owned: true, read: false },
       data: expect.objectContaining({ read: true }),
     });
     expect(result).toBeInstanceOf(Set);
     expect(result).toContain("series-1");
+  });
+
+  it("uses the given read date instead of today", async () => {
+    prismaMock.volume.findMany.mockResolvedValue([
+      makeVolumeWithSeries({ id: "vol-1", owned: true }),
+    ]);
+    prismaMock.volume.updateMany.mockResolvedValue({ count: 1 });
+    const readDate = new Date("2025-06-01");
+
+    await bulkSetRead("user-1", ["vol-1"], readDate);
+
+    const call = prismaMock.volume.updateMany.mock.calls[0][0];
+    expect(call.data.readDate).toBe(readDate);
   });
 });

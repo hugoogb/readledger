@@ -51,16 +51,6 @@ export async function deleteVolume(id: string) {
   revalidatePath(`/dashboard/series/${seriesId}`);
 }
 
-export async function toggleVolumeOwned(id: string) {
-  const user = await requireUser();
-
-  const { updated, seriesId } = await volumeService.toggleVolumeOwned(user.id, id);
-
-  revalidatePath(`/dashboard/series/${seriesId}`);
-
-  return updated;
-}
-
 export async function toggleVolumeRead(id: string) {
   const user = await requireUser();
 
@@ -69,57 +59,6 @@ export async function toggleVolumeRead(id: string) {
   revalidatePath(`/dashboard/series/${seriesId}`);
 
   return updated;
-}
-
-export async function markVolumesOwned(
-  seriesId: string,
-  volumeNumbers: number[],
-  owned: boolean,
-) {
-  const user = await requireUser();
-
-  await volumeService.markVolumesOwned(user.id, seriesId, volumeNumbers, owned);
-
-  revalidatePath("/dashboard");
-  revalidatePath("/dashboard/series");
-  revalidatePath(`/dashboard/series/${seriesId}`);
-}
-
-export async function markVolumesRead(
-  seriesId: string,
-  volumeNumbers: number[],
-  read: boolean,
-) {
-  const user = await requireUser();
-
-  await volumeService.markVolumesRead(user.id, seriesId, volumeNumbers, read);
-
-  revalidatePath("/dashboard");
-  revalidatePath("/dashboard/series");
-  revalidatePath(`/dashboard/series/${seriesId}`);
-}
-
-export async function markVolumesOwnedUpTo(
-  seriesId: string,
-  upToVolume: number,
-) {
-  const user = await requireUser();
-
-  await volumeService.markVolumesOwnedUpTo(user.id, seriesId, upToVolume);
-
-  revalidatePath("/dashboard");
-  revalidatePath("/dashboard/series");
-  revalidatePath(`/dashboard/series/${seriesId}`);
-}
-
-export async function markAllOwnedAsRead(seriesId: string) {
-  const user = await requireUser();
-
-  await volumeService.markAllOwnedAsRead(user.id, seriesId);
-
-  revalidatePath("/dashboard");
-  revalidatePath("/dashboard/series");
-  revalidatePath(`/dashboard/series/${seriesId}`);
 }
 
 export const getVolumeStats = cache(async function getVolumeStats(seriesId: string) {
@@ -149,10 +88,11 @@ export async function bulkMarkOwned(
   }
 }
 
-export async function bulkSetRead(volumeIds: string[]) {
+export async function bulkSetRead(volumeIds: string[], readDate?: Date) {
   const user = await requireUser();
+  checkUserActionLimit(user.id);
 
-  const seriesIds = await volumeService.bulkSetRead(user.id, volumeIds);
+  const seriesIds = await volumeService.bulkSetRead(user.id, volumeIds, readDate);
 
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/series");
