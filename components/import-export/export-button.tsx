@@ -21,7 +21,8 @@ export function ExportButton() {
       a.href = url;
       a.download = `readledger-export.${format}`;
       a.click();
-      URL.revokeObjectURL(url);
+      // Revoking synchronously can cancel the download in iOS Safari.
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
       toast.success(`Collection exported as ${format.toUpperCase()}`);
     } catch {
       toast.error("Failed to export collection");

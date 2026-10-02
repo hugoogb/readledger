@@ -1,6 +1,7 @@
 "use server";
 
 import { requireUser } from "@/lib/auth";
+import { withResult } from "@/lib/action-result";
 import { checkUserActionLimit } from "@/lib/rate-limit";
 import { readingGoalSchema } from "@/lib/validations";
 import * as readingService from "@/services/reading";
@@ -17,7 +18,7 @@ export const getReadingGoals = cache(async function getReadingGoals() {
   return readingService.getReadingGoals(user.id);
 });
 
-export async function setReadingGoal(year: number, target: number) {
+export const setReadingGoal = withResult(async (year: number, target: number) => {
   const user = await requireUser();
   checkUserActionLimit(user.id);
   const validated = readingGoalSchema.parse({ year, target });
@@ -26,9 +27,9 @@ export async function setReadingGoal(year: number, target: number) {
 
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/statistics");
-}
+});
 
-export async function deleteReadingGoal(year: number) {
+export const deleteReadingGoal = withResult(async (year: number) => {
   const user = await requireUser();
   checkUserActionLimit(user.id);
 
@@ -36,4 +37,4 @@ export async function deleteReadingGoal(year: number) {
 
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/statistics");
-}
+});

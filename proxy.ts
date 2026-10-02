@@ -15,7 +15,10 @@ const securityHeaders: Record<string, string> = {
   "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
   "Content-Security-Policy": [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+    // Next.js only needs eval in development (React Refresh).
+    process.env.NODE_ENV === "production"
+      ? "script-src 'self' 'unsafe-inline'"
+      : "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: https://uploads.mangadex.org",
     "font-src 'self'",
@@ -33,7 +36,9 @@ type SessionState =
   | { status: "none" }
   | { status: "invalid" }
   | { status: "valid"; token: string; refreshedExpiresAt: Date | null }
-  | { status: "unknown" };
+  | { status: "unknown" }
+  // Route doesn't depend on auth, so the session wasn't looked up.
+  | { status: "skipped" };
 
 async function resolveSession(request: NextRequest): Promise<SessionState> {
   const token = request.cookies.get(SESSION_COOKIE)?.value;
@@ -79,17 +84,23 @@ function withCookies(response: NextResponse, request: NextRequest, session: Sess
 export async function proxy(request: NextRequest) {
   // www -> apex is a Cloudflare Redirect Rule on the readledger.app zone, so
   // www requests never reach this server.
-  const session = await resolveSession(request);
   const { pathname } = request.nextUrl;
-
   const isProtectedRoute = protectedRoutes.some((route) => pathname.startsWith(route));
+  const isPublicEntryRoute = publicEntryRoutes.includes(pathname);
+
+  // Only routes that redirect on auth state need the session (a DB lookup).
+  const session: SessionState =
+    isProtectedRoute || isPublicEntryRoute
+      ? await resolveSession(request)
+      : { status: "skipped" };
+
   if (isProtectedRoute && (session.status === "none" || session.status === "invalid")) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return withCookies(NextResponse.redirect(url), request, session);
   }
 
-  if (publicEntryRoutes.includes(pathname) && session.status === "valid") {
+  if (isPublicEntryRoute && session.status === "valid") {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     return withCookies(NextResponse.redirect(url), request, session);
@@ -105,8 +116,9 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
+     * - health (container health check)
      * - public files (public folder)
      */
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|health|manifest.webmanifest|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
   ],
 };

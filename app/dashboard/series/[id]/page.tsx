@@ -12,7 +12,7 @@ import { BulkMarkOwnedModal } from "@/components/volumes/bulk-mark-owned-modal";
 import { BulkSetReadModal } from "@/components/volumes/bulk-set-read-modal";
 import { VolumeGrid } from "@/components/volumes/volume-grid";
 import { statusConfig } from "@/lib/constants";
-import { formatCurrency } from "@/utils/currency";
+import { getFormatCurrency } from "@/lib/currency";
 import {
   ArrowLeft,
   BookMarked,
@@ -59,11 +59,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 async function SeriesStatsSection({ seriesId }: { seriesId: string }) {
-  const stats = await getVolumeStats(seriesId);
+  const [stats, formatCurrency] = await Promise.all([
+    getVolumeStats(seriesId),
+    getFormatCurrency(),
+  ]);
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-      <div className="animate-fade-in stagger-1">
+      <div>
         <StatsCard
           title="Owned"
           value={stats.owned}
@@ -71,7 +74,7 @@ async function SeriesStatsSection({ seriesId }: { seriesId: string }) {
           variant="accent"
         />
       </div>
-      <div className="animate-fade-in stagger-2">
+      <div>
         <StatsCard
           title="Read"
           value={stats.read}
@@ -79,7 +82,7 @@ async function SeriesStatsSection({ seriesId }: { seriesId: string }) {
           variant="success"
         />
       </div>
-      <div className="animate-fade-in stagger-3">
+      <div>
         <StatsCard
           title="Missing"
           value={stats.missing}
@@ -87,7 +90,7 @@ async function SeriesStatsSection({ seriesId }: { seriesId: string }) {
           variant="default"
         />
       </div>
-      <div className="animate-fade-in stagger-4">
+      <div>
         <StatsCard
           title="Total Spent"
           value={formatCurrency(stats.totalSpent)}
@@ -96,7 +99,7 @@ async function SeriesStatsSection({ seriesId }: { seriesId: string }) {
           variant="warning"
         />
       </div>
-      <div className="animate-fade-in stagger-5">
+      <div>
         <StatsCard
           title="Savings"
           value={formatCurrency(stats.savings)}
@@ -148,10 +151,11 @@ async function SeriesProgressSection({ seriesId }: { seriesId: string }) {
 
 export default async function SeriesDetailPage({ params }: Props) {
   const { id } = await params;
-  const [series, publishers, stores] = await Promise.all([
+  const [series, publishers, stores, formatCurrency] = await Promise.all([
     getSeries(id),
     getPublishers(),
     getStores(),
+    getFormatCurrency(),
   ]);
 
   if (!series) {
@@ -163,10 +167,10 @@ export default async function SeriesDetailPage({ params }: Props) {
   return (
     <div className="p-4 lg:p-8">
       {/* Header */}
-      <div className="mb-8 animate-fade-in">
+      <div className="mb-8">
         <Link
           href="/dashboard/series"
-          className="inline-flex items-center gap-2 text-foreground-muted hover:text-foreground transition-colors mb-4"
+          className="inline-flex items-center gap-2 py-2 -my-2 text-foreground-muted hover:text-foreground transition-colors mb-4"
         >
           <ArrowLeft className="w-4 h-4" />
           Back to Series
@@ -266,7 +270,7 @@ export default async function SeriesDetailPage({ params }: Props) {
       </Suspense>
 
       {/* Volume Grid */}
-      <div className="glass rounded-2xl p-6 animate-fade-in stagger-6">
+      <div className="glass rounded-2xl p-6">
         <div className="flex items-center justify-between flex-wrap gap-6 mb-6">
           <div>
             <h2 className="text-xl font-semibold">Volumes</h2>

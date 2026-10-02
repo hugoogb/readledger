@@ -87,7 +87,9 @@ export function MangaSearch({ onSelect }: MangaSearchProps) {
     <div className="space-y-4">
       <div className="relative">
         <Input
-          type="text"
+          type="search"
+          enterKeyHint="search"
+          aria-label="Search MangaDex for a series"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search for a manga series..."

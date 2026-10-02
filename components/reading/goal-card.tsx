@@ -50,7 +50,7 @@ export function GoalCard({ year, readCount, progress }: GoalCardProps) {
   const pace = progress ? paceText(progress) : null;
 
   return (
-    <section className="glass rounded-2xl p-4 sm:p-6 animate-fade-in">
+    <section className="glass rounded-2xl p-4 sm:p-6">
       <div className="flex items-center justify-between gap-3 mb-4">
         <h2 className="text-lg font-semibold flex items-center gap-2">
           <Target className="w-5 h-5 text-success" />

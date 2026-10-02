@@ -3,6 +3,9 @@
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
 import { NotFoundError } from "@/lib/errors";
+import { withResult } from "@/lib/action-result";
+import { checkUserActionLimit } from "@/lib/rate-limit";
+import { nameSchema } from "@/lib/validations";
 import { revalidatePath } from "next/cache";
 import { cache } from "react";
 
@@ -14,45 +17,46 @@ export const getStores = cache(async function getStores() {
   });
 });
 
-export async function createStore(name: string) {
+export const createStore = withResult(async (name: string) => {
   const user = await requireUser();
-  const trimmed = name.trim();
-  if (!trimmed) throw new Error("Store name is required");
+  checkUserActionLimit(user.id);
+  const validName = nameSchema.parse(name);
 
-  const store = await prisma.userStore.create({
-    data: { userId: user.id, name: trimmed },
+  const created = await prisma.userStore.create({
+    data: { userId: user.id, name: validName },
   });
 
   revalidatePath("/dashboard");
-  return store;
-}
+  return created;
+});
 
-export async function updateStore(id: string, name: string) {
+export const updateStore = withResult(async (id: string, name: string) => {
   const user = await requireUser();
-  const trimmed = name.trim();
-  if (!trimmed) throw new Error("Store name is required");
+  checkUserActionLimit(user.id);
+  const validName = nameSchema.parse(name);
 
-  const store = await prisma.userStore.findFirst({
+  const existing = await prisma.userStore.findFirst({
     where: { id, userId: user.id },
   });
-  if (!store) throw new NotFoundError("Store");
+  if (!existing) throw new NotFoundError("Store");
 
   const updated = await prisma.userStore.update({
     where: { id },
-    data: { name: trimmed },
+    data: { name: validName },
   });
 
   revalidatePath("/dashboard");
   return updated;
-}
+});
 
-export async function deleteStore(id: string) {
+export const deleteStore = withResult(async (id: string) => {
   const user = await requireUser();
-  const store = await prisma.userStore.findFirst({
+  checkUserActionLimit(user.id);
+  const existing = await prisma.userStore.findFirst({
     where: { id, userId: user.id },
   });
-  if (!store) throw new NotFoundError("Store");
+  if (!existing) throw new NotFoundError("Store");
 
   await prisma.userStore.delete({ where: { id } });
   revalidatePath("/dashboard");
-}
+});

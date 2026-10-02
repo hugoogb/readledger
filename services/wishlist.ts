@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { NotFoundError } from "@/lib/errors";
+import { NotFoundError, ValidationError } from "@/lib/errors";
 
 export async function toggleWishlist(userId: string, volumeId: string) {
   const volume = await prisma.volume.findFirst({
@@ -13,7 +13,7 @@ export async function toggleWishlist(userId: string, volumeId: string) {
 
   // Can't wishlist an already-owned volume
   if (volume.owned && !volume.wishlist) {
-    throw new Error("Volume is already owned");
+    throw new ValidationError("Volume is already owned");
   }
 
   const updated = await prisma.volume.update({
@@ -31,8 +31,11 @@ export async function getWishlistVolumes(userId: string) {
       owned: false,
       series: { userId },
     },
-    include: {
-      series: true,
+    select: {
+      id: true,
+      seriesId: true,
+      volumeNumber: true,
+      series: { select: { id: true, title: true, coverImage: true, retailPrice: true } },
     },
     orderBy: [
       { series: { title: "asc" } },
@@ -67,30 +70,13 @@ export async function getWishlistVolumes(userId: string) {
   return Array.from(grouped.values());
 }
 
-export async function getWishlistStats(userId: string) {
-  const count = await prisma.volume.count({
-    where: {
-      wishlist: true,
-      owned: false,
-      series: { userId },
-    },
-  });
-
-  const volumes = await prisma.volume.findMany({
-    where: {
-      wishlist: true,
-      owned: false,
-      series: { userId },
-    },
-    include: { series: true },
-  });
-
-  const estimatedCost = volumes.reduce(
-    (acc, v) => acc + (v.series.retailPrice || 0),
-    0,
-  );
-
-  const seriesCount = new Set(volumes.map((v) => v.seriesId)).size;
-
-  return { count, estimatedCost, seriesCount };
+/** Summary numbers derived from getWishlistVolumes() — no extra queries. */
+export function wishlistStats(groups: Awaited<ReturnType<typeof getWishlistVolumes>>) {
+  let count = 0;
+  let estimatedCost = 0;
+  for (const g of groups) {
+    count += g.volumes.length;
+    estimatedCost += g.volumes.length * (g.series.retailPrice || 0);
+  }
+  return { count, estimatedCost, seriesCount: groups.length };
 }

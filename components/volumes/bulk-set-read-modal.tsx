@@ -13,8 +13,10 @@ import { BookMarked, Calendar, Check, Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
+import { todayInputValue } from "@/utils/date";
+import { unwrap } from "@/lib/unwrap";
 
-const today = () => new Date().toISOString().split("T")[0];
+const today = () => todayInputValue();
 
 type BulkSetReadModalProps = {
   volumes: Volume[];
@@ -64,7 +66,7 @@ export function BulkSetReadModal({ volumes }: BulkSetReadModalProps) {
     setIsLoading(true);
 
     try {
-      await bulkSetRead(ids, readDate ? new Date(readDate) : undefined);
+      unwrap(await bulkSetRead(ids, readDate ? new Date(readDate) : undefined));
       toast.success(`${ids.length} volumes marked as read`);
       router.refresh();
       handleOpenChange(false);

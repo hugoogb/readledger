@@ -20,12 +20,12 @@ import { conditionOptions } from "@/lib/constants";
 import type { Volume } from "@/lib/generated/prisma/browser";
 import { volumeSchema, type VolumeSchema } from "@/lib/validations";
 import type { SeriesDefaults } from "@/types";
-import { formatDateForInput } from "@/utils/date";
+import { formatDateForInput, todayInputValue } from "@/utils/date";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   BookMarked,
   Calendar,
-  Euro,
+  Banknote,
   Heart,
   ImageIcon,
   Package,
@@ -38,6 +38,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { toast } from "sonner";
+import { unwrap } from "@/lib/unwrap";
 
 type UserStore = { id: string; name: string };
 
@@ -51,7 +52,7 @@ type VolumeDetailsModalProps = {
   focusField?: "readDate";
 };
 
-const todayInput = () => new Date().toISOString().split("T")[0];
+const todayInput = () => todayInputValue();
 
 export function VolumeDetailsModal({
   volume,
@@ -96,7 +97,7 @@ export function VolumeDetailsModal({
       notes: volume.notes || "",
       purchaseDate: (volume.owned
         ? formatDateForInput(volume.purchaseDate)
-        : new Date().toISOString().split("T")[0]) as unknown as Date,
+        : todayInput()) as unknown as Date,
     },
   });
 
@@ -117,7 +118,7 @@ export function VolumeDetailsModal({
         notes: volume.notes || "",
         purchaseDate: (volume.owned
           ? formatDateForInput(volume.purchaseDate)
-          : new Date().toISOString().split("T")[0]) as unknown as Date,
+          : todayInput()) as unknown as Date,
       });
       setIsReadChecked(volume.read);
       setReadOn(
@@ -144,13 +145,13 @@ export function VolumeDetailsModal({
         pricePaid: Number(data.pricePaid?.toFixed(2)) ?? undefined,
         condition: data.condition,
         storeId: data.storeId || null,
-        coverImage: data.coverImage || undefined,
+        coverImage: data.coverImage ?? "",
         purchaseDate: data.purchaseDate || undefined,
         readDate: isReadChecked && readOn ? new Date(readOn) : undefined,
-        notes: data.notes || undefined,
+        notes: data.notes ?? "",
       };
 
-      await updateVolume(volume.id, input);
+      unwrap(await updateVolume(volume.id, input));
       toast.success(`Volume ${volume.volumeNumber} updated`);
       router.refresh();
       onClose();
@@ -174,7 +175,7 @@ export function VolumeDetailsModal({
           readDate: null,
         };
 
-        await updateVolume(volume.id, input);
+        unwrap(await updateVolume(volume.id, input));
         toast.success(`Volume ${volume.volumeNumber} removed from collection`);
         router.refresh();
         onClose();
@@ -190,7 +191,7 @@ export function VolumeDetailsModal({
     e.preventDefault();
     startAction(async () => {
       try {
-        await toggleWishlist(volume.id);
+        unwrap(await toggleWishlist(volume.id));
         toast.success(
           volume.wishlist
             ? `Volume ${volume.volumeNumber} removed from wishlist`
@@ -314,11 +315,12 @@ export function VolumeDetailsModal({
               <Input
                 id="pricePaid"
                 type="number"
+                inputMode="decimal"
                 step="0.01"
                 min="0"
                 {...register("pricePaid", { valueAsNumber: true })}
                 placeholder="9.95"
-                icon={<Euro className="w-4 h-4" />}
+                icon={<Banknote className="w-4 h-4" />}
                 error={!!errors.pricePaid}
               />
             </FormField>
@@ -337,7 +339,7 @@ export function VolumeDetailsModal({
                 onChange={(val) => setValue("storeId", val || null)}
                 onCreate={async (name) => {
                   try {
-                    const store = await createStore(name);
+                    const store = unwrap(await createStore(name));
                     toast.success(`Store "${store.name}" created`);
                     router.refresh();
                     return store;

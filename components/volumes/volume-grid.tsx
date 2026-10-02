@@ -6,8 +6,10 @@ import type { SeriesDefaults, VolumeWithStore } from "@/types";
 import { BookOpen } from "lucide-react";
 import { useCallback, useOptimistic, useState, useTransition } from "react";
 import { toast } from "sonner";
+import { todayInputValue } from "@/utils/date";
 import { VolumeCell } from "./volume-cell";
 import { VolumeDetailsModal } from "./volume-details-modal";
+import { unwrap } from "@/lib/unwrap";
 
 type UserStore = { id: string; name: string };
 
@@ -71,7 +73,7 @@ export function VolumeGrid({
       startTransition(async () => {
         applyOptimistic({ id: volume.id, field: "read" });
         try {
-          await toggleVolumeRead(volume.id);
+          unwrap(await toggleVolumeRead(volume.id, todayInputValue()));
           toast.success(
             `Volume ${volume.volumeNumber} marked as ${willBeRead ? "read" : "unread"}`,
             willBeRead
@@ -84,8 +86,8 @@ export function VolumeGrid({
                 }
               : undefined,
           );
-        } catch {
-          toast.error("Failed to update volume");
+        } catch (err) {
+          toast.error(err instanceof Error ? err.message : "Failed to update volume");
         }
       });
     },
@@ -98,14 +100,14 @@ export function VolumeGrid({
       startTransition(async () => {
         applyOptimistic({ id: volume.id, field: "wishlist" });
         try {
-          await toggleWishlist(volume.id);
+          unwrap(await toggleWishlist(volume.id));
           toast.success(
             willBeWishlisted
               ? `Volume ${volume.volumeNumber} added to wishlist`
               : `Volume ${volume.volumeNumber} removed from wishlist`,
           );
-        } catch {
-          toast.error("Failed to update wishlist");
+        } catch (err) {
+          toast.error(err instanceof Error ? err.message : "Failed to update wishlist");
         }
       });
     },

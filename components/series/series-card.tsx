@@ -2,13 +2,13 @@ import Link from "next/link";
 import { BookOpen, User } from "lucide-react";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import Image from "next/image";
-import type { SeriesWithVolumes } from "@/types";
+import type { SeriesCardData } from "@/types";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { statusConfig } from "@/lib/constants";
 
 type SeriesCardProps = {
-  series: SeriesWithVolumes;
+  series: SeriesCardData;
 };
 
 export function SeriesCard({ series }: SeriesCardProps) {
@@ -32,6 +32,8 @@ export function SeriesCard({ series }: SeriesCardProps) {
               fill
               src={series.coverImage}
               alt={series.title}
+              // Matches the grid: 2 cols on phones, up to 5 on wide screens.
+              sizes="(min-width: 1280px) 20vw, (min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw"
               className="object-cover group-hover:scale-110 transition-transform duration-500"
             />
           ) : (

@@ -30,7 +30,7 @@ export default async function StatisticsPage({ searchParams }: Props) {
   return (
     <div className="p-4 lg:p-8">
       {/* Header */}
-      <div className="mb-6 animate-fade-in">
+      <div className="mb-6">
         <h1 className="text-3xl font-bold mb-1">Statistics</h1>
         <p className="text-foreground-muted">
           Insights about your manga collection

@@ -17,6 +17,7 @@ import { getSeriesFormDefaults } from "@/lib/form-defaults";
 import { seriesSchema, type SeriesSchema } from "@/lib/validations";
 import { toast } from "sonner";
 import { SeriesFormFields } from "./series-form-fields";
+import { unwrap } from "@/lib/unwrap";
 
 type Publisher = { id: string; name: string };
 
@@ -48,18 +49,18 @@ export function EditSeriesModal({ series, publishers = [] }: EditSeriesModalProp
     try {
       const input: UpdateSeriesInput = {
         title: data.title,
-        author: data.author || undefined,
-        publisherId: data.publisherId || undefined,
+        author: data.author ?? "",
+        publisherId: data.publisherId || null,
         status: data.status,
         publishing: data.publishing,
         totalVolumes: data.totalVolumes ?? undefined,
-        coverImage: data.coverImage || undefined,
-        description: data.description || undefined,
+        coverImage: data.coverImage ?? "",
+        description: data.description ?? "",
         retailPrice: data.retailPrice ?? undefined,
         mangadexId: data.mangadexId ?? undefined,
       };
 
-      await updateSeries(series.id, input);
+      unwrap(await updateSeries(series.id, input));
       toast.success(`${series.title} updated`);
       setIsOpen(false);
       router.refresh();
@@ -73,7 +74,7 @@ export function EditSeriesModal({ series, publishers = [] }: EditSeriesModalProp
   async function handleDelete() {
     setIsDeleting(true);
     try {
-      await deleteSeries(series.id);
+      unwrap(await deleteSeries(series.id));
       toast.success(`${series.title} deleted`);
       router.push("/dashboard/series");
     } catch (err) {
