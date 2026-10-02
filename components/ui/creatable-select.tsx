@@ -75,9 +75,11 @@ export function CreatableSelect({
               }
             }}
             placeholder="Enter name..."
+            aria-label="New name"
+            maxLength={100}
             disabled={isSubmitting}
             className={cn(
-              "flex h-12 w-full rounded-xl border border-accent bg-background-tertiary px-4 py-3 text-sm text-foreground ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-50 transition-colors",
+              "flex h-12 w-full rounded-xl border border-accent bg-background-tertiary px-4 py-3 text-base sm:text-sm text-foreground ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-50 transition-colors",
             )}
           />
         </div>
@@ -85,6 +87,7 @@ export function CreatableSelect({
           type="button"
           onClick={handleCreate}
           disabled={!newName.trim() || isSubmitting}
+          aria-label="Add"
           className="h-12 w-12 rounded-xl bg-accent text-white hover:bg-accent-hover disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center transition-colors cursor-pointer"
         >
           <Plus className="w-4 h-4" />
@@ -95,6 +98,7 @@ export function CreatableSelect({
             setIsCreating(false);
             setNewName("");
           }}
+          aria-label="Cancel"
           className="h-12 w-12 rounded-xl border border-border bg-background-tertiary hover:bg-background-tertiary/80 flex items-center justify-center transition-colors cursor-pointer"
         >
           <X className="w-4 h-4" />
@@ -116,7 +120,7 @@ export function CreatableSelect({
           }
         }}
         className={cn(
-          "flex h-12 w-full rounded-xl border border-border bg-background-tertiary px-4 py-3 text-sm text-foreground ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-50 transition-colors appearance-none cursor-pointer pr-10 hover:border-border-hover",
+          "flex h-12 w-full rounded-xl border border-border bg-background-tertiary px-4 py-3 text-base sm:text-sm text-foreground ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-50 transition-colors appearance-none cursor-pointer pr-10 hover:border-border-hover",
           error && "border-error focus-visible:ring-error",
         )}
       >

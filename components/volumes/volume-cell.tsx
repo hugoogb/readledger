@@ -5,7 +5,7 @@ import { memo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { VolumeWithStore } from "@/types";
-import { formatCurrency } from "@/utils/currency";
+import { useFormatCurrency } from "@/components/providers/currency-provider";
 import {
   BookMarked,
   Check,
@@ -14,6 +14,10 @@ import {
   ShoppingBag,
 } from "lucide-react";
 import Image from "next/image";
+
+// The 32px buttons get an invisible 40x44px touch target that doesn't
+// overlap the neighbouring button (gap-2).
+const HIT_AREA = "relative after:absolute after:-inset-y-1.5 after:-inset-x-1 after:content-['']";
 
 type VolumeCellProps = {
   volume: VolumeWithStore;
@@ -28,6 +32,7 @@ export const VolumeCell = memo(function VolumeCell({
   onToggleRead,
   onToggleWishlist,
 }: VolumeCellProps) {
+  const formatCurrency = useFormatCurrency();
 
   const handleToggleRead = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -188,17 +193,17 @@ export const VolumeCell = memo(function VolumeCell({
         )}
 
         {/* Action Buttons - Bottom Right.
-            On touch devices there's no hover, so the buttons are always
-            visible; on sm+ pointers they reveal on hover/focus to keep covers
-            clean. */}
-        <div className="flex absolute bottom-1 right-1 z-20 items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-within:opacity-100 transition-opacity">
+            Touch devices (phones and tablets) can't hover, so the buttons are
+            always visible there; only devices with a real hover pointer reveal
+            them on hover/focus to keep covers clean. */}
+        <div className="flex absolute bottom-1 right-1 z-20 items-center gap-2 opacity-100 [@media(hover:hover)]:opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
           {!isOwned ? (
             <>
               <Button
                 size="icon-sm"
                 onClick={handleToggleWishlist}
                 variant="secondary"
-                className={`rounded-md ${isWishlisted ? "bg-error text-white hover:bg-error/90" : ""}`}
+                className={`${HIT_AREA} rounded-md ${isWishlisted ? "bg-error text-white hover:bg-error/90" : ""}`}
                 aria-label={`${isWishlisted ? "Remove" : "Add"} volume ${volume.volumeNumber} ${isWishlisted ? "from" : "to"} wishlist`}
               >
                 <Heart
@@ -209,7 +214,7 @@ export const VolumeCell = memo(function VolumeCell({
                 size="icon-sm"
                 onClick={handleOpenModal}
                 variant="secondary"
-                className="rounded-md"
+                className={`${HIT_AREA} rounded-md`}
                 aria-label={`Mark volume ${volume.volumeNumber} as owned`}
               >
                 <Package className="w-3.5 h-3.5" />
@@ -220,7 +225,7 @@ export const VolumeCell = memo(function VolumeCell({
               size="icon-sm"
               onClick={handleToggleRead}
               variant={isRead ? "success" : "secondary"}
-              className="rounded-md"
+              className={`${HIT_AREA} rounded-md`}
               aria-label={`Mark volume ${volume.volumeNumber} as ${isRead ? "unread" : "read"}`}
             >
               <Check className="w-3.5 h-3.5" />

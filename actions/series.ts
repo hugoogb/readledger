@@ -1,16 +1,17 @@
 "use server";
 
 import { requireUser } from "@/lib/auth";
+import { withResult } from "@/lib/action-result";
 import { revalidatePath } from "next/cache";
 import { cache } from "react";
 import { SeriesStatus } from "@/lib/generated/prisma/enums";
-import { seriesSchema } from "@/lib/validations";
+import { idSchema, seriesSchema, seriesVolumesSchema } from "@/lib/validations";
 import { checkUserActionLimit } from "@/lib/rate-limit";
 import * as seriesService from "@/services/series";
 
 export type { CreateSeriesInput, UpdateSeriesInput, VolumeInput, SortOption } from "@/services/series";
 
-export async function createSeries(input: seriesService.CreateSeriesInput) {
+export const createSeries = withResult(async (input: seriesService.CreateSeriesInput) => {
   const user = await requireUser();
   checkUserActionLimit(user.id);
   const validated = seriesSchema.parse(input);
@@ -21,25 +22,26 @@ export async function createSeries(input: seriesService.CreateSeriesInput) {
   revalidatePath("/dashboard/series");
 
   return series;
-}
+});
 
-export async function createSeriesWithVolumes(
+export const createSeriesWithVolumes = withResult(async (
   input: seriesService.CreateSeriesInput,
   volumes: seriesService.VolumeInput[],
-) {
+) => {
   const user = await requireUser();
   checkUserActionLimit(user.id);
   const validated = seriesSchema.parse(input);
+  const validatedVolumes = seriesVolumesSchema.parse(volumes);
 
-  const series = await seriesService.createSeriesWithVolumes(user.id, validated, volumes);
+  const series = await seriesService.createSeriesWithVolumes(user.id, validated, validatedVolumes);
 
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/series");
 
   return series;
-}
+});
 
-export async function updateSeries(id: string, input: seriesService.UpdateSeriesInput) {
+export const updateSeries = withResult(async (id: string, input: seriesService.UpdateSeriesInput) => {
   const user = await requireUser();
   checkUserActionLimit(user.id);
   const validated = seriesSchema.partial().parse(input);
@@ -51,9 +53,9 @@ export async function updateSeries(id: string, input: seriesService.UpdateSeries
   revalidatePath(`/dashboard/series/${id}`);
 
   return updated;
-}
+});
 
-export async function deleteSeries(id: string) {
+export const deleteSeries = withResult(async (id: string) => {
   const user = await requireUser();
   checkUserActionLimit(user.id);
 
@@ -61,16 +63,22 @@ export async function deleteSeries(id: string) {
 
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/series");
-}
+});
 
 export const getSeries = cache(async function getSeries(id: string) {
   const user = await requireUser();
+  // A malformed id in the URL is simply "not found", not a database error.
+  if (!idSchema.safeParse(id).success) return null;
   return seriesService.getSeries(user.id, id);
 });
 
-export async function getAllSeries(status?: SeriesStatus, sort?: seriesService.SortOption) {
+export async function getAllSeries(
+  status?: SeriesStatus,
+  sort?: seriesService.SortOption,
+  search?: string,
+) {
   const user = await requireUser();
-  return seriesService.getAllSeries(user.id, status, sort);
+  return seriesService.getAllSeries(user.id, status, sort, search?.slice(0, 200));
 }
 
 export async function checkDuplicateSeries(mangadexId: string): Promise<boolean> {
@@ -88,14 +96,7 @@ export const getSeriesStats = cache(async function getSeriesStats() {
   return seriesService.getSeriesStats(user.id);
 });
 
-export async function getDashboardData() {
-  const [stats, recentSeries] = await Promise.all([
-    getSeriesStats(),
-    getAllSeries(),
-  ]);
-
-  return {
-    stats,
-    recentSeries: recentSeries.slice(0, 5),
-  };
+export async function getRecentSeries() {
+  const user = await requireUser();
+  return seriesService.getRecentSeries(user.id);
 }

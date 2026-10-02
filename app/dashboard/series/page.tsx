@@ -6,11 +6,19 @@ import { SeriesFilters } from "@/components/series/series-filters";
 import { Pagination } from "@/components/ui/pagination";
 import { SeriesGridSkeleton } from "@/components/ui/skeletons";
 import { SeriesStatus } from "@/lib/generated/prisma/enums";
-import type { SeriesWithVolumes } from "@/types";
 import { Library } from "lucide-react";
 import { Suspense } from "react";
 
 const PAGE_SIZE = 20;
+
+const SORT_OPTIONS: SortOption[] = [
+  "updated",
+  "title_asc",
+  "title_desc",
+  "created",
+  "completion",
+  "spent",
+];
 
 type Props = {
   searchParams: Promise<{ status?: string; q?: string; sort?: string; page?: string }>;
@@ -29,11 +37,7 @@ async function FilteredSeriesList({
   sort,
   page,
 }: FilteredSeriesListProps) {
-  let series: SeriesWithVolumes[] = await getAllSeries(statusFilter, sort);
-
-  if (searchQuery) {
-    series = series.filter((s) => s.title.toLowerCase().includes(searchQuery));
-  }
+  const series = await getAllSeries(statusFilter, sort, searchQuery);
 
   const totalCount = series.length;
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
@@ -58,14 +62,8 @@ async function FilteredSeriesList({
   return (
     <div>
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-        {paginatedSeries.map((s, index) => (
-          <div
-            key={s.id}
-            className="animate-fade-in"
-            style={{ animationDelay: `${index * 0.05}s` }}
-          >
-            <SeriesCard series={s} />
-          </div>
+        {paginatedSeries.map((s) => (
+          <SeriesCard key={s.id} series={s} />
         ))}
       </div>
       {totalPages > 1 && (
@@ -87,15 +85,21 @@ export default async function SeriesPage({ searchParams }: Props) {
     searchParams,
     getPublishers(),
   ]);
-  const statusFilter = status as SeriesStatus | undefined;
-  const searchQuery = q?.toLowerCase();
-  const sortOption = (sort as SortOption) || undefined;
-  const currentPage = parseInt(page || "1", 10);
+  // URL params are user-editable: ignore values we don't recognise.
+  const statusFilter = (Object.values(SeriesStatus) as string[]).includes(status ?? "")
+    ? (status as SeriesStatus)
+    : undefined;
+  const searchQuery = q?.trim() || undefined;
+  const sortOption = SORT_OPTIONS.includes(sort as SortOption)
+    ? (sort as SortOption)
+    : undefined;
+  const parsedPage = parseInt(page ?? "", 10);
+  const currentPage = Number.isFinite(parsedPage) ? parsedPage : 1;
 
   return (
     <div className="p-4 lg:p-8">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 animate-fade-in">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-bold">My Series</h1>
           <p className="text-foreground-muted mt-1">
@@ -106,7 +110,7 @@ export default async function SeriesPage({ searchParams }: Props) {
       </div>
 
       {/* Filters */}
-      <div className="mb-8 animate-fade-in stagger-1">
+      <div className="mb-8">
         <Suspense fallback={null}>
           <SeriesFilters />
         </Suspense>

@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { User } from "lucide-react";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
+import { unwrap } from "@/lib/unwrap";
 
 export function DisplayNameForm({ initialName }: { initialName: string | null }) {
   const [name, setName] = useState(initialName ?? "");
@@ -17,7 +18,7 @@ export function DisplayNameForm({ initialName }: { initialName: string | null })
     event.preventDefault();
     startTransition(async () => {
       try {
-        await updateDisplayName(name);
+        unwrap(await updateDisplayName(name));
         setSaved(name.trim());
         toast.success("Name updated");
       } catch (err) {

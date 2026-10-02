@@ -1,6 +1,7 @@
-import { getWishlistVolumes, getWishlistStats } from "@/actions/wishlist";
+import { getWishlistVolumes } from "@/actions/wishlist";
+import { wishlistStats } from "@/services/wishlist";
 import { Badge } from "@/components/ui/badge";
-import { formatCurrency } from "@/utils/currency";
+import { getFormatCurrency } from "@/lib/currency";
 import { Heart, Package, Wallet } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -13,15 +14,16 @@ export const metadata: Metadata = {
 };
 
 export default async function WishlistPage() {
-  const [groups, stats] = await Promise.all([
+  const [groups, formatCurrency] = await Promise.all([
     getWishlistVolumes(),
-    getWishlistStats(),
+    getFormatCurrency(),
   ]);
+  const stats = wishlistStats(groups);
 
   return (
     <div className="p-4 lg:p-8">
       {/* Header */}
-      <div className="mb-8 animate-fade-in">
+      <div className="mb-8">
         <h1 className="text-3xl font-bold mb-1">Wishlist</h1>
         <p className="text-foreground-muted">
           Volumes you want to add to your collection
@@ -29,7 +31,7 @@ export default async function WishlistPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8 animate-fade-in stagger-1">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
         <div className="glass rounded-xl p-4 flex items-center gap-4">
           <div className="w-10 h-10 rounded-lg bg-error/10 flex items-center justify-center">
             <Heart className="w-5 h-5 text-error" />
@@ -63,7 +65,7 @@ export default async function WishlistPage() {
 
       {/* Wishlist Groups */}
       {groups.length === 0 ? (
-        <div className="text-center py-16 animate-fade-in stagger-2">
+        <div className="text-center py-16">
           <Heart className="w-16 h-16 text-foreground-muted/30 mx-auto mb-4" />
           <h3 className="text-xl font-semibold mb-2">No wishlisted volumes</h3>
           <p className="text-foreground-muted">
@@ -72,11 +74,10 @@ export default async function WishlistPage() {
         </div>
       ) : (
         <div className="space-y-6">
-          {groups.map((group, idx) => (
+          {groups.map((group) => (
             <div
               key={group.series.id}
-              className="glass rounded-2xl p-6 animate-fade-in"
-              style={{ animationDelay: `${(idx + 2) * 0.05}s` }}
+              className="glass rounded-2xl p-6"
             >
               <div className="flex items-center gap-4 mb-4">
                 <Link

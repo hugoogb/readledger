@@ -3,6 +3,9 @@
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
 import { NotFoundError } from "@/lib/errors";
+import { withResult } from "@/lib/action-result";
+import { checkUserActionLimit } from "@/lib/rate-limit";
+import { nameSchema } from "@/lib/validations";
 import { revalidatePath } from "next/cache";
 import { cache } from "react";
 
@@ -14,45 +17,46 @@ export const getPublishers = cache(async function getPublishers() {
   });
 });
 
-export async function createPublisher(name: string) {
+export const createPublisher = withResult(async (name: string) => {
   const user = await requireUser();
-  const trimmed = name.trim();
-  if (!trimmed) throw new Error("Publisher name is required");
+  checkUserActionLimit(user.id);
+  const validName = nameSchema.parse(name);
 
-  const publisher = await prisma.publisher.create({
-    data: { userId: user.id, name: trimmed },
+  const created = await prisma.publisher.create({
+    data: { userId: user.id, name: validName },
   });
 
   revalidatePath("/dashboard");
-  return publisher;
-}
+  return created;
+});
 
-export async function updatePublisher(id: string, name: string) {
+export const updatePublisher = withResult(async (id: string, name: string) => {
   const user = await requireUser();
-  const trimmed = name.trim();
-  if (!trimmed) throw new Error("Publisher name is required");
+  checkUserActionLimit(user.id);
+  const validName = nameSchema.parse(name);
 
-  const publisher = await prisma.publisher.findFirst({
+  const existing = await prisma.publisher.findFirst({
     where: { id, userId: user.id },
   });
-  if (!publisher) throw new NotFoundError("Publisher");
+  if (!existing) throw new NotFoundError("Publisher");
 
   const updated = await prisma.publisher.update({
     where: { id },
-    data: { name: trimmed },
+    data: { name: validName },
   });
 
   revalidatePath("/dashboard");
   return updated;
-}
+});
 
-export async function deletePublisher(id: string) {
+export const deletePublisher = withResult(async (id: string) => {
   const user = await requireUser();
-  const publisher = await prisma.publisher.findFirst({
+  checkUserActionLimit(user.id);
+  const existing = await prisma.publisher.findFirst({
     where: { id, userId: user.id },
   });
-  if (!publisher) throw new NotFoundError("Publisher");
+  if (!existing) throw new NotFoundError("Publisher");
 
   await prisma.publisher.delete({ where: { id } });
   revalidatePath("/dashboard");
-}
+});

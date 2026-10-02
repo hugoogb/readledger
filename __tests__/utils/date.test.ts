@@ -1,5 +1,12 @@
 import { describe, it, expect } from "vitest";
-import { formatDateForInput, formatShortDate, formatRelativeDate } from "@/utils/date";
+import {
+  formatDateForInput,
+  formatShortDate,
+  formatRelativeDate,
+  parseDateInput,
+  startOfUtcDay,
+  todayInputValue,
+} from "@/utils/date";
 
 describe("formatDateForInput", () => {
   it("formats a Date object to YYYY-MM-DD", () => {
@@ -53,5 +60,26 @@ describe("formatRelativeDate", () => {
     [800, "2 years ago"],
   ])("%i days → %s", (days, expected) => {
     expect(formatRelativeDate(ago(days), now)).toBe(expected);
+  });
+});
+
+describe("calendar date helpers", () => {
+  it("todayInputValue uses the local calendar day", () => {
+    const localLateNight = new Date(2026, 0, 1, 0, 30); // 00:30 local time
+    expect(todayInputValue(localLateNight)).toBe("2026-01-01");
+  });
+
+  it("startOfUtcDay truncates to UTC midnight", () => {
+    expect(startOfUtcDay(new Date("2026-03-05T22:30:00Z"))).toEqual(
+      new Date("2026-03-05T00:00:00Z"),
+    );
+  });
+
+  it("parseDateInput accepts real YYYY-MM-DD dates only", () => {
+    expect(parseDateInput("2026-01-31")).toEqual(new Date("2026-01-31T00:00:00Z"));
+    expect(parseDateInput("2026-02-30")).toBeNull();
+    expect(parseDateInput("31/01/2026")).toBeNull();
+    expect(parseDateInput("")).toBeNull();
+    expect(parseDateInput(undefined)).toBeNull();
   });
 });

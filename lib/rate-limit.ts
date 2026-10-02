@@ -4,6 +4,9 @@
 
 type RateLimitEntry = {
   timestamps: number[];
+  // Each key keeps its own window so cleanup doesn't cut long windows short
+  // (e.g. the hourly OTP-send limit).
+  windowMs: number;
 };
 
 const store = new Map<string, RateLimitEntry>();
@@ -12,7 +15,7 @@ const store = new Map<string, RateLimitEntry>();
 setInterval(() => {
   const now = Date.now();
   for (const [key, entry] of store) {
-    entry.timestamps = entry.timestamps.filter((t) => now - t < 120_000);
+    entry.timestamps = entry.timestamps.filter((t) => now - t < entry.windowMs);
     if (entry.timestamps.length === 0) {
       store.delete(key);
     }
@@ -43,9 +46,10 @@ export function checkRateLimit(
   let entry = store.get(key);
 
   if (!entry) {
-    entry = { timestamps: [] };
+    entry = { timestamps: [], windowMs };
     store.set(key, entry);
   }
+  entry.windowMs = Math.max(entry.windowMs, windowMs);
 
   // Remove timestamps outside the window
   entry.timestamps = entry.timestamps.filter((t) => now - t < windowMs);

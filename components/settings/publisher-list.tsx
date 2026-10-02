@@ -12,6 +12,7 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Check, Loader2, Pencil, Plus, Trash2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { unwrap } from "@/lib/unwrap";
 
 type Publisher = { id: string; name: string };
 
@@ -33,7 +34,7 @@ export function PublisherList({ publishers }: PublisherListProps) {
 
     setLoading("create");
     try {
-      await createPublisher(trimmed);
+      unwrap(await createPublisher(trimmed));
       setNewName("");
       toast.success("Publisher created");
       router.refresh();
@@ -52,7 +53,7 @@ export function PublisherList({ publishers }: PublisherListProps) {
 
     setLoading(id);
     try {
-      await updatePublisher(id, trimmed);
+      unwrap(await updatePublisher(id, trimmed));
       setEditingId(null);
       toast.success("Publisher updated");
       router.refresh();
@@ -69,7 +70,7 @@ export function PublisherList({ publishers }: PublisherListProps) {
     if (!deleteTarget) return;
     setLoading(deleteTarget.id);
     try {
-      await deletePublisher(deleteTarget.id);
+      unwrap(await deletePublisher(deleteTarget.id));
       setDeleteTarget(null);
       toast.success("Publisher deleted");
       router.refresh();
@@ -117,7 +118,8 @@ export function PublisherList({ publishers }: PublisherListProps) {
                   }
                   if (e.key === "Escape") setEditingId(null);
                 }}
-                className="h-9 flex-1"
+                className="flex-1"
+                aria-label="Publisher name"
                 autoFocus
               />
               <Button
@@ -186,6 +188,7 @@ export function PublisherList({ publishers }: PublisherListProps) {
             }
           }}
           placeholder="New publisher name..."
+          aria-label="New publisher name"
           className="flex-1"
         />
         <Button

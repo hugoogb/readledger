@@ -19,12 +19,12 @@ import {
   bulkMarkOwnedSchema,
   type BulkMarkOwnedSchema,
 } from "@/lib/validations";
-import { formatCurrency } from "@/utils/currency";
+import { useFormatCurrency } from "@/components/providers/currency-provider";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Calendar,
   Check,
-  Euro,
+  Banknote,
   Package,
   Sparkles,
   StickyNote,
@@ -33,6 +33,8 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { toast } from "sonner";
+import { parseDateInput, todayInputValue } from "@/utils/date";
+import { unwrap } from "@/lib/unwrap";
 
 type UserStore = { id: string; name: string };
 
@@ -48,6 +50,7 @@ export function BulkMarkOwnedModal({
   volumes,
   stores = [],
 }: BulkMarkOwnedModalProps) {
+  const formatCurrency = useFormatCurrency();
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
 
@@ -74,7 +77,7 @@ export function BulkMarkOwnedModal({
       totalPrice: undefined,
       storeId: "",
       condition: Condition.NEW,
-      purchaseDate: new Date().toISOString().split("T")[0],
+      purchaseDate: todayInputValue(),
       notes: "",
     },
   });
@@ -100,15 +103,15 @@ export function BulkMarkOwnedModal({
     if (ids.length === 0) return;
 
     try {
-      await bulkMarkOwned(ids, {
-        pricePaid: pricePerVolume || undefined,
+      unwrap(await bulkMarkOwned(ids, {
+        pricePaid: Number.isFinite(data.totalPrice)
+          ? roundToTwo(data.totalPrice / ids.length)
+          : undefined,
         storeId: data.storeId || undefined,
         condition: data.condition,
-        purchaseDate: data.purchaseDate
-          ? new Date(data.purchaseDate)
-          : new Date(),
+        purchaseDate: parseDateInput(data.purchaseDate) ?? undefined,
         notes: data.notes || undefined,
-      });
+      }));
       toast.success(`${ids.length} volumes marked as owned`);
       router.refresh();
       handleOpenChange(false);
@@ -208,11 +211,12 @@ export function BulkMarkOwnedModal({
             <Input
               id="totalPrice"
               type="number"
+              inputMode="decimal"
               step="0.01"
               min="0"
               {...register("totalPrice", { valueAsNumber: true })}
               placeholder="Enter total amount..."
-              icon={<Euro className="w-4 h-4" />}
+              icon={<Banknote className="w-4 h-4" />}
               error={!!errors.totalPrice}
             />
             {selectedCount > 0 && !isNaN(totalPrice) && (
@@ -246,7 +250,7 @@ export function BulkMarkOwnedModal({
                 onChange={(val) => setValue("storeId", val || "")}
                 onCreate={async (name) => {
                   try {
-                    const store = await createStore(name);
+                    const store = unwrap(await createStore(name));
                     toast.success(`Store "${store.name}" created`);
                     router.refresh();
                     return store;

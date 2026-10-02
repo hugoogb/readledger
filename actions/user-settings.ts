@@ -3,45 +3,38 @@
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
-import { displayNameSchema } from "@/lib/validations";
+import { currencySchema, displayNameSchema } from "@/lib/validations";
+import { withResult } from "@/lib/action-result";
 
 export async function getUserSettings() {
   const user = await requireUser();
   return { currency: user.currency };
 }
 
-export async function updateCurrency(currency: string) {
+export const updateCurrency = withResult(async (currency: string) => {
   const user = await requireUser();
-  const trimmed = currency.trim().toUpperCase();
-  if (!trimmed || trimmed.length !== 3) {
-    throw new Error("Currency must be a 3-letter code (e.g. EUR, USD)");
-  }
+  const code = currencySchema.parse(currency);
 
   await prisma.user.update({
     where: { id: user.id },
-    data: { currency: trimmed },
+    data: { currency: code },
   });
 
-  revalidatePath("/dashboard");
-  revalidatePath("/dashboard/series");
-  revalidatePath("/dashboard/profile");
-}
+  revalidatePath("/dashboard", "layout");
+});
 
 /**
  * `null` means "never asked" (shows the first-login prompt); an empty string
  * means the user chose not to set a name, so the prompt stays dismissed.
  */
-export async function updateDisplayName(name: string) {
+export const updateDisplayName = withResult(async (name: string) => {
   const user = await requireUser();
-  const parsed = displayNameSchema.safeParse(name);
-  if (!parsed.success) {
-    throw new Error(parsed.error.issues[0].message);
-  }
+  const validName = displayNameSchema.parse(name);
 
   await prisma.user.update({
     where: { id: user.id },
-    data: { name: parsed.data },
+    data: { name: validName },
   });
 
   revalidatePath("/dashboard", "layout");
-}
+});

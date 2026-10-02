@@ -1,13 +1,18 @@
 import { prisma } from "@/lib/prisma";
-import { NotFoundError } from "@/lib/errors";
+import { NotFoundError, ValidationError } from "@/lib/errors";
 import { Condition } from "@/lib/generated/prisma/enums";
 import type { VolumeSchema } from "@/lib/validations";
 import { comparableSavings } from "@/lib/savings";
+import { parseDateInput, startOfUtcDay } from "@/utils/date";
+import { blankToNull } from "@/lib/normalize";
+import { assertOwnedStore } from "@/services/ownership";
 
 export const MAX_BULK_SIZE = 500;
 
 export type CreateVolumeInput = VolumeSchema & { seriesId: string };
 export type UpdateVolumeInput = Partial<VolumeSchema>;
+
+const CLEARABLE_FIELDS = ["title", "coverImage", "notes"] as const;
 
 export async function createVolume(userId: string, validated: CreateVolumeInput) {
   const series = await prisma.series.findFirst({
@@ -18,15 +23,17 @@ export async function createVolume(userId: string, validated: CreateVolumeInput)
     throw new NotFoundError("Series");
   }
 
+  await assertOwnedStore(userId, validated.storeId);
+
   return prisma.volume.create({
     data: {
-      ...validated,
+      ...blankToNull(validated, CLEARABLE_FIELDS),
       seriesId: validated.seriesId,
       volumeNumber: validated.volumeNumber,
       purchaseDate: validated.owned
-        ? (validated.purchaseDate ?? new Date())
+        ? (validated.purchaseDate ?? startOfUtcDay())
         : null,
-      readDate: validated.read ? (validated.readDate ?? new Date()) : null,
+      readDate: validated.read ? (validated.readDate ?? startOfUtcDay()) : null,
       storeId: validated.storeId || null,
       condition: (validated.condition as Condition) || null,
     },
@@ -43,10 +50,15 @@ export async function updateVolume(userId: string, id: string, validated: Update
     throw new NotFoundError("Volume");
   }
 
+  await assertOwnedStore(userId, validated.storeId);
+
   return prisma.volume.update({
     where: { id },
     data: {
-      ...validated,
+      ...blankToNull(validated, CLEARABLE_FIELDS),
+      // Owning a volume takes it off the wishlist (as bulkMarkOwned does), so
+      // removing it from the collection later doesn't resurrect the wish.
+      ...(validated.owned === true && { wishlist: false }),
       storeId: validated.storeId !== undefined ? (validated.storeId || null) : undefined,
       condition: validated.condition ? (validated.condition as Condition) : validated.condition === null ? null : undefined,
       readDate: resolveReadDate(validated, volume.readDate),
@@ -64,7 +76,7 @@ function resolveReadDate(
   if (input.read === false) return null;
   const isRead = input.read === true;
   if (input.readDate) return input.readDate;
-  if (isRead) return current ?? new Date();
+  if (isRead) return current ?? startOfUtcDay();
   return undefined;
 }
 
@@ -85,7 +97,9 @@ export async function deleteVolume(userId: string, id: string) {
   return volume.seriesId;
 }
 
-export async function toggleVolumeRead(userId: string, id: string) {
+// `today` is the client's local calendar date ("YYYY-MM-DD"); the server runs
+// in UTC and would otherwise date late-night reads to the previous day.
+export async function toggleVolumeRead(userId: string, id: string, today?: string) {
   const volume = await prisma.volume.findFirst({
     where: { id },
     include: { series: true },
@@ -99,7 +113,7 @@ export async function toggleVolumeRead(userId: string, id: string) {
     where: { id },
     data: {
       read: !volume.read,
-      readDate: !volume.read ? new Date() : null,
+      readDate: !volume.read ? (parseDateInput(today) ?? startOfUtcDay()) : null,
     },
   });
 
@@ -116,6 +130,16 @@ export async function getVolumeStats(userId: string, seriesId: string) {
     throw new NotFoundError("Series");
   }
 
+  return computeVolumeStats(series);
+}
+
+type StatsVolume = { owned: boolean; read: boolean; wishlist: boolean; pricePaid: number | null };
+
+export function computeVolumeStats(series: {
+  totalVolumes: number | null;
+  retailPrice: number | null;
+  volumes: StatsVolume[];
+}) {
   const volumes = series.volumes;
   const owned = volumes.filter((v) => v.owned).length;
   const read = volumes.filter((v) => v.read).length;
@@ -157,8 +181,8 @@ export async function bulkMarkOwned(
     notes?: string;
   },
 ) {
-  if (volumeIds.length === 0) throw new Error("No volumes selected");
-  if (volumeIds.length > MAX_BULK_SIZE) throw new Error(`Cannot process more than ${MAX_BULK_SIZE} volumes at once`);
+  if (volumeIds.length === 0) throw new ValidationError("No volumes selected");
+  if (volumeIds.length > MAX_BULK_SIZE) throw new ValidationError(`Cannot process more than ${MAX_BULK_SIZE} volumes at once`);
 
   const volumes = await prisma.volume.findMany({
     where: { id: { in: volumeIds } },
@@ -172,10 +196,12 @@ export async function bulkMarkOwned(
   const seriesIds = new Set<string>();
   for (const volume of volumes) {
     if (volume.series.userId !== userId) {
-      throw new Error("Unauthorized");
+      throw new NotFoundError("Some volumes");
     }
     seriesIds.add(volume.seriesId);
   }
+
+  await assertOwnedStore(userId, data.storeId);
 
   await prisma.volume.updateMany({
     where: { id: { in: volumeIds } },
@@ -185,7 +211,7 @@ export async function bulkMarkOwned(
       pricePaid: data.pricePaid ?? null,
       storeId: data.storeId || null,
       condition: data.condition,
-      purchaseDate: data.purchaseDate ?? new Date(),
+      purchaseDate: data.purchaseDate ?? startOfUtcDay(),
       notes: data.notes ?? null,
     },
   });
@@ -198,8 +224,8 @@ export async function bulkSetRead(
   volumeIds: string[],
   readDate?: Date,
 ) {
-  if (volumeIds.length === 0) throw new Error("No volumes selected");
-  if (volumeIds.length > MAX_BULK_SIZE) throw new Error(`Cannot process more than ${MAX_BULK_SIZE} volumes at once`);
+  if (volumeIds.length === 0) throw new ValidationError("No volumes selected");
+  if (volumeIds.length > MAX_BULK_SIZE) throw new ValidationError(`Cannot process more than ${MAX_BULK_SIZE} volumes at once`);
 
   const volumes = await prisma.volume.findMany({
     where: { id: { in: volumeIds } },
@@ -213,7 +239,7 @@ export async function bulkSetRead(
   const seriesIds = new Set<string>();
   for (const volume of volumes) {
     if (volume.series.userId !== userId) {
-      throw new Error("Unauthorized");
+      throw new NotFoundError("Some volumes");
     }
     seriesIds.add(volume.seriesId);
   }
@@ -222,7 +248,7 @@ export async function bulkSetRead(
     where: { id: { in: volumeIds }, owned: true, read: false },
     data: {
       read: true,
-      readDate: readDate ?? new Date(),
+      readDate: readDate ?? startOfUtcDay(),
     },
   });
 

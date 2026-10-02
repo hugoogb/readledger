@@ -21,16 +21,16 @@ export default async function ProfilePage() {
   }
 
   return (
-    <div className="p-8">
+    <div className="p-4 lg:p-8">
       {/* Header */}
-      <div className="mb-8 animate-fade-in">
+      <div className="mb-8">
         <h1 className="text-3xl font-bold">Profile</h1>
         <p className="text-foreground-muted mt-1">Manage your account</p>
       </div>
 
       <div className="max-w-2xl space-y-6">
         {/* Profile Card */}
-        <Card className="animate-fade-in stagger-1">
+        <Card>
           <CardHeader className="flex flex-row items-center gap-4">
             {user.avatarUrl ? (
               <Image
@@ -79,7 +79,7 @@ export default async function ProfilePage() {
         </Card>
 
         {/* Import / Export */}
-        <Card className="animate-fade-in stagger-2">
+        <Card>
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
               <Database className="w-5 h-5" />
@@ -98,7 +98,7 @@ export default async function ProfilePage() {
         </Card>
 
         {/* Sign Out */}
-        <Card className="animate-fade-in stagger-3">
+        <Card>
           <CardHeader>
             <CardTitle className="text-lg">Account Actions</CardTitle>
           </CardHeader>

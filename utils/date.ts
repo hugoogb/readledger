@@ -47,3 +47,28 @@ export function formatRelativeDate(date: Date, now: Date = new Date()): string {
   if (days < 730) return rtf.format(-Math.floor(days / 30), "month");
   return rtf.format(-Math.floor(days / 365), "year");
 }
+
+/**
+ * Calendar dates (purchase/read dates) are stored as UTC midnight of the day,
+ * which is what `new Date("YYYY-MM-DD")` from a date input produces.
+ */
+
+/** Today in the viewer's local timezone as "YYYY-MM-DD", for date inputs. */
+export function todayInputValue(now: Date = new Date()): string {
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, "0");
+  const d = String(now.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+/** UTC midnight of `date`'s UTC calendar day. */
+export function startOfUtcDay(date: Date = new Date()): Date {
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+}
+
+/** Parse a strict "YYYY-MM-DD" string into a stored date, or null if invalid. */
+export function parseDateInput(value: string | null | undefined): Date | null {
+  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+  const d = new Date(value);
+  return isNaN(d.getTime()) || formatDateForInput(d) !== value ? null : d;
+}

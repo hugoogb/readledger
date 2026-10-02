@@ -10,7 +10,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { formatCurrency } from "@/utils/currency";
+import { useFormatCurrency } from "@/components/providers/currency-provider";
 import { formatChartMonth, formatChartMonthShort } from "@/utils/date";
 import { Wallet } from "lucide-react";
 import { ChartEmpty } from "./chart-empty";
@@ -20,6 +20,7 @@ type SpendingOverTimeProps = {
 };
 
 export function SpendingOverTime({ data }: SpendingOverTimeProps) {
+  const formatCurrency = useFormatCurrency();
   if (data.length === 0) {
     return <ChartEmpty label="spending data" icon={Wallet} />;
   }

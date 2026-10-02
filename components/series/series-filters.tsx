@@ -68,6 +68,9 @@ export function SeriesFilters() {
         {/* Search */}
         <Input
           id="series-search"
+          type="search"
+          enterKeyHint="search"
+          aria-label="Search series"
           icon={
             isPending ? (
               <Loader2 className="w-5 h-5 animate-spin" />
@@ -84,6 +87,7 @@ export function SeriesFilters() {
         {/* Sort */}
         <Select
           id="series-sort"
+          aria-label="Sort series"
           value={currentSort}
           onChange={(e) => updateParams("sort", e.target.value)}
           className="w-full sm:w-48"

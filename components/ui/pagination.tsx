@@ -69,17 +69,23 @@ export function Pagination({
           size="icon"
           onClick={() => goToPage(currentPage - 1)}
           disabled={currentPage <= 1 || isPending}
-          className="w-9 h-9"
+          className="w-11 h-11 sm:w-9 sm:h-9"
           aria-label="Previous page"
         >
           <ChevronLeft className="w-4 h-4" />
         </Button>
 
+        {/* Phones: a compact "3 / 9" between large arrows; the numbered
+            buttons don't fit a narrow screen at a tappable size. */}
+        <span className="sm:hidden min-w-16 text-center text-sm tabular-nums text-foreground-muted">
+          {currentPage} / {totalPages}
+        </span>
+
         {pages.map((page, i) =>
           page === "..." ? (
             <span
               key={`dots-${i}`}
-              className="w-9 h-9 flex items-center justify-center text-foreground-muted"
+              className="hidden sm:flex w-9 h-9 items-center justify-center text-foreground-muted"
             >
               ...
             </span>
@@ -90,7 +96,7 @@ export function Pagination({
               onClick={() => goToPage(page)}
               disabled={isPending}
               aria-current={page === currentPage ? "page" : undefined}
-              className="w-9 h-9 p-0"
+              className="hidden sm:inline-flex w-9 h-9 p-0"
             >
               {page}
             </Button>
@@ -102,7 +108,7 @@ export function Pagination({
           size="icon"
           onClick={() => goToPage(currentPage + 1)}
           disabled={currentPage >= totalPages || isPending}
-          className="w-9 h-9"
+          className="w-11 h-11 sm:w-9 sm:h-9"
           aria-label="Next page"
         >
           <ChevronRight className="w-4 h-4" />

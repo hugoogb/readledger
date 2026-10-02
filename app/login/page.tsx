@@ -223,7 +223,7 @@ function CodeStep({
               onChange={(e) => handleCodeChange(e.target.value)}
               placeholder="123456"
               aria-describedby="code-hint"
-              className="text-center text-2xl tracking-[0.5em] font-mono"
+              className="text-center text-2xl sm:text-2xl tracking-[0.5em] font-mono"
               icon={<KeyRound className="w-5 h-5" />}
             />
             <p id="code-hint" className="text-xs text-foreground-muted">

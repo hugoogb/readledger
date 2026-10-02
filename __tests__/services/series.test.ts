@@ -82,6 +82,7 @@ describe("createSeries", () => {
       publisherId: "pub-001",
     };
     const expected = makeSeries();
+    prismaMock.publisher.findFirst.mockResolvedValue({ id: "pub-001" } as never);
     prismaMock.series.create.mockResolvedValue(expected);
 
     const result = await createSeries(USER_ID, input);
@@ -188,12 +189,46 @@ describe("updateSeries", () => {
     expect(result).toEqual(updatedData);
     expect(prismaMock.series.findFirst).toHaveBeenCalledWith({
       where: { id: SERIES_ID, userId: USER_ID },
-      include: { volumes: true },
+      include: { volumes: { select: { volumeNumber: true } } },
     });
     expect(prismaMock.series.update).toHaveBeenCalledWith({
       where: { id: SERIES_ID },
       data: expect.objectContaining({ title: "Chainsaw Man Part 2" }),
     });
+  });
+
+  it("clears the publisher and blank text fields", async () => {
+    prismaMock.series.findFirst.mockResolvedValue(makeSeries({ volumes: [] }));
+    prismaMock.series.update.mockResolvedValue(makeSeries());
+
+    await updateSeries(USER_ID, SERIES_ID, { publisherId: null, author: "", description: "" });
+
+    expect(prismaMock.series.update).toHaveBeenCalledWith({
+      where: { id: SERIES_ID },
+      data: expect.objectContaining({ publisherId: null, author: null, description: null }),
+    });
+  });
+
+  it("leaves the publisher alone when it isn't sent", async () => {
+    prismaMock.series.findFirst.mockResolvedValue(makeSeries({ volumes: [] }));
+    prismaMock.series.update.mockResolvedValue(makeSeries());
+
+    await updateSeries(USER_ID, SERIES_ID, { title: "X" });
+
+    expect(prismaMock.series.update).toHaveBeenCalledWith({
+      where: { id: SERIES_ID },
+      data: expect.objectContaining({ publisherId: undefined }),
+    });
+  });
+
+  it("rejects another user's publisher", async () => {
+    prismaMock.series.findFirst.mockResolvedValue(makeSeries({ volumes: [] }));
+    prismaMock.publisher.findFirst.mockResolvedValue(null);
+
+    await expect(
+      updateSeries(USER_ID, SERIES_ID, { publisherId: "someone-elses" }),
+    ).rejects.toThrow(NotFoundError);
+    expect(prismaMock.series.update).not.toHaveBeenCalled();
   });
 
   it("throws NotFoundError when series does not exist", async () => {
@@ -283,9 +318,21 @@ describe("getAllSeries", () => {
     expect(result).toEqual(seriesList);
     expect(prismaMock.series.findMany).toHaveBeenCalledWith({
       where: { userId: USER_ID },
-      include: { publisher: true, volumes: true },
+      select: expect.objectContaining({ id: true, title: true }),
       orderBy: { updatedAt: "desc" },
     });
+  });
+
+  it("searches titles case-insensitively in the database", async () => {
+    prismaMock.series.findMany.mockResolvedValue([]);
+
+    await getAllSeries(USER_ID, undefined, undefined, "chain");
+
+    expect(prismaMock.series.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { userId: USER_ID, title: { contains: "chain", mode: "insensitive" } },
+      }),
+    );
   });
 
   it("sorts by completion percentage client-side", async () => {

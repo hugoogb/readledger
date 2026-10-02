@@ -10,6 +10,7 @@ import { Target, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
+import { unwrap } from "@/lib/unwrap";
 
 type GoalModalProps = {
   year: number;
@@ -36,7 +37,7 @@ export function GoalModal({ year, currentTarget, isOpen, onClose }: GoalModalPro
 
     startSave(async () => {
       try {
-        await setReadingGoal(year, parsed.data);
+        unwrap(await setReadingGoal(year, parsed.data));
         toast.success(`Goal for ${year} set to ${parsed.data} volumes`);
         router.refresh();
         onClose();
@@ -49,7 +50,7 @@ export function GoalModal({ year, currentTarget, isOpen, onClose }: GoalModalPro
   const handleRemove = () => {
     startRemove(async () => {
       try {
-        await deleteReadingGoal(year);
+        unwrap(await deleteReadingGoal(year));
         toast.success(`Goal for ${year} removed`);
         router.refresh();
         onClose();

@@ -19,7 +19,8 @@ export function ThemeToggle() {
           suppressHydrationWarning
           key={value}
           onClick={() => setTheme(value)}
-          className={`p-1.5 rounded-md transition-colors cursor-pointer ${
+          aria-pressed={theme === value}
+          className={`p-2.5 rounded-md transition-colors cursor-pointer ${
             theme === value
               ? "bg-accent/15 text-accent"
               : "text-foreground-muted hover:text-foreground"
@@ -27,7 +28,7 @@ export function ThemeToggle() {
           aria-label={`Switch to ${label} theme`}
           title={label}
         >
-          <Icon className="w-3.5 h-3.5" />
+          <Icon className="w-4 h-4" />
         </button>
       ))}
     </div>
