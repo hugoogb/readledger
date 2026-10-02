@@ -2,13 +2,13 @@
 
 import { createStore } from "@/actions/stores";
 import {
-  toggleVolumeRead,
   updateVolume,
   type UpdateVolumeInput,
 } from "@/actions/volumes";
 import { toggleWishlist } from "@/actions/wishlist";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { CreatableSelect } from "@/components/ui/creatable-select";
 import { FormField } from "@/components/ui/form-field";
 import { FormSection } from "@/components/ui/form-section";
@@ -25,7 +25,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import {
   BookMarked,
   Calendar,
-  Check,
   Euro,
   Heart,
   ImageIcon,
@@ -36,7 +35,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useEffect, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -48,7 +47,11 @@ type VolumeDetailsModalProps = {
   stores?: UserStore[];
   isOpen: boolean;
   onClose: () => void;
+  /** Focus this field when the modal opens (e.g. from the "Change date" toast). */
+  focusField?: "readDate";
 };
+
+const todayInput = () => new Date().toISOString().split("T")[0];
 
 export function VolumeDetailsModal({
   volume,
@@ -56,11 +59,18 @@ export function VolumeDetailsModal({
   stores = [],
   isOpen,
   onClose,
+  focusField,
 }: VolumeDetailsModalProps) {
   const router = useRouter();
-  // Pending state for the secondary actions (toggle read / wishlist / remove)
-  // which run outside react-hook-form's submit lifecycle.
+  // Pending state for the secondary actions (wishlist / remove) which run
+  // outside react-hook-form's submit lifecycle.
   const [isActionPending, startAction] = useTransition();
+
+  // The read flag and date live outside react-hook-form: the date input holds
+  // a "YYYY-MM-DD" string that we prefill programmatically, which RHF's
+  // setValueAs (input-event only) wouldn't convert for the Date schema.
+  const [isReadChecked, setIsReadChecked] = useState(volume.read);
+  const [readOn, setReadOn] = useState(formatDateForInput(volume.readDate));
 
   const {
     register,
@@ -87,9 +97,6 @@ export function VolumeDetailsModal({
       purchaseDate: (volume.owned
         ? formatDateForInput(volume.purchaseDate)
         : new Date().toISOString().split("T")[0]) as unknown as Date,
-      readDate: (volume.readDate
-        ? formatDateForInput(volume.readDate)
-        : undefined) as unknown as Date,
     },
   });
 
@@ -111,25 +118,35 @@ export function VolumeDetailsModal({
         purchaseDate: (volume.owned
           ? formatDateForInput(volume.purchaseDate)
           : new Date().toISOString().split("T")[0]) as unknown as Date,
-        readDate: (volume.readDate
-          ? formatDateForInput(volume.readDate)
-          : undefined) as unknown as Date,
       });
+      setIsReadChecked(volume.read);
+      setReadOn(
+        volume.readDate
+          ? formatDateForInput(volume.readDate)
+          : volume.read
+            ? todayInput()
+            : "",
+      );
     }
   }, [isOpen, volume, seriesDefaults, reset]);
+
+  const handleReadChange = (checked: boolean) => {
+    setIsReadChecked(checked);
+    if (checked && !readOn) setReadOn(todayInput());
+  };
 
   const onSubmit: SubmitHandler<VolumeSchema> = async (data) => {
     try {
       const input: UpdateVolumeInput = {
         volumeNumber: data.volumeNumber,
         owned: true,
-        read: data.read,
+        read: isReadChecked,
         pricePaid: Number(data.pricePaid?.toFixed(2)) ?? undefined,
         condition: data.condition,
         storeId: data.storeId || null,
         coverImage: data.coverImage || undefined,
         purchaseDate: data.purchaseDate || undefined,
-        readDate: data.readDate || undefined,
+        readDate: isReadChecked && readOn ? new Date(readOn) : undefined,
         notes: data.notes || undefined,
       };
 
@@ -169,20 +186,6 @@ export function VolumeDetailsModal({
     });
   };
 
-  const handleToggleRead = (e: React.MouseEvent) => {
-    e.preventDefault();
-    startAction(async () => {
-      try {
-        await toggleVolumeRead(volume.id);
-        toast.success(`Volume ${volume.volumeNumber} updated`);
-        router.refresh();
-        onClose();
-      } catch {
-        toast.error("Failed to update volume");
-      }
-    });
-  };
-
   const handleToggleWishlist = (e: React.MouseEvent) => {
     e.preventDefault();
     startAction(async () => {
@@ -206,7 +209,6 @@ export function VolumeDetailsModal({
   const storeId = watch("storeId");
 
   const isOwned = volume.owned;
-  const isRead = volume.read;
   const isWishlisted = volume.wishlist && !isOwned;
 
   return (
@@ -266,20 +268,6 @@ export function VolumeDetailsModal({
             </div>
 
             <div className="mt-2">
-              {isOwned && (
-                <Button
-                  size="sm"
-                  onClick={handleToggleRead}
-                  loading={isActionPending}
-                  variant={isRead ? "success" : "secondary"}
-                  className="rounded-md"
-                  aria-label={`Mark volume ${volume.volumeNumber} as ${isRead ? "unread" : "read"}`}
-                >
-                  <Check className="w-3.5 h-3.5" />
-                  Mark as {isRead ? "unread" : "read"}
-                </Button>
-              )}
-
               {!volume.owned && (
                 <Button
                   size="sm"
@@ -406,23 +394,27 @@ export function VolumeDetailsModal({
             </FormField>
           </FormSection>
 
-          {isRead && (
-            <FormField
-              label="Read On"
-              htmlFor="readDate"
-              error={errors.readDate?.message}
-            >
-              <Input
-                id="readDate"
-                type="date"
-                {...register("readDate", {
-                  setValueAs: (v: string) => (v ? new Date(v) : null),
-                })}
-                icon={<BookMarked className="w-4 h-4" />}
-                error={!!errors.readDate}
-              />
-            </FormField>
-          )}
+          <div className="space-y-3">
+            <Checkbox
+              checked={isReadChecked}
+              onChange={handleReadChange}
+              label="Read"
+              description="Track when you read this volume"
+              variant="success"
+            />
+            {isReadChecked && (
+              <FormField label="Read On" htmlFor="readDate">
+                <Input
+                  id="readDate"
+                  type="date"
+                  value={readOn}
+                  onChange={(e) => setReadOn(e.target.value)}
+                  icon={<BookMarked className="w-4 h-4" />}
+                  autoFocus={focusField === "readDate"}
+                />
+              </FormField>
+            )}
+          </div>
 
           <FormField
             label="Notes"

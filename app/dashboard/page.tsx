@@ -1,4 +1,6 @@
+import { getReadingGoals, getReadingVolumes } from "@/actions/reading";
 import { getDashboardData, getSeriesStats } from "@/actions/series";
+import { CoverList } from "@/components/reading/cover-list";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import {
   DashboardStatsSkeleton,
@@ -6,7 +8,9 @@ import {
   RecentSeriesListSkeleton,
 } from "@/components/ui/skeletons";
 import { StatsCard } from "@/components/ui/stats-card";
+import { goalProgress, readCount, recentlyRead } from "@/lib/reading-stats";
 import { formatCurrency } from "@/utils/currency";
+import { formatRelativeDate } from "@/utils/date";
 import {
   BookMarked,
   BookOpen,
@@ -15,6 +19,7 @@ import {
   Library,
   PauseCircle,
   PiggyBank,
+  Target,
   TrendingUp,
   Wallet,
   XCircle,
@@ -24,10 +29,23 @@ import Link from "next/link";
 import { Suspense } from "react";
 
 async function DashboardStats() {
-  const stats = await getSeriesStats();
+  const [stats, readingVolumes, goals] = await Promise.all([
+    getSeriesStats(),
+    getReadingVolumes(),
+    getReadingGoals(),
+  ]);
+  const now = new Date();
+  const year = now.getUTCFullYear();
+  const readThisYear = readCount(readingVolumes, year);
+  const goal = goalProgress(
+    goals.find((g) => g.year === year) ?? null,
+    readThisYear,
+    year,
+    now,
+  );
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
       <div className="animate-fade-in stagger-1">
         <StatsCard
           title="Total Series"
@@ -55,6 +73,19 @@ async function DashboardStats() {
           variant="default"
         />
       </div>
+      <Link
+        href="/dashboard/statistics?tab=reading"
+        className="animate-fade-in stagger-4 rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+      >
+        <StatsCard
+          title={`Reading ${year}`}
+          value={readThisYear}
+          subtitle={goal ? `${goal.read} / ${goal.target} goal` : "No goal set"}
+          icon={Target}
+          variant="success"
+          className="h-full hover:bg-background-tertiary/40 transition-colors"
+        />
+      </Link>
       <div className="animate-fade-in stagger-4">
         <StatsCard
           title="Total Spent"
@@ -270,6 +301,35 @@ async function StatusAndRecentSection() {
   );
 }
 
+async function RecentlyReadSection() {
+  const volumes = await getReadingVolumes();
+  const now = new Date();
+
+  return (
+    <div className="glass rounded-2xl p-4 sm:p-6 animate-fade-in mb-8">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-semibold">Recently Read</h2>
+        <Link
+          href="/dashboard/statistics?tab=reading"
+          className="text-sm text-accent hover:text-accent-hover transition-colors"
+        >
+          Reading stats
+        </Link>
+      </div>
+      <CoverList
+        emptyText="Volumes you mark as read will show up here."
+        items={recentlyRead(volumes).map((v) => ({
+          key: v.id,
+          href: `/dashboard/series/${v.seriesId}`,
+          title: v.series.title,
+          subtitle: `Vol ${v.volumeNumber} · ${formatRelativeDate(v.readDate, now)}`,
+          coverImage: v.coverImage ?? v.series.coverImage,
+        }))}
+      />
+    </div>
+  );
+}
+
 export default function DashboardPage() {
   return (
     <div className="p-4 lg:p-8">
@@ -294,6 +354,10 @@ export default function DashboardPage() {
         }
       >
         <ProgressSection />
+      </Suspense>
+
+      <Suspense fallback={<RecentSeriesListSkeleton />}>
+        <RecentlyReadSection />
       </Suspense>
 
       <Suspense fallback={<RecentSeriesListSkeleton />}>

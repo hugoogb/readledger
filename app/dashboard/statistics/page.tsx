@@ -1,95 +1,60 @@
-import {
-  getSpendingOverTime,
-  getStatusDistribution,
-  getCollectionGrowth,
-  getPublisherBreakdown,
-  getStoreBreakdown,
-  getConditionDistribution,
-  getUndatedOwnedCount,
-} from "@/actions/statistics";
-import { SpendingOverTime } from "@/components/charts/spending-over-time";
-import { StatusDistribution } from "@/components/charts/status-distribution";
-import { CollectionGrowth } from "@/components/charts/collection-growth";
-import { PublisherBreakdown } from "@/components/charts/publisher-breakdown";
-import { StoreBreakdown } from "@/components/charts/store-breakdown";
-import { ConditionDistribution } from "@/components/charts/condition-distribution";
+import { ChipNav } from "@/components/statistics/chip-nav";
+import { CollectionTab } from "@/components/statistics/collection-tab";
+import { MoneyTab } from "@/components/statistics/money-tab";
+import { ReadingTab } from "@/components/statistics/reading-tab";
+import { ChartGridSkeleton } from "@/components/ui/skeletons";
 import type { Metadata } from "next";
+import { Suspense } from "react";
 
 export const metadata: Metadata = {
   title: "Statistics",
   description: "Collection statistics and insights",
 };
 
-export default async function StatisticsPage() {
-  const [spending, statusDist, growth, publishers, stores, conditions, undated] = await Promise.all([
-    getSpendingOverTime(),
-    getStatusDistribution(),
-    getCollectionGrowth(),
-    getPublisherBreakdown(),
-    getStoreBreakdown(),
-    getConditionDistribution(),
-    getUndatedOwnedCount(),
-  ]);
+const tabs = [
+  { value: "reading", label: "Reading" },
+  { value: "collection", label: "Collection" },
+  { value: "money", label: "Money" },
+] as const;
+
+type Tab = (typeof tabs)[number]["value"];
+
+type Props = {
+  searchParams: Promise<{ tab?: string; year?: string }>;
+};
+
+export default async function StatisticsPage({ searchParams }: Props) {
+  const { tab: tabParam, year } = await searchParams;
+  const tab: Tab = tabs.some((t) => t.value === tabParam) ? (tabParam as Tab) : "reading";
 
   return (
     <div className="p-4 lg:p-8">
       {/* Header */}
-      <div className="mb-8 animate-fade-in">
+      <div className="mb-6 animate-fade-in">
         <h1 className="text-3xl font-bold mb-1">Statistics</h1>
         <p className="text-foreground-muted">
           Insights about your manga collection
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Spending Over Time */}
-        <div className="glass rounded-2xl p-6 animate-fade-in stagger-1">
-          <h2 className="text-lg font-semibold mb-4">Spending Over Time</h2>
-          <SpendingOverTime data={spending} />
-          <UndatedNote count={undated} />
-        </div>
-
-        {/* Status Distribution */}
-        <div className="glass rounded-2xl p-6 animate-fade-in stagger-2">
-          <h2 className="text-lg font-semibold mb-4">Status Distribution</h2>
-          <StatusDistribution data={statusDist} />
-        </div>
-
-        {/* Collection Growth */}
-        <div className="glass rounded-2xl p-6 animate-fade-in stagger-3">
-          <h2 className="text-lg font-semibold mb-4">Collection Growth</h2>
-          <CollectionGrowth data={growth} />
-          <UndatedNote count={undated} />
-        </div>
-
-        {/* Publisher Breakdown */}
-        <div className="glass rounded-2xl p-6 animate-fade-in stagger-4">
-          <h2 className="text-lg font-semibold mb-4">By Publisher</h2>
-          <PublisherBreakdown data={publishers} />
-        </div>
-
-        {/* Store Breakdown */}
-        <div className="glass rounded-2xl p-6 animate-fade-in stagger-5">
-          <h2 className="text-lg font-semibold mb-4">By Store</h2>
-          <StoreBreakdown data={stores} />
-        </div>
-
-        {/* Condition Distribution */}
-        <div className="glass rounded-2xl p-6 animate-fade-in stagger-6">
-          <h2 className="text-lg font-semibold mb-4">Condition Distribution</h2>
-          <ConditionDistribution data={conditions} />
-        </div>
+      <div className="mb-6">
+        <ChipNav
+          label="Statistics sections"
+          active={tab}
+          items={tabs.map((t) => ({
+            value: t.value,
+            label: t.label,
+            href: `/dashboard/statistics?tab=${t.value}`,
+          }))}
+        />
       </div>
-    </div>
-  );
-}
 
-function UndatedNote({ count }: { count: number }) {
-  if (count === 0) return null;
-  return (
-    <p className="text-xs text-foreground-muted mt-3">
-      {count} owned volume{count !== 1 ? "s have" : " has"} no purchase date
-      and {count !== 1 ? "aren't" : "isn't"} shown here.
-    </p>
+      {/* Keyed so switching tab/year shows the skeleton instead of stale data. */}
+      <Suspense key={`${tab}-${year ?? ""}`} fallback={<ChartGridSkeleton />}>
+        {tab === "reading" && <ReadingTab yearParam={year} />}
+        {tab === "collection" && <CollectionTab />}
+        {tab === "money" && <MoneyTab />}
+      </Suspense>
+    </div>
   );
 }

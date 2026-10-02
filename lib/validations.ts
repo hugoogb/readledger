@@ -41,6 +41,15 @@ export const bulkSetReadSchema = z.object({
   volumeIds: z.array(z.string()).min(1, "Select at least one volume"),
 });
 
+export const readingGoalSchema = z.object({
+  year: z.number().int().min(2000).max(2100),
+  target: z
+    .number("Goal must be a number")
+    .int("Goal must be a whole number")
+    .min(1, "Goal must be at least 1")
+    .max(1000, "Goal must be 1000 or less"),
+});
+
 export const emailSchema = z
   .string()
   .trim()
@@ -59,3 +68,4 @@ export type SeriesSchema = z.infer<typeof seriesSchema>;
 export type VolumeSchema = z.infer<typeof volumeSchema>;
 export type BulkMarkOwnedSchema = z.infer<typeof bulkMarkOwnedSchema>;
 export type BulkSetReadSchema = z.infer<typeof bulkSetReadSchema>;
+export type ReadingGoalSchema = z.infer<typeof readingGoalSchema>;

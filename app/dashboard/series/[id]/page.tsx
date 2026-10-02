@@ -3,6 +3,7 @@ import { getSeries } from "@/actions/series";
 import { getStores } from "@/actions/stores";
 import { getVolumeStats } from "@/actions/volumes";
 import { EditSeriesModal } from "@/components/series/edit-series-modal";
+import { SeriesTimeline } from "@/components/series/series-timeline";
 import { Badge } from "@/components/ui/badge";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { StatsCardSkeleton } from "@/components/ui/skeletons";
@@ -245,6 +246,8 @@ export default async function SeriesDetailPage({ params }: Props) {
             <Suspense fallback={null}>
               <SeriesProgressSection seriesId={id} />
             </Suspense>
+
+            <SeriesTimeline volumes={series.volumes} />
           </div>
         </div>
       </div>

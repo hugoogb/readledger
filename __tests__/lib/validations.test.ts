@@ -1,6 +1,7 @@
 import {
   bulkMarkOwnedSchema,
   bulkSetReadSchema,
+  readingGoalSchema,
   seriesSchema,
   volumeSchema,
 } from "@/lib/validations";
@@ -286,5 +287,19 @@ describe("bulkSetReadSchema", () => {
   it("rejects empty array", () => {
     const result = bulkSetReadSchema.safeParse({ volumeIds: [] });
     expect(result.success).toBe(false);
+  });
+});
+
+describe("readingGoalSchema", () => {
+  it("accepts a valid goal", () => {
+    expect(readingGoalSchema.safeParse({ year: 2026, target: 60 }).success).toBe(true);
+  });
+
+  it.each([0, 1001, 2.5])("rejects target %s", (target) => {
+    expect(readingGoalSchema.safeParse({ year: 2026, target }).success).toBe(false);
+  });
+
+  it("rejects an out-of-range year", () => {
+    expect(readingGoalSchema.safeParse({ year: 1999, target: 10 }).success).toBe(false);
   });
 });

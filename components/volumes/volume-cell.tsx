@@ -1,10 +1,10 @@
 "use client";
 
-import { memo, useState } from "react";
+import { memo } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import type { SeriesDefaults, VolumeWithStore } from "@/types";
+import type { VolumeWithStore } from "@/types";
 import { formatCurrency } from "@/utils/currency";
 import {
   BookMarked,
@@ -14,26 +14,20 @@ import {
   ShoppingBag,
 } from "lucide-react";
 import Image from "next/image";
-import { VolumeDetailsModal } from "./volume-details-modal";
-
-type UserStore = { id: string; name: string };
 
 type VolumeCellProps = {
   volume: VolumeWithStore;
-  seriesDefaults?: SeriesDefaults;
-  stores?: UserStore[];
+  onOpen: (volume: VolumeWithStore) => void;
   onToggleRead: (volume: VolumeWithStore) => void;
   onToggleWishlist: (volume: VolumeWithStore) => void;
 };
 
 export const VolumeCell = memo(function VolumeCell({
   volume,
-  seriesDefaults,
-  stores,
+  onOpen,
   onToggleRead,
   onToggleWishlist,
 }: VolumeCellProps) {
-  const [showModal, setShowModal] = useState(false);
 
   const handleToggleRead = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -47,7 +41,7 @@ export const VolumeCell = memo(function VolumeCell({
 
   const handleOpenModal = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setShowModal(true);
+    onOpen(volume);
   };
 
   const isOwned = volume.owned;
@@ -234,16 +228,6 @@ export const VolumeCell = memo(function VolumeCell({
           )}
         </div>
       </div>
-
-      {showModal && (
-        <VolumeDetailsModal
-          volume={volume}
-          seriesDefaults={seriesDefaults}
-          stores={stores}
-          isOpen={showModal}
-          onClose={() => setShowModal(false)}
-        />
-      )}
     </>
   );
 },
