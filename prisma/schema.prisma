@@ -78,7 +78,6 @@ model Publisher {
   series    Series[]
 
   @@unique([userId, name])
-  @@index([userId])
   @@map("publishers")
 }
 
@@ -91,7 +90,6 @@ model UserStore {
   volumes   Volume[]
 
   @@unique([userId, name])
-  @@index([userId])
   @@map("user_stores")
 }
 
@@ -115,8 +113,6 @@ model Series {
   volumes      Volume[]
 
   @@unique([userId, mangadexId])
-  @@index([userId])
-  @@index([userId], map: "idx_series_userid")
   @@map("series")
 }
 
@@ -142,8 +138,6 @@ model Volume {
   store        UserStore? @relation(fields: [storeId], references: [id], onDelete: SetNull)
 
   @@unique([seriesId, volumeNumber])
-  @@index([seriesId])
-  @@index([seriesId], map: "idx_volumes_seriesid")
   @@map("volumes")
 }
 
