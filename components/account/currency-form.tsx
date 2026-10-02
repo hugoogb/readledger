@@ -55,7 +55,7 @@ export function CurrencyForm({ initialCurrency }: { initialCurrency: string }) {
         value={currency}
         onChange={(e) => handleChange(e.target.value)}
         disabled={isPending}
-        className="sm:w-72"
+        containerClassName="sm:w-72"
       >
         {options.map((c) => (
           <option key={c.code} value={c.code}>
