@@ -103,7 +103,7 @@ pnpm install
 cp .env.example .env
 ```
 
-Update with your Supabase project URL, anon key, and database connection string.
+Set `DATABASE_URL` and `DIRECT_URL` to a local Postgres and `AUTH_SECRET` to a random key (`openssl rand -base64 48`). `BREVO_API_KEY` is optional in development: without it, login codes are printed to the server log instead of emailed.
 
 ### 4️⃣ Database setup
 
