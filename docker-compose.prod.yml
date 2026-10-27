@@ -1,0 +1,51 @@
+# Production compose file for the VPS. The deploy workflow sends this file to
+# the server, where infra-setup's deploy-app.sh checks it against the
+# platform's deploy policy (no privileged mode, no host mounts outside the
+# app's own directory, only the `edge` and `data` platform networks, ...)
+# before running it. A change the policy refuses fails the deploy with the
+# reason; see infra-setup/scripts/deploy-policy.py.
+#
+# The server supplies .env (database URLs and app secrets, written by
+# new-app.sh and never in this repository) and .tag (TAG=<commit sha>).
+name: readledger
+
+services:
+  readledger:
+    image: ghcr.io/hugoogb/readledger:${TAG:-latest}
+    container_name: readledger
+    restart: unless-stopped
+    env_file: .env
+    # `edge` is how Caddy reaches this, as readledger:3000 over Docker's DNS;
+    # there is deliberately no `ports:`. `data` is what makes `postgres` and
+    # `pgbouncer` resolve.
+    networks:
+      - edge
+      - data
+    mem_limit: 512m
+    cpus: 1.0
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  # Run by deploy-app.sh before the app restarts, never on its own: services
+  # in the `tasks` profile only start through `compose run`. Prisma reads
+  # DIRECT_URL from .env, because PgBouncer's transaction pooling cannot run a
+  # migration.
+  migrate:
+    image: ghcr.io/hugoogb/readledger:${TAG:-latest}
+    profiles: [tasks]
+    restart: "no"
+    env_file: .env
+    networks:
+      - data
+    entrypoint: ["sh", "-c"]
+    command: ["cd /migrate && node node_modules/prisma/build/index.js migrate deploy"]
+
+networks:
+  edge:
+    external: true
+  data:
+    external: true
