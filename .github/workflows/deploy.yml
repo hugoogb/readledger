@@ -4,12 +4,15 @@
 # Pushing to master deploys. `workflow_dispatch` with a tag rolls back to an image
 # that already exists, without building.
 #
-# Repository secrets required:
-#   TS_OAUTH_CLIENT_ID / TS_OAUTH_SECRET   join the tailnet as tag:ci
-#   VPS_HOST                               the server's tailnet IP (100.x.y.z)
+# Secrets required:
+#   TS_OAUTH_CLIENT_ID / TS_OAUTH_SECRET   in the `vps` environment (master only)
+#   VPS_HOST                               repository secret, the server's 100.x.y.z
 #
 # There is deliberately NO SSH key: the server runs Tailscale SSH and admits tag:ci
-# by tailnet identity.
+# by tailnet identity -- as the `deploy` user, which can do exactly one thing:
+# run infra-setup's deploy-app.sh. This job sends docker-compose.prod.yml to it;
+# the server checks the file against its deploy policy, then pulls, migrates
+# (the `migrate` task in that file) and restarts.
 name: deploy
 
 on:
@@ -44,6 +47,11 @@ env:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    # The Tailscale OAuth secrets live in the `vps` environment, not the
+    # repository, and that environment only releases them to runs on master.
+    # A workflow edited on a branch and started with workflow_dispatch gets
+    # nothing to join the tailnet with.
+    environment: vps
     timeout-minutes: 30
 
     steps:
@@ -115,38 +123,19 @@ jobs:
 
       # accept-new is acceptable only because the connection rides inside
       # WireGuard between two authenticated tailnet peers.
-      - name: Roll the container
+      #
+      # One command, with the compose file as its stdin. deploy-app.sh reads
+      # all of stdin before it runs anything, so nothing on the server can eat
+      # part of a script -- there is no script, only the file and the verb.
+      # On failure it prints why (policy violation, failed migration, the
+      # container's last log lines) and exits non-zero.
+      - name: Deploy
         env:
           SSH_OPTS: -o StrictHostKeyChecking=accept-new -o ConnectTimeout=30
         run: |
-          set -euo pipefail
-          # The remote script arrives on ssh's stdin (`bash -s`): any command that
-          # reads stdin would swallow the rest of the script and bash would exit 0.
-          # Hence `-T` and `</dev/null` on `compose run`, and the completion marker.
-          ssh $SSH_OPTS "hugo@${{ secrets.VPS_HOST }}" bash -s <<REMOTE | tee /tmp/roll.log
-          set -euo pipefail
-          cd "${APP_DIR}"
-          echo "TAG=${DEPLOY_TAG}" > .tag
-
-          docker compose --env-file .env --env-file .tag pull
-
-          # Migrations before the new container starts, against DIRECT_URL:
-          # PgBouncer's transaction pooling cannot run them.
-          docker compose --env-file .env --env-file .tag run --rm -T \
-            --entrypoint "" ${APP_NAME} \
-            sh -c 'cd /migrate && node node_modules/prisma/build/index.js migrate deploy' </dev/null
-
-          # --wait blocks on /health, which checks Postgres.
-          docker compose --env-file .env --env-file .tag up -d --wait
-
-          docker image prune -f
-          echo "___ROLL_COMPLETED___"
-          REMOTE
-
-          grep -q '___ROLL_COMPLETED___' /tmp/roll.log || {
-            echo "::error::The remote script stopped before its last line."
-            exit 1
-          }
+          ssh $SSH_OPTS "deploy@${{ secrets.VPS_HOST }}" \
+            sudo -u hugo /srv/scripts/deploy-app.sh deploy "$APP_NAME" "$DEPLOY_TAG" \
+            < docker-compose.prod.yml
 
       - name: Assert the app answers through Cloudflare
         run: curl -fsS --retry 12 --retry-delay 5 --retry-all-errors "${PUBLIC_URL}/health"
