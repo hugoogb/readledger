@@ -1,0 +1,543 @@
+{
+  "checkedOn": "2026-11-04",
+  "series": [
+    {
+      "slug": "20th-century-boys",
+      "title": "20th Century Boys",
+      "authors": [
+        "Naoki Urasawa"
+      ],
+      "mangadexId": "ad06790a-01e3-400c-a449-0ec152d6756a",
+      "year": 1999,
+      "demographic": "seinen",
+      "status": "completed",
+      "volumes": 22,
+      "exact": true,
+      "note": "The 22 volumes are followed by a two-volume conclusion, 21st Century Boys, not counted here. VIZ Media also released a Perfect Edition that combines volumes."
+    },
+    {
+      "slug": "attack-on-titan",
+      "title": "Attack on Titan",
+      "authors": [
+        "Hajime Isayama"
+      ],
+      "mangadexId": "304ceac3-8cdb-4fe7-acf7-2b6ff7a60613",
+      "year": 2009,
+      "demographic": "shounen",
+      "status": "completed",
+      "volumes": 34,
+      "exact": true,
+      "note": "Kodansha publishes the English edition. Its larger Colossal Editions collect several volumes each, so count them separately from single volumes."
+    },
+    {
+      "slug": "berserk",
+      "title": "Berserk",
+      "authors": [
+        "Kentaro Miura"
+      ],
+      "mangadexId": "801513ba-a712-498c-8f57-cae55b38cc92",
+      "year": 1989,
+      "demographic": "seinen",
+      "status": "ongoing",
+      "volumes": 43,
+      "exact": false,
+      "note": "Dark Horse publishes the English edition, and most of its Deluxe hardcovers collect three volumes. The series continued after Kentaro Miura’s death in 2021, under Kouji Mori and Studio Gaga."
+    },
+    {
+      "slug": "black-clover",
+      "title": "Black Clover",
+      "authors": [
+        "Yuki Tabata"
+      ],
+      "mangadexId": "e7eabe96-aa17-476f-b431-2497d5e9d060",
+      "year": 2015,
+      "demographic": "shounen",
+      "status": "completed",
+      "volumes": 38,
+      "exact": true,
+      "note": "VIZ Media publishes the English edition, which follows the original volume numbering."
+    },
+    {
+      "slug": "bleach",
+      "title": "Bleach",
+      "authors": [
+        "Tite Kubo"
+      ],
+      "mangadexId": "239d6260-d71f-43b0-afff-074e3619e3de",
+      "year": 2001,
+      "demographic": "shounen",
+      "status": "completed",
+      "volumes": 74,
+      "exact": true,
+      "note": "VIZ Media publishes the English edition. It also released 3-in-1 omnibuses, so check which format you are buying before you fill a gap."
+    },
+    {
+      "slug": "blue-lock",
+      "title": "Blue Lock",
+      "authors": [
+        "Muneyuki Kaneshiro",
+        "Yusuke Nomura"
+      ],
+      "mangadexId": "4141c5dc-c525-4df5-afd7-cc7d192a832f",
+      "year": 2018,
+      "demographic": "shounen",
+      "status": "ongoing",
+      "volumes": 40,
+      "exact": false,
+      "note": "Kodansha publishes the English edition. The spin-off Blue Lock: Episode Nagi has separate numbering and is not part of this checklist."
+    },
+    {
+      "slug": "chainsaw-man",
+      "title": "Chainsaw Man",
+      "authors": [
+        "Tatsuki Fujimoto"
+      ],
+      "mangadexId": "a77742b1-befd-49a4-bff5-1ad4e6b0ef7b",
+      "year": 2018,
+      "demographic": "shounen",
+      "status": "completed",
+      "volumes": 24,
+      "exact": false,
+      "note": "VIZ Media publishes the English edition. Part 1 ends at volume 11, and Part 2 continues the same numbering from volume 12."
+    },
+    {
+      "slug": "dandadan",
+      "title": "Dandadan",
+      "authors": [
+        "Yukinobu Tatsu"
+      ],
+      "mangadexId": "68112dc1-2b80-4f20-beb8-2f2a8716a430",
+      "year": 2021,
+      "demographic": "shounen",
+      "status": "ongoing",
+      "volumes": 26,
+      "exact": false,
+      "note": "VIZ Media publishes the English edition, which usually trails the Japanese release by a few volumes."
+    },
+    {
+      "slug": "death-note",
+      "title": "Death Note",
+      "authors": [
+        "Tsugumi Ohba",
+        "Takeshi Obata"
+      ],
+      "mangadexId": "75ee72ab-c6bf-4b87-badd-de839156934c",
+      "year": 2003,
+      "demographic": "shounen",
+      "status": "completed",
+      "volumes": 12,
+      "exact": true,
+      "note": "The story runs 12 volumes. VIZ Media also published a guidebook, How to Read, plus Black Edition and All-in-One versions, so a shelf can look quite different depending on format."
+    },
+    {
+      "slug": "delicious-in-dungeon",
+      "title": "Delicious in Dungeon",
+      "authors": [
+        "Ryoko Kui"
+      ],
+      "mangadexId": "d90ea6cb-7bc3-4d80-8af0-28557e6c4e17",
+      "year": 2014,
+      "demographic": "seinen",
+      "status": "completed",
+      "volumes": 14,
+      "exact": true,
+      "note": "Published in Japanese as Dungeon Meshi. Yen Press publishes the English edition."
+    },
+    {
+      "slug": "demon-slayer",
+      "title": "Demon Slayer: Kimetsu no Yaiba",
+      "authors": [
+        "Koyoharu Gotouge"
+      ],
+      "mangadexId": "789642f8-ca89-4e4e-8f7b-eee4d17ea08b",
+      "year": 2016,
+      "demographic": "shounen",
+      "status": "completed",
+      "volumes": 23,
+      "exact": true,
+      "note": "VIZ Media publishes the English edition, and a complete box set exists if you would rather buy the series in one go."
+    },
+    {
+      "slug": "dragon-ball",
+      "title": "Dragon Ball",
+      "authors": [
+        "Akira Toriyama"
+      ],
+      "mangadexId": "40bc649f-7b49-4645-859e-6cd94136e722",
+      "year": 1984,
+      "demographic": "shounen",
+      "status": "completed",
+      "volumes": 42,
+      "exact": true,
+      "note": "The 42 Japanese volumes are split in VIZ Media’s English release into Dragon Ball (16 volumes) and Dragon Ball Z (26 volumes), so English numbering restarts partway through."
+    },
+    {
+      "slug": "fairy-tail",
+      "title": "Fairy Tail",
+      "authors": [
+        "Hiro Mashima"
+      ],
+      "mangadexId": "227e3f72-863f-46f9-bafe-c43104ca29ee",
+      "year": 2006,
+      "demographic": "shounen",
+      "status": "completed",
+      "volumes": 63,
+      "exact": true,
+      "note": "Kodansha publishes the English edition. The sequel, Fairy Tail: 100 Years Quest, has its own numbering and is not counted here."
+    },
+    {
+      "slug": "fire-force",
+      "title": "Fire Force",
+      "authors": [
+        "Atsushi Ohkubo"
+      ],
+      "mangadexId": "ec514ef4-fb77-43b9-b9b4-528229de1308",
+      "year": 2015,
+      "demographic": "shounen",
+      "status": "completed",
+      "volumes": 34,
+      "exact": true,
+      "note": "Kodansha publishes the English edition. Its single volumes follow the original numbering, and it also sells 3-in-1 omnibuses with their own numbering."
+    },
+    {
+      "slug": "frieren",
+      "title": "Frieren: Beyond Journey’s End",
+      "authors": [
+        "Kanehito Yamada",
+        "Tsukasa Abe"
+      ],
+      "mangadexId": "b0b721ff-c388-4486-aa0f-c2b0bb321512",
+      "year": 2020,
+      "demographic": "shounen",
+      "status": "hiatus",
+      "volumes": 15,
+      "exact": false,
+      "note": "VIZ Media publishes the English edition. The original run takes occasional serialization breaks, so new volumes can be irregular."
+    },
+    {
+      "slug": "fruits-basket",
+      "title": "Fruits Basket",
+      "authors": [
+        "Natsuki Takaya"
+      ],
+      "mangadexId": "e9b1d4ba-b8fb-48c3-8d52-5a4eefd05980",
+      "year": 1998,
+      "demographic": "shoujo",
+      "status": "completed",
+      "volumes": 23,
+      "exact": true,
+      "note": "The original English run of 23 volumes came from Tokyopop. Yen Press later released a Collector’s Edition of 12 larger books."
+    },
+    {
+      "slug": "fullmetal-alchemist",
+      "title": "Fullmetal Alchemist",
+      "authors": [
+        "Hiromu Arakawa"
+      ],
+      "mangadexId": "dd8a907a-3850-4f95-ba03-ba201a8399e3",
+      "year": 2001,
+      "demographic": "shounen",
+      "status": "completed",
+      "volumes": 27,
+      "exact": true,
+      "note": "VIZ Media publishes the English edition, along with 3-in-1 omnibuses and larger Fullmetal Edition hardcovers."
+    },
+    {
+      "slug": "golden-kamuy",
+      "title": "Golden Kamuy",
+      "authors": [
+        "Satoru Noda"
+      ],
+      "mangadexId": "8847f905-550d-4fe6-bcda-ac2b896789c7",
+      "year": 2014,
+      "demographic": "seinen",
+      "status": "completed",
+      "volumes": 31,
+      "exact": true,
+      "note": "VIZ Media publishes the English edition, which follows the original volume numbering."
+    },
+    {
+      "slug": "goodnight-punpun",
+      "title": "Goodnight Punpun",
+      "authors": [
+        "Inio Asano"
+      ],
+      "mangadexId": "4301d363-ee02-43f4-ae24-4cbf29a74830",
+      "year": 2007,
+      "demographic": "seinen",
+      "status": "completed",
+      "volumes": 13,
+      "exact": true,
+      "note": "The 13 Japanese volumes are collected in English by VIZ Media as seven larger books, so your English shelf will look much shorter than this list."
+    },
+    {
+      "slug": "haikyu",
+      "title": "Haikyu!!",
+      "authors": [
+        "Haruichi Furudate"
+      ],
+      "mangadexId": "8f8b7cb0-7109-46e8-b12c-0448a6453dfa",
+      "year": 2012,
+      "demographic": "shounen",
+      "status": "completed",
+      "volumes": 45,
+      "exact": true,
+      "note": "VIZ Media publishes the English edition, which follows the original volume numbering."
+    },
+    {
+      "slug": "horimiya",
+      "title": "Horimiya",
+      "authors": [
+        "Hero",
+        "Daisuke Hagiwara"
+      ],
+      "mangadexId": "a25e46ec-30f7-4db6-89df-cacbc1d9a900",
+      "year": 2011,
+      "demographic": "shounen",
+      "status": "completed",
+      "volumes": 17,
+      "exact": true,
+      "note": "Adapted from Hero’s webcomic Hori-san to Miyamura-kun. Yen Press publishes the English edition."
+    },
+    {
+      "slug": "hunter-x-hunter",
+      "title": "Hunter x Hunter",
+      "authors": [
+        "Yoshihiro Togashi"
+      ],
+      "mangadexId": "db692d58-4b13-4174-ae8c-30c515c0689c",
+      "year": 1998,
+      "demographic": "shounen",
+      "status": "hiatus",
+      "volumes": 39,
+      "exact": false,
+      "note": "VIZ Media publishes the English edition. The series has a long history of publication breaks, so long gaps between new volumes are normal."
+    },
+    {
+      "slug": "jujutsu-kaisen",
+      "title": "Jujutsu Kaisen",
+      "authors": [
+        "Gege Akutami"
+      ],
+      "mangadexId": "c52b2ce3-7f95-469c-96b0-479524fb7a1a",
+      "year": 2018,
+      "demographic": "shounen",
+      "status": "completed",
+      "volumes": 30,
+      "exact": true,
+      "note": "VIZ Media publishes the English edition. The prequel, Jujutsu Kaisen 0, is a separate book outside the main numbering, so this checklist does not include it."
+    },
+    {
+      "slug": "kaguya-sama",
+      "title": "Kaguya-sama: Love Is War",
+      "authors": [
+        "Aka Akasaka"
+      ],
+      "mangadexId": "37f5cce0-8070-4ada-96e5-fa24b1bd4ff9",
+      "year": 2015,
+      "demographic": "seinen",
+      "status": "completed",
+      "volumes": 28,
+      "exact": true,
+      "note": "VIZ Media publishes the English edition, which follows the original volume numbering."
+    },
+    {
+      "slug": "kaiju-no-8",
+      "title": "Kaiju No. 8",
+      "authors": [
+        "Naoya Matsumoto"
+      ],
+      "mangadexId": "237d527f-adb5-420e-8e6e-b7dd006fbe47",
+      "year": 2020,
+      "demographic": "shounen",
+      "status": "completed",
+      "volumes": 16,
+      "exact": true,
+      "note": "VIZ Media publishes the English edition, which follows the original volume numbering."
+    },
+    {
+      "slug": "mob-psycho-100",
+      "title": "Mob Psycho 100",
+      "authors": [
+        "ONE"
+      ],
+      "mangadexId": "736a2bf0-f875-4b52-a7b4-e8c40505b68a",
+      "year": 2012,
+      "demographic": "shounen",
+      "status": "completed",
+      "volumes": 16,
+      "exact": true,
+      "note": "Dark Horse publishes the English edition."
+    },
+    {
+      "slug": "monster",
+      "title": "Monster",
+      "authors": [
+        "Naoki Urasawa"
+      ],
+      "mangadexId": "d9e30523-9d65-469e-92a2-302995770950",
+      "year": 1994,
+      "demographic": "seinen",
+      "status": "completed",
+      "volumes": 18,
+      "exact": true,
+      "note": "VIZ Media published the 18 original volumes in English and later The Perfect Edition, nine larger books that combine them."
+    },
+    {
+      "slug": "my-hero-academia",
+      "title": "My Hero Academia",
+      "authors": [
+        "Kohei Horikoshi"
+      ],
+      "mangadexId": "4f3bcae4-2d96-4c9d-932c-90181d9c873e",
+      "year": 2014,
+      "demographic": "shounen",
+      "status": "completed",
+      "volumes": 42,
+      "exact": true,
+      "note": "VIZ Media publishes the English edition. Spin-offs like Vigilantes have their own numbering and are not part of this checklist."
+    },
+    {
+      "slug": "naruto",
+      "title": "Naruto",
+      "authors": [
+        "Masashi Kishimoto"
+      ],
+      "mangadexId": "6b1eb93e-473a-4ab3-9922-1a66d2a29a4a",
+      "year": 1999,
+      "demographic": "shounen",
+      "status": "completed",
+      "volumes": 72,
+      "exact": true,
+      "note": "VIZ Media publishes the English edition, along with 3-in-1 omnibuses that are often a cheaper way to fill gaps."
+    },
+    {
+      "slug": "one-piece",
+      "title": "One Piece",
+      "authors": [
+        "Eiichiro Oda"
+      ],
+      "mangadexId": "a1c7c817-4e59-43b7-9365-09675a149a6f",
+      "year": 1997,
+      "demographic": "shounen",
+      "status": "ongoing",
+      "volumes": 115,
+      "exact": false,
+      "note": "VIZ Media publishes the English edition, and also sells 3-in-1 omnibus editions and box sets that cover the same story with different numbering."
+    },
+    {
+      "slug": "one-punch-man",
+      "title": "One-Punch Man",
+      "authors": [
+        "ONE",
+        "Yusuke Murata"
+      ],
+      "mangadexId": "d8a959f7-648e-4c8d-8f23-f1f3f8e129f3",
+      "year": 2012,
+      "demographic": "seinen",
+      "status": "ongoing",
+      "volumes": 37,
+      "exact": false,
+      "note": "Yusuke Murata’s redrawn version of ONE’s webcomic. VIZ Media publishes the English edition, which trails the Japanese release."
+    },
+    {
+      "slug": "oshi-no-ko",
+      "title": "Oshi no Ko",
+      "authors": [
+        "Aka Akasaka",
+        "Mengo Yokoyari"
+      ],
+      "mangadexId": "296cbc31-af1a-4b5b-a34b-fee2b4cad542",
+      "year": 2020,
+      "demographic": "seinen",
+      "status": "completed",
+      "volumes": 16,
+      "exact": true,
+      "note": "Yen Press publishes the English edition, which follows the original volume numbering."
+    },
+    {
+      "slug": "sakamoto-days",
+      "title": "Sakamoto Days",
+      "authors": [
+        "Yuto Suzuki"
+      ],
+      "mangadexId": "9d9b04ad-9a83-49f4-8ae4-a9a3780fe9c0",
+      "year": 2020,
+      "demographic": "shounen",
+      "status": "ongoing",
+      "volumes": 29,
+      "exact": false,
+      "note": "VIZ Media publishes the English edition, which usually trails the Japanese release by a few volumes."
+    },
+    {
+      "slug": "slam-dunk",
+      "title": "Slam Dunk",
+      "authors": [
+        "Takehiko Inoue"
+      ],
+      "mangadexId": "319df2e2-e6a6-4e3a-a31c-68539c140a84",
+      "year": 1990,
+      "demographic": "shounen",
+      "status": "completed",
+      "volumes": 31,
+      "exact": true,
+      "note": "VIZ Media publishes the 31-volume English edition."
+    },
+    {
+      "slug": "spy-x-family",
+      "title": "Spy x Family",
+      "authors": [
+        "Tatsuya Endo"
+      ],
+      "mangadexId": "6b958848-c885-4735-9201-12ee77abcb3c",
+      "year": 2019,
+      "demographic": "shounen",
+      "status": "ongoing",
+      "volumes": 18,
+      "exact": false,
+      "note": "VIZ Media publishes the English edition, which usually trails the Japanese release by a few volumes."
+    },
+    {
+      "slug": "tokyo-ghoul",
+      "title": "Tokyo Ghoul",
+      "authors": [
+        "Sui Ishida"
+      ],
+      "mangadexId": "6a1d1cb1-ecd5-40d9-89ff-9d88e40b136b",
+      "year": 2011,
+      "demographic": "seinen",
+      "status": "completed",
+      "volumes": 14,
+      "exact": true,
+      "note": "VIZ Media publishes the English edition. The sequel, Tokyo Ghoul:re, has its own 16 volumes and is not counted here."
+    },
+    {
+      "slug": "tokyo-revengers",
+      "title": "Tokyo Revengers",
+      "authors": [
+        "Ken Wakui"
+      ],
+      "mangadexId": "59b36734-f2d6-46d7-97c0-06cfd2380852",
+      "year": 2017,
+      "demographic": "shounen",
+      "status": "completed",
+      "volumes": 31,
+      "exact": true,
+      "note": "In English, Seven Seas publishes the print edition as omnibuses that combine two volumes, so the English book count is lower than the Japanese one."
+    },
+    {
+      "slug": "vinland-saga",
+      "title": "Vinland Saga",
+      "authors": [
+        "Makoto Yukimura"
+      ],
+      "mangadexId": "5d1fc77e-706a-4fc5-bea8-486c9be0145d",
+      "year": 2005,
+      "demographic": "seinen",
+      "status": "completed",
+      "volumes": 29,
+      "exact": true,
+      "note": "Kodansha’s English hardcovers combine two Japanese volumes in most books, so an English shelf has far fewer books than the Japanese count."
+    }
+  ]
+}

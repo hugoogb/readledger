@@ -1,16 +1,145 @@
 import {
   ArrowRight,
+  ArrowRightLeft,
   BarChart3,
   BookMarked,
   BookOpen,
+  ChevronDown,
+  Heart,
   Library,
+  PiggyBank,
   Sparkles,
   TrendingUp,
   Wallet,
 } from "lucide-react";
-import Image from "next/image";
+import type { Metadata } from "next";
 import Link from "next/link";
-import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { JsonLd } from "@/components/marketing/content-parts";
+import { SiteFooter } from "@/components/marketing/site-footer";
+import { SiteHeader } from "@/components/marketing/site-header";
+import { guides } from "@/content/guides";
+import { getMangaSeries } from "@/lib/content/manga-series";
+import { REPOSITORY_URL, SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site";
+
+// Only the home page declares this: set in the root layout, it would be
+// inherited by every route and point them all at the home page.
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+};
+
+const structuredData = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "@id": `${SITE_URL}/#website`,
+      url: `${SITE_URL}/`,
+      name: SITE_NAME,
+      description: SITE_DESCRIPTION,
+      publisher: { "@id": `${SITE_URL}/#organization` },
+    },
+    {
+      "@type": "Organization",
+      "@id": `${SITE_URL}/#organization`,
+      name: SITE_NAME,
+      url: `${SITE_URL}/`,
+      logo: `${SITE_URL}/icon-512.png`,
+      sameAs: [REPOSITORY_URL],
+    },
+    {
+      "@type": "WebApplication",
+      name: SITE_NAME,
+      url: `${SITE_URL}/`,
+      description: SITE_DESCRIPTION,
+      applicationCategory: "LifestyleApplication",
+      operatingSystem: "Any",
+      browserRequirements: "Requires a modern web browser",
+      offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+      publisher: { "@id": `${SITE_URL}/#organization` },
+    },
+  ],
+};
+
+const features = [
+  {
+    title: "Collection management",
+    body: "Track every volume across all your series. See what you own, what's missing, and what to buy next.",
+    icon: Library,
+    iconClass: "text-accent",
+    tileClass: "bg-accent/10 border-accent/20",
+  },
+  {
+    title: "Reading progress",
+    body: "Mark volumes as read, set a yearly reading goal, and watch completion rates climb. Always know where you left off.",
+    icon: BarChart3,
+    iconClass: "text-success",
+    tileClass: "bg-success/10 border-success/20",
+  },
+  {
+    title: "Spending insights",
+    body: "Log what you pay as you go and see totals, averages, and trends, so your hobby never surprises your wallet.",
+    icon: Wallet,
+    iconClass: "text-warning",
+    tileClass: "bg-warning/10 border-warning/20",
+  },
+  {
+    title: "Second-hand savings",
+    body: "Compare what you paid against retail price and see how much buying used has saved you, with condition and store on every volume.",
+    icon: PiggyBank,
+    iconClass: "text-success",
+    tileClass: "bg-success/10 border-success/20",
+  },
+  {
+    title: "Wishlist",
+    body: "Keep a list of the volumes you want next, with an estimate of what they'll cost, and stop buying duplicates.",
+    icon: Heart,
+    iconClass: "text-accent",
+    tileClass: "bg-accent/10 border-accent/20",
+  },
+  {
+    title: "CSV and JSON import",
+    body: "Bring your collection over from a spreadsheet and export it whenever you like. Your data stays yours.",
+    icon: ArrowRightLeft,
+    iconClass: "text-warning",
+    tileClass: "bg-warning/10 border-warning/20",
+  },
+];
+
+// Rendered as visible text, not just markup: each answer targets a question
+// collectors actually search for. No FAQPage schema, because Google limits
+// that rich result to government and health sites.
+const faqs = [
+  {
+    question: "What is ReadLedger?",
+    answer:
+      "ReadLedger is a manga collection tracker for people who collect physical volumes. It records which volumes you own, which you've read, and what you paid for them, then turns that into stats about your collection.",
+  },
+  {
+    question: "Is ReadLedger free?",
+    answer:
+      "Yes, ReadLedger is free to use. You sign up with your email address, with no credit card and no password to remember.",
+  },
+  {
+    question: "Can ReadLedger replace my manga spreadsheet?",
+    answer:
+      "Yes. You can import your collection from a CSV file instead of retyping it, and you get covers, missing-volume tracking, and spending charts that a spreadsheet makes you build by hand. You can export to CSV or JSON at any time.",
+  },
+  {
+    question: "How do I track how much I've spent on manga?",
+    answer:
+      "Log the price you paid for each volume, along with the store and its condition. ReadLedger adds it up into totals, averages, and trends in your chosen currency, and shows your savings wherever a retail price is set.",
+  },
+  {
+    question: "How do I add a series to my collection?",
+    answer:
+      "Search for the title and add it in a couple of taps. Series details and cover art come from MangaDex, so you don't have to enter them yourself.",
+  },
+  {
+    question: "Is there a ReadLedger mobile app?",
+    answer:
+      "ReadLedger is a web app designed for phones first, so there's nothing to download and it works on both iPhone and Android as well as desktop. You can also add it to your home screen to open it like an app.",
+  },
+];
 
 // Faux dashboard stats shown in the product preview. These are illustrative,
 // not real data — they mirror the layout of the actual /dashboard so visitors
@@ -30,9 +159,20 @@ const previewSpines = [
   true, true, false, true, true, true, false, true, true, true,
 ];
 
+const popularChecklists = [
+  "one-piece",
+  "jujutsu-kaisen",
+  "chainsaw-man",
+  "berserk",
+  "naruto",
+  "vinland-saga",
+].flatMap((slug) => getMangaSeries(slug) ?? []);
+
 export default function Home() {
   return (
     <div className="min-h-screen bg-background">
+      <JsonLd data={structuredData} />
+
       {/* Background decoration */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[60rem] h-[40rem] bg-accent/10 rounded-full blur-3xl" />
@@ -40,38 +180,7 @@ export default function Home() {
         <div className="absolute bottom-0 right-0 w-96 h-96 bg-success/5 rounded-full blur-3xl" />
       </div>
 
-      {/* Header */}
-      <header className="relative z-10 px-5 sm:px-6 py-4">
-        <nav className="max-w-6xl mx-auto flex items-center justify-between gap-4">
-          <Link href="/" className="flex items-center gap-2">
-            <Image
-              src="/readledger-logo.webp"
-              alt="ReadLedger logo"
-              width={40}
-              height={40}
-              className="rounded-xl"
-            />
-            <span className="text-lg sm:text-xl font-bold">ReadLedger</span>
-          </Link>
-          <div className="flex items-center gap-2 sm:gap-4">
-            <div className="hidden sm:block">
-              <ThemeToggle />
-            </div>
-            <Link
-              href="/login"
-              className="text-sm font-medium text-foreground-muted hover:text-foreground transition-colors px-2 py-2"
-            >
-              Sign in
-            </Link>
-            <Link
-              href="/login"
-              className="bg-accent hover:bg-accent-hover text-white text-sm font-medium py-2 px-3 sm:px-4 rounded-xl transition-colors"
-            >
-              Get started
-            </Link>
-          </div>
-        </nav>
-      </header>
+      <SiteHeader />
 
       {/* Hero */}
       <main className="relative z-10 px-5 sm:px-6 pt-12 sm:pt-20 pb-24">
@@ -86,9 +195,10 @@ export default function Home() {
               <span className="gradient-text"> beautifully tracked</span>
             </h1>
             <p className="mt-6 text-lg sm:text-xl text-foreground-muted leading-relaxed">
-              Know exactly which volumes you own, which you&apos;ve read, and
-              what you&apos;ve spent — all in one place, with insights that
-              actually look good on your phone.
+              ReadLedger is a free manga collection tracker. Know exactly which
+              volumes you own, which you&apos;ve read, and what you&apos;ve spent
+              — all in one place, with insights that actually look good on your
+              phone.
             </p>
             <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-3">
               <Link
@@ -175,53 +285,32 @@ export default function Home() {
           </div>
 
           {/* Features */}
-          <div className="mt-24 sm:mt-32">
+          <section className="mt-24 sm:mt-32">
             <div className="text-center max-w-2xl mx-auto mb-12">
-              <h2 className="text-3xl font-bold">Everything in one shelf</h2>
+              <h2 className="text-3xl font-bold">
+                A manga tracker for your whole shelf
+              </h2>
               <p className="mt-3 text-foreground-muted">
-                Three views of your collection, always in sync.
+                Your volumes, reading, and spending, always in sync.
               </p>
             </div>
-            <div className="grid sm:grid-cols-3 gap-6">
-              <div className="glass rounded-2xl p-6 animate-fade-in stagger-1">
-                <div className="w-12 h-12 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center mb-4">
-                  <Library className="w-6 h-6 text-accent" />
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {features.map(({ title, body, icon: Icon, iconClass, tileClass }) => (
+                <div key={title} className="glass rounded-2xl p-6 animate-fade-in">
+                  <div
+                    className={`w-12 h-12 rounded-xl border flex items-center justify-center mb-4 ${tileClass}`}
+                  >
+                    <Icon className={`w-6 h-6 ${iconClass}`} />
+                  </div>
+                  <h3 className="text-lg font-semibold mb-2">{title}</h3>
+                  <p className="text-foreground-muted">{body}</p>
                 </div>
-                <h3 className="text-lg font-semibold mb-2">
-                  Collection management
-                </h3>
-                <p className="text-foreground-muted">
-                  Track every volume across all your series. See what you own,
-                  what&apos;s missing, and what to buy next.
-                </p>
-              </div>
-
-              <div className="glass rounded-2xl p-6 animate-fade-in stagger-2">
-                <div className="w-12 h-12 rounded-xl bg-success/10 border border-success/20 flex items-center justify-center mb-4">
-                  <BarChart3 className="w-6 h-6 text-success" />
-                </div>
-                <h3 className="text-lg font-semibold mb-2">Reading progress</h3>
-                <p className="text-foreground-muted">
-                  Mark volumes as read and watch completion rates climb. Always
-                  know where you left off.
-                </p>
-              </div>
-
-              <div className="glass rounded-2xl p-6 animate-fade-in stagger-3">
-                <div className="w-12 h-12 rounded-xl bg-warning/10 border border-warning/20 flex items-center justify-center mb-4">
-                  <Wallet className="w-6 h-6 text-warning" />
-                </div>
-                <h3 className="text-lg font-semibold mb-2">Spending insights</h3>
-                <p className="text-foreground-muted">
-                  Log prices as you go and see totals, averages, and trends —
-                  so your hobby never surprises your wallet.
-                </p>
-              </div>
+              ))}
             </div>
-          </div>
+          </section>
 
           {/* How it works */}
-          <div className="mt-24 sm:mt-32">
+          <section className="mt-24 sm:mt-32">
             <h2 className="text-3xl font-bold text-center mb-12">
               Up and running in minutes
             </h2>
@@ -259,7 +348,72 @@ export default function Home() {
                 </p>
               </div>
             </div>
-          </div>
+          </section>
+
+          {/* FAQ: native <details> keeps the answers in the HTML and needs no JS. */}
+          <section className="mt-24 sm:mt-32 max-w-3xl mx-auto">
+            <h2 className="text-3xl font-bold text-center mb-12">
+              Frequently asked questions
+            </h2>
+            <div className="space-y-3">
+              {faqs.map(({ question, answer }) => (
+                <details key={question} className="glass group rounded-2xl">
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-4 p-5 font-semibold [&::-webkit-details-marker]:hidden">
+                    <h3>{question}</h3>
+                    <ChevronDown className="w-5 h-5 shrink-0 text-foreground-muted transition-transform group-open:rotate-180" />
+                  </summary>
+                  <p className="px-5 pb-5 text-foreground-muted">{answer}</p>
+                </details>
+              ))}
+            </div>
+          </section>
+
+          {/* Crawl paths into the checklists and guides. */}
+          <section className="mt-24 sm:mt-32 grid gap-10 md:grid-cols-2">
+            <div>
+              <h2 className="text-2xl font-bold">Manga volume checklists</h2>
+              <p className="mt-2 text-foreground-muted">
+                See how many volumes a series has and tick off what you own. No
+                account needed.
+              </p>
+              <ul className="mt-4 grid grid-cols-2 gap-2">
+                {popularChecklists.map((series) => (
+                  <li key={series.slug}>
+                    <Link
+                      href={`/manga/${series.slug}`}
+                      className="flex min-h-12 items-center rounded-xl border border-border bg-background-secondary px-3 py-2 text-sm font-medium transition-colors hover:border-border-hover"
+                    >
+                      {series.title}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+              <Link href="/manga" className="mt-4 inline-block py-1 text-sm font-medium text-accent underline">
+                See all checklists
+              </Link>
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold">Guides for collectors</h2>
+              <p className="mt-2 text-foreground-muted">
+                Practical advice on tracking, budgeting, and buying used.
+              </p>
+              <ul className="mt-4 space-y-2">
+                {guides.slice(0, 4).map((guide) => (
+                  <li key={guide.slug}>
+                    <Link
+                      href={`/guides/${guide.slug}`}
+                      className="flex min-h-12 items-center rounded-xl border border-border bg-background-secondary px-3 py-2 text-sm font-medium transition-colors hover:border-border-hover"
+                    >
+                      {guide.title}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+              <Link href="/guides" className="mt-4 inline-block py-1 text-sm font-medium text-accent underline">
+                See all guides
+              </Link>
+            </div>
+          </section>
 
           {/* Closing CTA */}
           <div className="mt-24 sm:mt-32 animate-fade-in">
@@ -287,33 +441,7 @@ export default function Home() {
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="relative z-10 border-t border-border px-5 sm:px-6 py-8">
-        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <Image
-              src="/readledger-logo.webp"
-              alt="ReadLedger logo"
-              width={32}
-              height={32}
-              className="rounded-lg"
-            />
-            <span className="font-semibold">ReadLedger</span>
-          </div>
-          <div className="flex items-center gap-4 sm:gap-6 text-sm text-foreground-muted">
-            <ThemeToggle />
-            <Link href="/login" className="hover:text-foreground transition-colors">
-              Sign in
-            </Link>
-            <Link
-              href="/login"
-              className="hover:text-foreground transition-colors"
-            >
-              Get started
-            </Link>
-          </div>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }
