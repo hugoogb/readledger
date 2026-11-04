@@ -3,6 +3,10 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   // Self-contained server for the Docker image (see Dockerfile).
   output: "standalone",
+  // Sign-up and sign-in are the same email-code flow; kept so old links work.
+  async redirects() {
+    return [{ source: "/register", destination: "/login", permanent: true }];
+  },
   images: {
     remotePatterns: [
       {

@@ -1,0 +1,4 @@
+series_title,volume_number,owned,read,wishlist,price_paid,store,condition,purchase_date,read_date,notes,isbn
+Example Series,1,yes,yes,no,9.99,Local bookshop,NEW,2026-01-15,2026-01-20,Delete these example rows,
+Example Series,2,yes,no,no,5.50,Second-hand shop,VERY_GOOD,2026-02-03,,Slight shelf wear,
+Example Series,3,no,no,yes,,,,,,Next one to buy,
