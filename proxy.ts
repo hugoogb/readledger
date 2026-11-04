@@ -30,7 +30,7 @@ const securityHeaders: Record<string, string> = {
 const protectedRoutes = ["/dashboard"];
 // The landing and auth pages only serve logged-out visitors; a signed-in user
 // opening them should land in the app instead.
-const publicEntryRoutes = ["/", "/login", "/register"];
+const publicEntryRoutes = ["/", "/login"];
 
 type SessionState =
   | { status: "none" }

@@ -1,5 +1,6 @@
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { Toaster } from "@/components/ui/toaster";
+import { SITE_DESCRIPTION, SITE_NAME, SITE_TITLE, SITE_URL } from "@/lib/site";
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
@@ -15,37 +16,35 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: {
-    template: "%s | ReadLedger",
-    default: "ReadLedger - Manga Collection Tracker",
+    template: `%s | ${SITE_NAME}`,
+    default: SITE_TITLE,
   },
-  description:
-    "Track your manga collection, reading progress, and spending with beautiful insights.",
-  keywords: [
-    "manga",
-    "collection",
-    "tracker",
-    "tracker tool",
-    "reading progress",
-    "manga spending",
-  ],
+  description: SITE_DESCRIPTION,
   authors: [{ name: "hugoogb.dev" }],
   openGraph: {
-    title: "ReadLedger - Manga Collection Tracker",
-    description: "Track your manga collection, reading progress, and spending",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    url: "/",
     type: "website",
-    siteName: "ReadLedger",
+    siteName: SITE_NAME,
+    locale: "en_US",
   },
   twitter: {
     card: "summary_large_image",
-    title: "ReadLedger - Manga Collection Tracker",
-    description: "Track your manga collection, reading progress, and spending",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
   },
   icons: {
-    icon: "/readledger-logo.webp",
+    icon: [
+      // Google's search-result favicon needs a square PNG, a multiple of 48px.
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/readledger-logo.webp", type: "image/webp" },
+    ],
   },
   appleWebApp: {
-    title: "ReadLedger",
+    title: SITE_NAME,
     statusBarStyle: "default",
   },
 };
