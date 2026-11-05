@@ -44,6 +44,13 @@ export function SiteFooter() {
           </a>
           . ReadLedger is not affiliated with MangaDex or any publisher.
         </p>
+        <p className="text-center sm:text-left text-xs text-foreground-muted">
+          Built by{" "}
+          <a href="https://hugoogb.dev/" rel="author" className="underline hover:text-foreground">
+            Hugo García Benjumea
+          </a>
+          .
+        </p>
       </div>
     </footer>
   );

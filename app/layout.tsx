@@ -22,7 +22,7 @@ export const metadata: Metadata = {
     default: SITE_TITLE,
   },
   description: SITE_DESCRIPTION,
-  authors: [{ name: "hugoogb.dev" }],
+  authors: [{ name: "Hugo García Benjumea", url: "https://hugoogb.dev/" }],
   openGraph: {
     title: SITE_TITLE,
     description: SITE_DESCRIPTION,
