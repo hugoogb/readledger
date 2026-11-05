@@ -30,7 +30,7 @@ Pushing to `master` deploys (`.github/workflows/deploy.yml`):
 
 Deploys never run in parallel and are never cancelled mid-way.
 
-Work happens on `develop`; merge to `master` to ship.
+Branch from `master` and open a pull request against it; merging to `master` ships.
 
 ### Rolling back
 
