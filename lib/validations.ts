@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { Condition, SeriesStatus } from "./generated/prisma/enums";
+import { Condition, Format, SeriesStatus } from "./generated/prisma/enums";
 
 /** Upper bound for volumes in one series — keeps volume generation bounded. */
 export const MAX_VOLUMES = 1000;
@@ -21,6 +21,7 @@ export const seriesSchema = z.object({
   author: z.string().max(255).optional().or(z.literal("")),
   publisherId: idSchema.nullable().optional().or(z.literal("")),
   status: z.enum(SeriesStatus),
+  format: z.enum(Format),
   publishing: z.boolean(),
   totalVolumes: z.number("Total volumes is required and must be a number").int().min(0).max(MAX_VOLUMES, `At most ${MAX_VOLUMES} volumes`).nullable(),
   coverImage: coverImageSchema,

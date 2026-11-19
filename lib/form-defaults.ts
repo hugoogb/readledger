@@ -1,5 +1,5 @@
 import type { Series } from "@/lib/generated/prisma/browser";
-import { SeriesStatus } from "@/lib/generated/prisma/enums";
+import { Format, SeriesStatus } from "@/lib/generated/prisma/enums";
 import type { SeriesSchema } from "@/lib/validations";
 
 export function getSeriesFormDefaults(series?: Series | null): SeriesSchema {
@@ -8,6 +8,7 @@ export function getSeriesFormDefaults(series?: Series | null): SeriesSchema {
     author: series?.author ?? "",
     publisherId: series?.publisherId ?? "",
     status: series?.status ?? SeriesStatus.READING,
+    format: series?.format ?? Format.MANGA,
     publishing: series?.publishing ?? false,
     totalVolumes: series?.totalVolumes ?? null,
     retailPrice: series?.retailPrice ?? null,

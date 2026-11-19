@@ -13,11 +13,28 @@ describe("seriesSchema", () => {
     status: "READING",
     publishing: false,
     totalVolumes: null,
+    format: "MANGA",
   };
 
   it("accepts valid series data", () => {
     const result = seriesSchema.safeParse(validSeries);
     expect(result.success).toBe(true);
+  });
+
+  it("accepts every book format", () => {
+    const result = seriesSchema.safeParse({ ...validSeries, format: "NOVEL" });
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects an unknown format", () => {
+    const result = seriesSchema.safeParse({ ...validSeries, format: "BOOK" });
+    expect(result.success).toBe(false);
+  });
+
+  it("requires a format", () => {
+    const { format: _format, ...withoutFormat } = validSeries;
+    const result = seriesSchema.safeParse(withoutFormat);
+    expect(result.success).toBe(false);
   });
 
   it("requires title", () => {

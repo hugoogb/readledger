@@ -99,6 +99,9 @@ model Series {
   title        String
   author       String?
   status       SeriesStatus @default(READING)
+  /// What kind of book this title is. A "standalone" book is a title with
+  /// totalVolumes = 1 and at most one volume row (see lib/format.ts).
+  format       Format       @default(MANGA)
   totalVolumes Int?
   coverImage   String?
   description  String?
@@ -147,6 +150,15 @@ enum SeriesStatus {
   ON_HOLD
   DROPPED
   PLAN_TO_READ
+}
+
+enum Format {
+  MANGA
+  LIGHT_NOVEL
+  COMIC
+  NOVEL
+  NONFICTION
+  OTHER
 }
 
 enum Condition {
