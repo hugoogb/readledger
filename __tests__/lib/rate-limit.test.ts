@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createThrottle } from "@/lib/rate-limit";
+import { createThrottle, throttleMangadex, throttleOpenLibrary } from "@/lib/rate-limit";
 import { AppError } from "@/lib/errors";
 
 describe("createThrottle", () => {
@@ -57,5 +57,41 @@ describe("createThrottle", () => {
     const times = track([throttle()]);
     await vi.advanceTimersByTimeAsync(0);
     expect(times).toEqual([5000]);
+  });
+});
+
+describe("shared upstream throttles", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    // Far past any slot an earlier test reserved on these module singletons.
+    vi.setSystemTime(1_000_000);
+  });
+  afterEach(() => vi.useRealTimers());
+
+  function resolveTimes(promises: Promise<void>[]) {
+    const times: number[] = [];
+    promises.forEach((p, i) => p.then(() => (times[i] = Date.now() - 1_000_000)));
+    return times;
+  }
+
+  // Regression: the old MangaDex throttle compared against a shared "last
+  // request" time, so concurrent callers all saw it stale and fired together.
+  it("spaces concurrent MangaDex callers 200ms apart (5 req/s)", async () => {
+    const times = resolveTimes([throttleMangadex(), throttleMangadex(), throttleMangadex()]);
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(times).toEqual([0, 200, 400]);
+  });
+
+  it("spaces concurrent Open Library callers for 3 req/s", async () => {
+    vi.setSystemTime(2_000_000);
+    const start = Date.now();
+    const times: number[] = [];
+    [throttleOpenLibrary(), throttleOpenLibrary(), throttleOpenLibrary(), throttleOpenLibrary()].forEach(
+      (p, i) => p.then(() => (times[i] = Date.now() - start)),
+    );
+    await vi.advanceTimersByTimeAsync(2000);
+    expect(times).toEqual([0, 334, 668, 1002]);
+    // Never more than 3 requests in any 1-second window.
+    expect(times[3] - times[0]).toBeGreaterThanOrEqual(1000);
   });
 });

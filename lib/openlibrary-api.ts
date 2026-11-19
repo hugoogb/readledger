@@ -3,20 +3,20 @@
 //
 // Terms (checked 2026-11-19): identify the app in the User-Agent, cache
 // responses, use search.json rather than many single-record requests, and
-// stay within 1 request/second (3/s needs a contact email in the User-Agent,
-// which we don't send). Covers are referenced by cover ID only: ID URLs are not
+// stay within 3 requests/second, the limit for clients whose User-Agent
+// carries a contact email (1/s without one). Covers are referenced by cover ID only: ID URLs are not
 // rate-limited, ISBN/OLID-keyed ones are (100 per 5 minutes per IP).
 
 import { TTLCache } from "./cache";
 import { AppError } from "./errors";
 import { logger } from "./logger";
 import { throttleOpenLibrary } from "./rate-limit";
-import { SITE_NAME, SITE_URL } from "./site";
+import { CONTACT_EMAIL, SITE_NAME, SITE_URL } from "./site";
 
 const OPENLIBRARY_BASE_URL = "https://openlibrary.org";
 const OPENLIBRARY_COVERS_URL = "https://covers.openlibrary.org";
 const OPENLIBRARY_TIMEOUT_MS = 10_000;
-const USER_AGENT = `${SITE_NAME} (${SITE_URL})`;
+const USER_AGENT = `${SITE_NAME} (${SITE_URL}; ${CONTACT_EMAIL})`;
 const PAGE_SIZE = 10;
 const MAX_SUBJECTS = 10;
 const MAX_DESCRIPTION = 2000;

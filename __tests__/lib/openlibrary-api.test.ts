@@ -145,7 +145,7 @@ describe("network", () => {
     expect(parsed.searchParams.get("page")).toBe("2");
     expect(parsed.searchParams.get("limit")).toBe("10");
     expect(parsed.searchParams.get("fields")).toContain("cover_i");
-    expect(init.headers["User-Agent"]).toBe("ReadLedger (https://readledger.app)");
+    expect(init.headers["User-Agent"]).toBe("ReadLedger (https://readledger.app; hello@readledger.app)");
     expect(page.data.map((b) => b.key)).toEqual(["OL1W"]);
     expect(page.pagination).toEqual({ currentPage: 2, hasNextPage: true });
   });
