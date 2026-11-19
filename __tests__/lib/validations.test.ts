@@ -135,6 +135,24 @@ describe("seriesSchema", () => {
     expect(result.success).toBe(false);
   });
 
+  it("accepts an Open Library cover-ID URL", () => {
+    const result = seriesSchema.safeParse({
+      ...validSeries,
+      coverImage: "https://covers.openlibrary.org/b/id/14856017-L.jpg",
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it.each([
+    "https://covers.openlibrary.org/b/isbn/9780441013593-L.jpg",
+    "https://covers.openlibrary.org/b/olid/OL7524304M-L.jpg",
+    "http://covers.openlibrary.org/b/id/14856017-L.jpg",
+    "https://covers.openlibrary.org/b/id/14856017-L.jpg?default=false",
+    "https://covers.openlibrary.org/b/id/abc-L.jpg",
+  ])("rejects Open Library cover URLs that are not cover-ID URLs: %s", (coverImage) => {
+    expect(seriesSchema.safeParse({ ...validSeries, coverImage }).success).toBe(false);
+  });
+
   it("rejects a non-uuid publisherId", () => {
     const result = seriesSchema.safeParse({ ...validSeries, publisherId: "pub-1" });
     expect(result.success).toBe(false);

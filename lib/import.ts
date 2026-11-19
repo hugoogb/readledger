@@ -1,4 +1,5 @@
 import { parseCsv } from "@/lib/csv";
+import { isAllowedCoverUrl } from "@/lib/covers";
 import { Condition, Format, SeriesStatus } from "@/lib/generated/prisma/enums";
 import { parseFormat } from "@/lib/format";
 import { MAX_VOLUMES } from "@/lib/validations";
@@ -53,7 +54,6 @@ export type ImportPreview = {
   formats: Record<string, Format>;
 };
 
-const MANGADEX_COVER_URL = /^https:\/\/uploads\.mangadex\.org\/covers\//;
 const CONDITIONS = new Set<string>(Object.values(Condition));
 const STATUSES = new Set<string>(Object.values(SeriesStatus));
 
@@ -105,7 +105,7 @@ function date(value: unknown, field: string): string | null {
 }
 
 function cover(value: unknown): string | null {
-  if (typeof value !== "string" || !MANGADEX_COVER_URL.test(value)) return null;
+  if (typeof value !== "string" || !isAllowedCoverUrl(value)) return null;
   return value;
 }
 

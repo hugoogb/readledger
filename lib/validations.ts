@@ -1,16 +1,15 @@
 import { z } from "zod";
 import { Condition, Format, SeriesStatus } from "./generated/prisma/enums";
+import { isAllowedCoverUrl } from "./covers";
 
 /** Upper bound for volumes in one series — keeps volume generation bounded. */
 export const MAX_VOLUMES = 1000;
 
-const MANGADEX_COVER_URL = /^https:\/\/uploads\.mangadex\.org\/covers\//;
-
-// Covers render through next/image, which only allows MangaDex covers (see
-// next.config.ts). Any other host would crash the page that shows it.
+// Covers render through next/image, which only allows the hosts in
+// lib/covers.ts (see next.config.ts). Any other URL would crash the page.
 const coverImageSchema = z
   .url("Must be a valid URL")
-  .regex(MANGADEX_COVER_URL, "Cover must be a MangaDex cover URL")
+  .refine(isAllowedCoverUrl, "Cover must be a MangaDex or Open Library cover URL")
   .optional()
   .or(z.literal(""));
 
@@ -74,7 +73,7 @@ export const seriesVolumesSchema = z
     z.object({
       volumeNumber: z.number().int().min(1).max(MAX_VOLUMES),
       title: z.string().max(255).optional(),
-      coverImage: z.string().regex(MANGADEX_COVER_URL).nullish(),
+      coverImage: z.string().refine(isAllowedCoverUrl).nullish(),
     }),
   )
   .max(MAX_VOLUMES);

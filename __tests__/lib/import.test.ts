@@ -95,6 +95,16 @@ describe("parseImport (json)", () => {
     ]);
     expect(parseImport(json, "json").seriesMeta.Berserk.coverImage).toBeNull();
   });
+
+  it("keeps Open Library cover-ID URLs and drops ISBN-keyed ones", () => {
+    const json = JSON.stringify([
+      { title: "Dune", coverImage: "https://covers.openlibrary.org/b/id/14856017-L.jpg", volumes: [] },
+      { title: "Emma", coverImage: "https://covers.openlibrary.org/b/isbn/9780141439587-L.jpg", volumes: [] },
+    ]);
+    const { seriesMeta } = parseImport(json, "json");
+    expect(seriesMeta.Dune.coverImage).toBe("https://covers.openlibrary.org/b/id/14856017-L.jpg");
+    expect(seriesMeta.Emma.coverImage).toBeNull();
+  });
 });
 
 describe("parseImport format", () => {
