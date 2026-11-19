@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { NotFoundError, ValidationError } from "@/lib/errors";
+import { isStandalone } from "@/lib/format";
 
 export async function toggleWishlist(userId: string, volumeId: string) {
   const volume = await prisma.volume.findFirst({
@@ -35,7 +36,16 @@ export async function getWishlistVolumes(userId: string) {
       id: true,
       seriesId: true,
       volumeNumber: true,
-      series: { select: { id: true, title: true, coverImage: true, retailPrice: true } },
+      series: {
+        select: {
+          id: true,
+          title: true,
+          coverImage: true,
+          retailPrice: true,
+          totalVolumes: true,
+          _count: { select: { volumes: true } },
+        },
+      },
     },
     orderBy: [
       { series: { title: "asc" } },
@@ -47,7 +57,13 @@ export async function getWishlistVolumes(userId: string) {
   const grouped = new Map<
     string,
     {
-      series: { id: string; title: string; coverImage: string | null; retailPrice: number | null };
+      series: {
+        id: string;
+        title: string;
+        coverImage: string | null;
+        retailPrice: number | null;
+        standalone: boolean;
+      };
       volumes: typeof volumes;
     }
   >();
@@ -60,6 +76,7 @@ export async function getWishlistVolumes(userId: string) {
           title: vol.series.title,
           coverImage: vol.series.coverImage,
           retailPrice: vol.series.retailPrice,
+          standalone: isStandalone(vol.series.totalVolumes, vol.series._count.volumes),
         },
         volumes: [],
       });

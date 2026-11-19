@@ -20,7 +20,7 @@ export function ChartEmpty({ label, icon: Icon = BarChart3 }: ChartEmptyProps) {
       <div>
         <p className="text-sm font-medium text-foreground">No {label} yet</p>
         <p className="text-sm text-foreground-muted mt-0.5">
-          Add volumes to your collection to see this chart come to life.
+          Add books to your collection to see this chart come to life.
         </p>
       </div>
     </div>

@@ -65,7 +65,7 @@ function ConditionTooltip({ active, payload }: BaseTooltipProps) {
         {config?.label ?? condition}
       </p>
       <p style={{ fontSize: 13 }}>
-        {count} volumes
+        {count} book{count !== 1 ? "s" : ""}
         {_total && _total > 0 && (
           <span style={{ color: "var(--color-foreground-muted)" }}>
             {" "}

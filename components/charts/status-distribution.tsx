@@ -61,7 +61,7 @@ function StatusTooltip({ active, payload }: BaseTooltipProps) {
         {config?.label ?? status}
       </p>
       <p style={{ fontSize: 13 }}>
-        {count} series
+        {count} title{count !== 1 ? "s" : ""}
         {_total && _total > 0 && (
           <span style={{ color: "var(--color-foreground-muted)" }}>
             {" "}
@@ -75,7 +75,7 @@ function StatusTooltip({ active, payload }: BaseTooltipProps) {
 
 export function StatusDistribution({ data }: StatusDistributionProps) {
   if (data.length === 0) {
-    return <ChartEmpty label="series data" icon={BookOpen} />;
+    return <ChartEmpty label="titles" icon={BookOpen} />;
   }
 
   const total = data.reduce((sum, d) => sum + d.count, 0);

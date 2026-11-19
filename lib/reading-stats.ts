@@ -17,7 +17,8 @@ export type ReadingVolume = {
   purchaseDate: Date | null;
   readDate: Date | null;
   coverImage: string | null;
-  series: { title: string; coverImage: string | null };
+  /** `standalone`: the title is a single book (see lib/format.ts). */
+  series: { title: string; coverImage: string | null; standalone: boolean };
 };
 
 /** A calendar year, or every year. */

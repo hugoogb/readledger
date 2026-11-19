@@ -33,7 +33,7 @@ export default async function StatisticsPage({ searchParams }: Props) {
       <div className="mb-6">
         <h1 className="text-3xl font-bold mb-1">Statistics</h1>
         <p className="text-foreground-muted">
-          Insights about your manga collection
+          Insights about your collection
         </p>
       </div>
 

@@ -20,6 +20,7 @@ import {
   undatedReadCount,
   type Period,
 } from "@/lib/reading-stats";
+import { volumeLabel } from "@/lib/format";
 import { formatRelativeDate } from "@/utils/date";
 import { BookMarked, CalendarRange, Flame, Hourglass, Target } from "lucide-react";
 import { ChartCard } from "./chart-card";
@@ -108,7 +109,7 @@ export async function ReadingTab({ yearParam }: { yearParam?: string }) {
           compact
           title={isAll ? "Best year" : "Best month"}
           value={best ? (isAll ? best.label : monthName(best.label)) : "—"}
-          subtitle={best ? plural(best.count, "volume") : undefined}
+          subtitle={best ? plural(best.count, "book") : undefined}
           icon={CalendarRange}
           variant="accent"
         />
@@ -131,21 +132,21 @@ export async function ReadingTab({ yearParam }: { yearParam?: string }) {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <ChartCard title="Volumes Read">
+        <ChartCard title="Books Read">
           <ReadsPerPeriod data={readsData} granularity={isAll ? "year" : "month"} />
           <UndatedNote count={undatedReadCount(volumes)} kind="read" />
         </ChartCard>
         <ChartCard title="Unread Backlog">
           <BacklogTrend data={backlogTrend(volumes, period, now)} granularity={isAll ? "year" : "month"} />
         </ChartCard>
-        <ChartCard title={isAll ? "Most Read Series" : `Most Read in ${period}`}>
+        <ChartCard title={isAll ? "Most Read" : `Most Read in ${period}`}>
           <CoverList
-            emptyText="No volumes read in this period yet."
+            emptyText="No books read in this period yet."
             items={top.map((s) => ({
               key: s.seriesId,
               href: `/dashboard/library/${s.seriesId}`,
               title: s.title,
-              subtitle: plural(s.count, "volume") + " read",
+              subtitle: plural(s.count, "book") + " read",
               coverImage: s.coverImage,
             }))}
           />
@@ -157,7 +158,7 @@ export async function ReadingTab({ yearParam }: { yearParam?: string }) {
               items={unread.map((v) => ({
                 key: v.id,
                 href: `/dashboard/library/${v.seriesId}`,
-                title: `${v.series.title} #${v.volumeNumber}`,
+                title: volumeLabel(v.series.title, v.volumeNumber, v.series.standalone),
                 subtitle: `bought ${formatRelativeDate(v.purchaseDate!, now)}`,
                 coverImage: v.coverImage ?? v.series.coverImage,
               }))}

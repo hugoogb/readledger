@@ -23,8 +23,33 @@ describe("getReadingVolumes", () => {
     expect(args.select).toMatchObject({
       purchaseDate: true,
       readDate: true,
-      series: { select: { title: true, coverImage: true } },
+      series: { select: expect.objectContaining({ title: true, coverImage: true }) },
     });
+  });
+});
+
+describe("getReadingVolumes standalone flag", () => {
+  it("marks volumes of standalone books", async () => {
+    const row = (totalVolumes: number | null, volumes: number) => ({
+      id: "v",
+      seriesId: "s",
+      volumeNumber: 1,
+      owned: true,
+      read: true,
+      purchaseDate: null,
+      readDate: null,
+      coverImage: null,
+      series: { title: "T", coverImage: null, totalVolumes, _count: { volumes } },
+    });
+    prismaMock.volume.findMany.mockResolvedValue([row(1, 1), row(10, 10), row(null, 1)]);
+
+    const result = await getReadingVolumes("user-1");
+
+    expect(result.map((v) => v.series)).toEqual([
+      { title: "T", coverImage: null, standalone: true },
+      { title: "T", coverImage: null, standalone: false },
+      { title: "T", coverImage: null, standalone: false },
+    ]);
   });
 });
 

@@ -46,7 +46,7 @@ export default function LoginPage() {
             ReadLedger
           </h1>
           <p className="text-foreground-muted mt-2 text-lg">
-            Track your manga collection
+            Track your book collection
           </p>
         </div>
 
