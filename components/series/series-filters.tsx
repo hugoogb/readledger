@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { statusOptions } from "@/lib/constants";
+import { FORMAT_LABELS } from "@/lib/format";
+import type { Format } from "@/lib/generated/prisma/enums";
 import { Loader2, Search } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useTransition } from "react";
@@ -22,10 +24,16 @@ const sortOptions = [
   { value: "spent", label: "Total Spent" },
 ];
 
-export function SeriesFilters() {
+type SeriesFiltersProps = {
+  /** Formats present in the library; chips show only when there are several. */
+  formats: Format[];
+};
+
+export function SeriesFilters({ formats }: SeriesFiltersProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const currentStatus = searchParams.get("status") || "";
+  const currentFormat = searchParams.get("format") || "";
   const currentSearch = searchParams.get("q") || "";
   const currentSort = searchParams.get("sort") || "";
 
@@ -44,7 +52,7 @@ export function SeriesFilters() {
       params.delete("page");
     }
     startTransition(() => {
-      router.push(`/dashboard/series?${params.toString()}`);
+      router.push(`/dashboard/library?${params.toString()}`);
     });
   }
 
@@ -70,7 +78,7 @@ export function SeriesFilters() {
           id="series-search"
           type="search"
           enterKeyHint="search"
-          aria-label="Search series"
+          aria-label="Search your library"
           icon={
             isPending ? (
               <Loader2 className="w-5 h-5 animate-spin" />
@@ -80,14 +88,14 @@ export function SeriesFilters() {
           }
           defaultValue={currentSearch}
           onChange={(e) => handleSearchChange(e.target.value)}
-          placeholder="Search series..."
+          placeholder="Search your library..."
           className="flex-1"
         />
 
         {/* Sort */}
         <Select
           id="series-sort"
-          aria-label="Sort series"
+          aria-label="Sort library"
           value={currentSort}
           onChange={(e) => updateParams("sort", e.target.value)}
           className="w-full sm:w-48"
@@ -99,6 +107,32 @@ export function SeriesFilters() {
           ))}
         </Select>
       </div>
+
+      {/* Format Filter: hidden for single-format libraries (e.g. manga only) */}
+      {formats.length > 1 && (
+        <div
+          role="group"
+          aria-label="Filter by format"
+          className="flex gap-2 overflow-x-auto no-scrollbar -mx-1 px-1"
+        >
+          {[{ value: "", label: "All formats" }, ...formats.map((f) => ({ value: f, label: FORMAT_LABELS[f] }))].map(
+            (filter) => {
+              const isActive = currentFormat === filter.value;
+              return (
+                <Button
+                  key={filter.value}
+                  variant={isActive ? "default" : "secondary"}
+                  onClick={() => updateParams("format", filter.value)}
+                  aria-pressed={isActive}
+                  className="whitespace-nowrap h-10 transition-all"
+                >
+                  {filter.label}
+                </Button>
+              );
+            },
+          )}
+        </div>
+      )}
 
       {/* Status Filter */}
       <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-1 px-1">

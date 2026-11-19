@@ -77,7 +77,7 @@ export function EditSeriesModal({ series, publishers = [] }: EditSeriesModalProp
     try {
       unwrap(await deleteSeries(series.id));
       toast.success(`${series.title} deleted`);
-      router.push("/dashboard/series");
+      router.push("/dashboard/library");
     } catch (err) {
       toast.error(
         err instanceof Error ? err.message : "Failed to delete series",

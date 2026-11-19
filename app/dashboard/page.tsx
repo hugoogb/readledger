@@ -237,7 +237,7 @@ async function StatusAndRecentSection() {
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold">Recent Series</h2>
           <Link
-            href="/dashboard/series"
+            href="/dashboard/library"
             className="text-sm text-accent hover:text-accent-hover transition-colors"
           >
             View all
@@ -248,7 +248,7 @@ async function StatusAndRecentSection() {
             <Library className="w-12 h-12 text-foreground-muted mx-auto mb-3" />
             <p className="text-foreground-muted mb-4">No series added yet</p>
             <Link
-              href="/dashboard/series"
+              href="/dashboard/library"
               className="inline-flex items-center gap-2 text-accent hover:text-accent-hover transition-colors"
             >
               Add your first series
@@ -264,7 +264,7 @@ async function StatusAndRecentSection() {
               return (
                 <Link
                   key={series.id}
-                  href={`/dashboard/series/${series.id}`}
+                  href={`/dashboard/library/${series.id}`}
                   className="flex items-center gap-4 p-3 rounded-xl hover:bg-background-tertiary transition-colors"
                 >
                   {series.coverImage ? (
@@ -321,7 +321,7 @@ async function RecentlyReadSection() {
         emptyText="Volumes you mark as read will show up here."
         items={recentlyRead(volumes).map((v) => ({
           key: v.id,
-          href: `/dashboard/series/${v.seriesId}`,
+          href: `/dashboard/library/${v.seriesId}`,
           title: v.series.title,
           subtitle: `Vol ${v.volumeNumber} · ${formatRelativeDate(v.readDate, now)}`,
           coverImage: v.coverImage ?? v.series.coverImage,

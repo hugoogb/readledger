@@ -17,7 +17,7 @@ import { ThemeToggle } from "./theme-toggle";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/dashboard/series", label: "My Series", icon: Library },
+  { href: "/dashboard/library", label: "Library", icon: Library },
   { href: "/dashboard/wishlist", label: "Wishlist", icon: Heart },
   { href: "/dashboard/statistics", label: "Statistics", icon: BarChart3 },
 ];

@@ -169,7 +169,7 @@ export default async function SeriesDetailPage({ params }: Props) {
       {/* Header */}
       <div className="mb-8">
         <Link
-          href="/dashboard/series"
+          href="/dashboard/library"
           className="inline-flex items-center gap-2 py-2 -my-2 text-foreground-muted hover:text-foreground transition-colors mb-4"
         >
           <ArrowLeft className="w-4 h-4" />

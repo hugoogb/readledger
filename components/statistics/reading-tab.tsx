@@ -143,7 +143,7 @@ export async function ReadingTab({ yearParam }: { yearParam?: string }) {
             emptyText="No volumes read in this period yet."
             items={top.map((s) => ({
               key: s.seriesId,
-              href: `/dashboard/series/${s.seriesId}`,
+              href: `/dashboard/library/${s.seriesId}`,
               title: s.title,
               subtitle: plural(s.count, "volume") + " read",
               coverImage: s.coverImage,
@@ -156,7 +156,7 @@ export async function ReadingTab({ yearParam }: { yearParam?: string }) {
               emptyText=""
               items={unread.map((v) => ({
                 key: v.id,
-                href: `/dashboard/series/${v.seriesId}`,
+                href: `/dashboard/library/${v.seriesId}`,
                 title: `${v.series.title} #${v.volumeNumber}`,
                 subtitle: `bought ${formatRelativeDate(v.purchaseDate!, now)}`,
                 coverImage: v.coverImage ?? v.series.coverImage,

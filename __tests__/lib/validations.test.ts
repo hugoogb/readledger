@@ -32,8 +32,7 @@ describe("seriesSchema", () => {
   });
 
   it("requires a format", () => {
-    const { format: _format, ...withoutFormat } = validSeries;
-    const result = seriesSchema.safeParse(withoutFormat);
+    const result = seriesSchema.safeParse({ ...validSeries, format: undefined });
     expect(result.success).toBe(false);
   });
 

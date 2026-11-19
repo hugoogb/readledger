@@ -1,11 +1,12 @@
-import { getAllSeries, type SortOption } from "@/actions/series";
+import { getAllSeries, getLibraryFormats, type SortOption } from "@/actions/series";
 import { getPublishers } from "@/actions/publishers";
 import { AddSeriesModal } from "@/components/series/add-series-modal";
 import { SeriesCard } from "@/components/series/series-card";
 import { SeriesFilters } from "@/components/series/series-filters";
 import { Pagination } from "@/components/ui/pagination";
 import { SeriesGridSkeleton } from "@/components/ui/skeletons";
-import { SeriesStatus } from "@/lib/generated/prisma/enums";
+import { parseFormat } from "@/lib/format";
+import { type Format, SeriesStatus } from "@/lib/generated/prisma/enums";
 import { Library } from "lucide-react";
 import { Suspense } from "react";
 
@@ -21,11 +22,14 @@ const SORT_OPTIONS: SortOption[] = [
 ];
 
 type Props = {
-  searchParams: Promise<{ status?: string; q?: string; sort?: string; page?: string }>;
+  searchParams: Promise<{ status?: string; format?: string; q?: string; sort?: string; page?: string }>;
 };
 
 type FilteredSeriesListProps = {
   statusFilter?: SeriesStatus;
+  formatFilter?: Format;
+  /** Badge each card with its format (the library holds several). */
+  showFormat: boolean;
   searchQuery?: string;
   sort?: SortOption;
   page: number;
@@ -33,11 +37,18 @@ type FilteredSeriesListProps = {
 
 async function FilteredSeriesList({
   statusFilter,
+  formatFilter,
+  showFormat,
   searchQuery,
   sort,
   page,
 }: FilteredSeriesListProps) {
-  const series = await getAllSeries({ status: statusFilter, sort, search: searchQuery });
+  const series = await getAllSeries({
+    status: statusFilter,
+    format: formatFilter,
+    sort,
+    search: searchQuery,
+  });
 
   const totalCount = series.length;
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
@@ -49,11 +60,13 @@ async function FilteredSeriesList({
     return (
       <div className="text-center py-16">
         <Library className="w-16 h-16 text-foreground-muted mx-auto mb-4" />
-        <h3 className="text-xl font-semibold mb-2">No series found</h3>
+        <h3 className="text-xl font-semibold mb-2">
+          {statusFilter || formatFilter || searchQuery ? "Nothing found" : "Nothing here yet"}
+        </h3>
         <p className="text-foreground-muted">
-          {statusFilter || searchQuery
+          {statusFilter || formatFilter || searchQuery
             ? "Try adjusting your filters"
-            : "Add your first manga series to get started"}
+            : "Add your first book or series"}
         </p>
       </div>
     );
@@ -63,7 +76,7 @@ async function FilteredSeriesList({
     <div>
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
         {paginatedSeries.map((s) => (
-          <SeriesCard key={s.id} series={s} />
+          <SeriesCard key={s.id} series={s} showFormat={showFormat} />
         ))}
       </div>
       {totalPages > 1 && (
@@ -81,14 +94,17 @@ async function FilteredSeriesList({
 }
 
 export default async function SeriesPage({ searchParams }: Props) {
-  const [{ status, q, sort, page }, publishers] = await Promise.all([
+  const [{ status, format, q, sort, page }, publishers, formats] = await Promise.all([
     searchParams,
     getPublishers(),
+    getLibraryFormats(),
   ]);
   // URL params are user-editable: ignore values we don't recognise.
   const statusFilter = (Object.values(SeriesStatus) as string[]).includes(status ?? "")
     ? (status as SeriesStatus)
     : undefined;
+  const parsedFormat = parseFormat(format);
+  const formatFilter = parsedFormat && formats.includes(parsedFormat) ? parsedFormat : undefined;
   const searchQuery = q?.trim() || undefined;
   const sortOption = SORT_OPTIONS.includes(sort as SortOption)
     ? (sort as SortOption)
@@ -101,9 +117,9 @@ export default async function SeriesPage({ searchParams }: Props) {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-bold">My Series</h1>
+          <h1 className="text-3xl font-bold">Library</h1>
           <p className="text-foreground-muted mt-1">
-            Manage your manga collection
+            Everything on your shelves
           </p>
         </div>
         <AddSeriesModal publishers={publishers} />
@@ -112,13 +128,15 @@ export default async function SeriesPage({ searchParams }: Props) {
       {/* Filters */}
       <div className="mb-8">
         <Suspense fallback={null}>
-          <SeriesFilters />
+          <SeriesFilters formats={formats} />
         </Suspense>
       </div>
 
       <Suspense fallback={<SeriesGridSkeleton />}>
         <FilteredSeriesList
           statusFilter={statusFilter}
+          formatFilter={formatFilter}
+          showFormat={formats.length > 1}
           searchQuery={searchQuery}
           sort={sortOption}
           page={currentPage}

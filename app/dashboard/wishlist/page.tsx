@@ -81,7 +81,7 @@ export default async function WishlistPage() {
             >
               <div className="flex items-center gap-4 mb-4">
                 <Link
-                  href={`/dashboard/series/${group.series.id}`}
+                  href={`/dashboard/library/${group.series.id}`}
                   className="flex items-center gap-4 flex-1 min-w-0 hover:text-accent transition-colors"
                 >
                   {group.series.coverImage ? (

@@ -18,7 +18,7 @@ export const createSeries = withResult(async (input: seriesService.CreateSeriesI
   const series = await seriesService.createSeries(user.id, validated);
 
   revalidatePath("/dashboard");
-  revalidatePath("/dashboard/series");
+  revalidatePath("/dashboard/library");
 
   return series;
 });
@@ -35,7 +35,7 @@ export const createSeriesWithVolumes = withResult(async (
   const series = await seriesService.createSeriesWithVolumes(user.id, validated, validatedVolumes);
 
   revalidatePath("/dashboard");
-  revalidatePath("/dashboard/series");
+  revalidatePath("/dashboard/library");
 
   return series;
 });
@@ -48,8 +48,8 @@ export const updateSeries = withResult(async (id: string, input: seriesService.U
   const updated = await seriesService.updateSeries(user.id, id, validated);
 
   revalidatePath("/dashboard");
-  revalidatePath("/dashboard/series");
-  revalidatePath(`/dashboard/series/${id}`);
+  revalidatePath("/dashboard/library");
+  revalidatePath(`/dashboard/library/${id}`);
 
   return updated;
 });
@@ -61,7 +61,7 @@ export const deleteSeries = withResult(async (id: string) => {
   await seriesService.deleteSeries(user.id, id);
 
   revalidatePath("/dashboard");
-  revalidatePath("/dashboard/series");
+  revalidatePath("/dashboard/library");
 });
 
 export const getSeries = cache(async function getSeries(id: string) {
