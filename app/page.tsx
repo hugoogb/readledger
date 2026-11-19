@@ -128,7 +128,7 @@ const faqs = [
   {
     question: "Does ReadLedger scan barcodes?",
     answer:
-      "No. To add an exact edition, type or paste the ISBN printed on the back cover, and ReadLedger looks it up.",
+      "Yes, on your phone. Tap Scan when adding a book and point the camera at the ISBN barcode on the back cover, and ReadLedger looks up that edition. You can also type or paste the ISBN.",
   },
   {
     question: "How do I track how much I've spent on books?",

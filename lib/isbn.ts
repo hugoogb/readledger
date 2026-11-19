@@ -35,3 +35,12 @@ export function parseIsbnQuery(query: string): string | null {
   const isbn = normalizeIsbn(trimmed);
   return isValidIsbn13(isbn) || isValidIsbn10(isbn) ? isbn : null;
 }
+
+/**
+ * The ISBN-13 encoded by a scanned EAN-13 barcode, or null when the barcode
+ * isn't a book's: ISBNs are the EAN-13 "Bookland" range, prefix 978 or 979.
+ */
+export function isbnFromBarcode(text: string): string | null {
+  const digits = text.trim();
+  return /^97[89]\d{10}$/.test(digits) && isValidIsbn13(digits) ? digits : null;
+}

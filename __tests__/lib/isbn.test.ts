@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { isValidIsbn10, isValidIsbn13, normalizeIsbn, parseIsbnQuery } from "@/lib/isbn";
+import { isbnFromBarcode, isValidIsbn10, isValidIsbn13, normalizeIsbn, parseIsbnQuery } from "@/lib/isbn";
 
 describe("normalizeIsbn", () => {
   it("strips spaces and hyphens and uppercases x", () => {
@@ -42,5 +42,17 @@ describe("parseIsbnQuery", () => {
     expect(parseIsbnQuery("dune 9780441013593")).toBeNull();
     expect(parseIsbnQuery("9780441013594")).toBeNull();
     expect(parseIsbnQuery("")).toBeNull();
+  });
+});
+
+describe("isbnFromBarcode", () => {
+  it("returns the ISBN for a 978/979 EAN-13", () => {
+    expect(isbnFromBarcode("9780441013593")).toBe("9780441013593");
+    expect(isbnFromBarcode("9791032305690")).toBe("9791032305690");
+  });
+  it("rejects non-book EAN-13s (e.g. a grocery barcode) and bad checksums", () => {
+    expect(isbnFromBarcode("5901234123457")).toBeNull();
+    expect(isbnFromBarcode("9780441013594")).toBeNull();
+    expect(isbnFromBarcode("978044101359")).toBeNull();
   });
 });

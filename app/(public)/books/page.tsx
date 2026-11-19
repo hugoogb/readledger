@@ -84,8 +84,8 @@ export default function BooksPage() {
           search doesn’t find, you can add by hand.
         </p>
         <p className={bodyClass}>
-          There’s no barcode scanner: to add a specific edition, type or paste the ISBN from the back
-          cover.
+          To add a specific edition on your phone, tap Scan and point the camera at the ISBN barcode on
+          the back cover. You can also type or paste the ISBN.
         </p>
       </section>
 

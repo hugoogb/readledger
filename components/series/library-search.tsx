@@ -13,9 +13,29 @@ import {
   type MangaSearchResult,
 } from "@/lib/manga-api";
 import type { BookSearchResult } from "@/lib/openlibrary-api";
-import { BookOpen, ChevronLeft, ChevronRight, Edit3, Library, Loader2, Search } from "lucide-react";
+import {
+  BookOpen,
+  ChevronLeft,
+  ChevronRight,
+  Edit3,
+  Library,
+  Loader2,
+  ScanBarcode,
+  Search,
+} from "lucide-react";
+import dynamic from "next/dynamic";
 import Image from "next/image";
 import { useEffect, useState } from "react";
+
+// Lazy: the barcode library loads only when someone taps Scan.
+const IsbnScanner = dynamic(() => import("./isbn-scanner").then((m) => m.IsbnScanner), {
+  ssr: false,
+  loading: () => (
+    <div className="flex aspect-4/3 items-center justify-center rounded-xl bg-background-tertiary">
+      <Loader2 className="w-8 h-8 animate-spin text-foreground-muted" aria-label="Loading scanner" />
+    </div>
+  ),
+});
 
 type LibrarySearchProps = {
   query: string;
@@ -43,6 +63,10 @@ export function LibrarySearch({
   onAddManually,
 }: LibrarySearchProps) {
   const [debounced, setDebounced] = useState(query.trim());
+  const [scanning, setScanning] = useState(false);
+  // Rendered only inside the (client-only) add modal, so navigator exists.
+  // No mediaDevices (old browsers, plain-http origins) means no Scan button.
+  const canScan = typeof navigator !== "undefined" && Boolean(navigator.mediaDevices);
 
   useEffect(() => {
     const timer = setTimeout(() => setDebounced(query.trim()), 500);
@@ -55,19 +79,47 @@ export function LibrarySearch({
   const books = <BookResults key={`b:${debounced}`} query={debounced} isbn={isbn} onSelect={onSelectBook} />;
   const manga = <MangaResults key={`m:${debounced}`} query={debounced} onSelect={onSelectManga} />;
 
+  if (scanning) {
+    return (
+      <IsbnScanner
+        onDetected={(isbn) => {
+          setScanning(false);
+          // Skip the typing debounce: the scan is the final query.
+          setDebounced(isbn);
+          onQueryChange(isbn);
+        }}
+        onClose={() => setScanning(false)}
+      />
+    );
+  }
+
   return (
     <div className="space-y-5">
-      <Input
-        type="search"
-        enterKeyHint="search"
-        aria-label="Search by title, author or ISBN"
-        value={query}
-        onChange={(e) => onQueryChange(e.target.value)}
-        placeholder="Search by title, author or ISBN"
-        autoFocus
-        className="pl-11"
-        icon={<Search className="w-5 h-5" />}
-      />
+      <div className="flex gap-2">
+        <Input
+          type="search"
+          enterKeyHint="search"
+          aria-label="Search by title, author or ISBN"
+          value={query}
+          onChange={(e) => onQueryChange(e.target.value)}
+          placeholder="Search by title, author or ISBN"
+          autoFocus
+          className="pl-11"
+          icon={<Search className="w-5 h-5" />}
+        />
+        {canScan && (
+          <Button
+            variant="secondary"
+            type="button"
+            onClick={() => setScanning(true)}
+            className="h-12 shrink-0 gap-2 px-3 sm:px-4"
+            aria-label="Scan a book barcode"
+          >
+            <ScanBarcode className="w-5 h-5" />
+            Scan
+          </Button>
+        )}
+      </div>
 
       {searching ? (
         isbn ? (

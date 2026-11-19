@@ -30,7 +30,7 @@ export function BestAppsGuide() {
       <DataTable
         head={["App", "Platforms", "Price", "Barcode scanning", "Best for"]}
         rows={[
-          ["ReadLedger", "Any browser, phone or desktop", "Free", "No", "Spending and reading stats on any device"],
+          ["ReadLedger", "Any browser, phone or desktop", "Free", "Yes, ISBN barcodes with the phone camera", "Spending and reading stats on any device"],
           ["Libib", "Web, iOS, Android", "Free up to 5,000 items; Pro $9/month", "Yes", "Mixed libraries with books and more"],
           ["CLZ Comics", "iOS, Android", "$1.99/month or $19.99/year after a 7-day trial", "Yes", "Mixed comic and manga collections"],
           ["Manga Inventory", "Android", "Free, with in-app purchases", "Not confirmed", "Android users who want no account"],
@@ -48,9 +48,10 @@ export function BestAppsGuide() {
         or JSON import and export.
       </p>
       <p>
-        <strong>What it lacks:</strong> there’s no barcode scanning and no native app, so you use it
-        through your browser (you can add it to your home screen). It needs an account and an internet
-        connection. If you scan a lot, or mostly collect Western comics, look at the options below.
+        <strong>What it lacks:</strong> there’s no native app, so you use it through your browser (you
+        can add it to your home screen). Its scanner reads ISBN barcodes only, so items without one
+        are added by search. It needs an account and an internet connection. If you mostly collect
+        Western comics, look at the options below.
       </p>
 
       <h2>Libib</h2>
@@ -97,7 +98,7 @@ export function BestAppsGuide() {
       <h2>How to choose</h2>
       <ul>
         <li>
-          <strong>You want to scan barcodes:</strong> Libib or CLZ Comics.
+          <strong>You want to scan barcodes:</strong> Libib or CLZ Comics, or ReadLedger for books with an ISBN.
         </li>
         <li>
           <strong>You collect more than manga:</strong> Libib, or ReadLedger if you want spending stats too.

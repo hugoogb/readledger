@@ -87,9 +87,10 @@ export function CatalogHomeLibraryGuide() {
         </li>
       </ul>
       <p>
-        ReadLedger doesn’t scan barcodes, so you type or paste the ISBN. If scanning matters to you, our{" "}
-        <Link href="/guides/best-manga-collection-tracker-apps">tracker app comparison</Link> lists apps
-        that do.
+        On a phone, ReadLedger scans the ISBN barcode on the back cover with your camera; you can also
+        type or paste the ISBN. Our{" "}
+        <Link href="/guides/best-manga-collection-tracker-apps">tracker app comparison</Link> covers how
+        other apps handle scanning.
       </p>
 
       <h2>4. Catalog one shelf at a time</h2>
