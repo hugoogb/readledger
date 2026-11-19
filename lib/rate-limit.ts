@@ -2,6 +2,8 @@
  * In-memory sliding window rate limiter.
  */
 
+import { AppError } from "./errors";
+
 type RateLimitEntry = {
   timestamps: number[];
   // Each key keeps its own window so cleanup doesn't cut long windows short
@@ -87,3 +89,37 @@ export async function throttleMangadex(): Promise<void> {
 
   lastMangadexRequest = Date.now();
 }
+
+/**
+ * Serialised outbound throttle: callers are given slots `intervalMs` apart.
+ * The slot is reserved before awaiting, so concurrent callers can't all see
+ * the same "last request" time and fire together. A caller whose slot would
+ * be more than `maxWaitMs` away is rejected (without reserving) instead of
+ * queueing indefinitely.
+ */
+export function createThrottle(
+  intervalMs: number,
+  maxWaitMs: number,
+): () => Promise<void> {
+  let nextSlot = 0;
+  return async () => {
+    const now = Date.now();
+    const slot = Math.max(now, nextSlot);
+    const wait = slot - now;
+    if (wait > maxWaitMs) {
+      throw new AppError(
+        "Book search is busy. Please try again in a moment.",
+        "UPSTREAM_BUSY",
+        503,
+      );
+    }
+    nextSlot = slot + intervalMs;
+    if (wait > 0) await new Promise((resolve) => setTimeout(resolve, wait));
+  };
+}
+
+/**
+ * Open Library allows 1 request/second for clients that don't put an email
+ * in their User-Agent (3/s with one). One server IP serves every user.
+ */
+export const throttleOpenLibrary = createThrottle(1000, 5000);
