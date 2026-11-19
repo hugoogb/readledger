@@ -1,5 +1,6 @@
 import { parseCsv } from "@/lib/csv";
-import { Condition, SeriesStatus } from "@/lib/generated/prisma/enums";
+import { Condition, Format, SeriesStatus } from "@/lib/generated/prisma/enums";
+import { parseFormat } from "@/lib/format";
 import { MAX_VOLUMES } from "@/lib/validations";
 
 export type ImportFormat = "csv" | "json";
@@ -44,6 +45,12 @@ export type ImportPreview = {
   volumeCount: number;
   /** Keyed by series title. */
   seriesMeta: Record<string, ImportSeriesMeta>;
+  /**
+   * Format per title, keyed by title; absent when the file doesn't say (new
+   * titles are then MANGA, as every pre-format export was). The first
+   * non-empty value of a title wins; later conflicting ones are ignored.
+   */
+  formats: Record<string, Format>;
 };
 
 const MANGADEX_COVER_URL = /^https:\/\/uploads\.mangadex\.org\/covers\//;
@@ -102,6 +109,15 @@ function cover(value: unknown): string | null {
   return value;
 }
 
+function bookFormat(value: unknown): Format | null {
+  if (value == null || String(value).trim() === "") return null;
+  const parsed = parseFormat(String(value));
+  if (!parsed) {
+    throw new RowError(`format must be one of ${Object.values(Format).join(", ")}`);
+  }
+  return parsed;
+}
+
 function condition(value: unknown): Condition | null {
   const s = value == null ? "" : String(value).trim().toUpperCase();
   return CONDITIONS.has(s) ? (s as Condition) : null;
@@ -118,13 +134,17 @@ function unescapeCell(value: string): string {
 }
 
 function emptyPreview(message: string): ImportPreview {
-  return { rows: [], errors: [{ row: 0, message }], seriesCount: 0, volumeCount: 0, seriesMeta: {} };
+  return { rows: [], errors: [{ row: 0, message }], seriesCount: 0, volumeCount: 0, seriesMeta: {}, formats: {} };
 }
 
 export function parseImport(data: string, format: ImportFormat): ImportPreview {
   const rows: ImportRow[] = [];
   const errors: { row: number; message: string }[] = [];
   const seriesMeta: Record<string, ImportSeriesMeta> = {};
+  const formats: Record<string, Format> = {};
+  const noteFormat = (title: string, value: Format | null) => {
+    if (value && !(title in formats)) formats[title] = value;
+  };
 
   if (data.length > MAX_IMPORT_SIZE) {
     return emptyPreview("File too large. Maximum size is 5 MB.");
@@ -154,6 +174,7 @@ export function parseImport(data: string, format: ImportFormat): ImportPreview {
       }
 
       try {
+        noteFormat(title, bookFormat(s.format));
         const totalVolumes = s.totalVolumes == null ? null : Number(s.totalVolumes);
         seriesMeta[title] = {
           author: text(s.author, "author"),
@@ -218,6 +239,7 @@ export function parseImport(data: string, format: ImportFormat): ImportPreview {
       try {
         const title = text(getCol(row, "series_title"), "title");
         if (!title) throw new RowError("missing series_title");
+        const rowFormat = bookFormat(getCol(row, "format"));
 
         rows.push({
           seriesTitle: title,
@@ -234,6 +256,7 @@ export function parseImport(data: string, format: ImportFormat): ImportPreview {
           isbn: text(getCol(row, "isbn"), "isbn"),
           coverImage: null,
         });
+        noteFormat(title, rowFormat);
       } catch (err) {
         errors.push({ row: line, message: (err as Error).message });
       }
@@ -250,5 +273,6 @@ export function parseImport(data: string, format: ImportFormat): ImportPreview {
     seriesCount: new Set(rows.map((r) => r.seriesTitle)).size,
     volumeCount: rows.length,
     seriesMeta,
+    formats,
   };
 }

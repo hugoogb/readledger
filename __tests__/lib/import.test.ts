@@ -96,3 +96,64 @@ describe("parseImport (json)", () => {
     expect(parseImport(json, "json").seriesMeta.Berserk.coverImage).toBeNull();
   });
 });
+
+describe("parseImport format", () => {
+  const FHEADER = "series_title,format,volume_number,owned"; // any column order
+
+  it("reads the format column per title", () => {
+    const { formats, errors } = parseImport(`${FHEADER}\nDune,novel,1,yes`, "csv");
+
+    expect(errors).toEqual([]);
+    expect(formats).toEqual({ Dune: "NOVEL" });
+  });
+
+  it("leaves the format out when the column is missing", () => {
+    const { formats, errors } = parseImport(`${HEADER}\nBerserk,1,yes,no,no,,,,,,,`, "csv");
+
+    expect(errors).toEqual([]);
+    expect(formats).toEqual({});
+  });
+
+  it("reports an unknown format as a row error", () => {
+    const { errors } = parseImport(`${FHEADER}\nDune,BOOK,1,yes`, "csv");
+
+    expect(errors).toEqual([
+      { row: 2, message: expect.stringContaining("format must be one of") },
+    ]);
+  });
+
+  it("keeps the first non-empty format of a title and ignores later conflicts", () => {
+    const csv = [FHEADER, "Saga,,1,yes", "Saga,COMIC,2,yes", "Saga,NOVEL,3,yes"].join("\n");
+    const { formats, errors } = parseImport(csv, "csv");
+
+    expect(errors).toEqual([]);
+    expect(formats).toEqual({ Saga: "COMIC" });
+  });
+
+  it("reads the format of a JSON series", () => {
+    const json = JSON.stringify([{ title: "Saga", format: "COMIC", volumes: [] }]);
+    const { formats, errors } = parseImport(json, "json");
+
+    expect(errors).toEqual([]);
+    expect(formats).toEqual({ Saga: "COMIC" });
+  });
+
+  it("reports an unknown JSON format as an error", () => {
+    const json = JSON.stringify([{ title: "Saga", format: "BOOK", volumes: [] }]);
+    const { errors } = parseImport(json, "json");
+
+    expect(errors).toEqual([{ row: 1, message: expect.stringContaining("format must be one of") }]);
+  });
+});
+
+describe("public CSV template", () => {
+  it("imports cleanly with its MANGA format", async () => {
+    const { readFileSync } = await import("node:fs");
+    const csv = readFileSync("public/manga-collection-template.csv", "utf8");
+    const { errors, formats, rows } = parseImport(csv, "csv");
+
+    expect(errors).toEqual([]);
+    expect(rows).toHaveLength(3);
+    expect(formats).toEqual({ "Example Series": "MANGA" });
+  });
+});
