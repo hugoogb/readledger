@@ -15,6 +15,9 @@ const coverImageSchema = z
 
 export const idSchema = z.uuid("Invalid id");
 
+/** Open Library work key without the /works/ prefix, e.g. "OL893414W". */
+export const openLibraryKeySchema = z.string().regex(/^OL\d+W$/, "Invalid Open Library work");
+
 export const seriesSchema = z.object({
   title: z.string().trim().min(1, "Title is required").max(255),
   author: z.string().max(255).optional().or(z.literal("")),
@@ -27,6 +30,7 @@ export const seriesSchema = z.object({
   description: z.string().max(2000).optional().or(z.literal("")),
   retailPrice: z.number("Retail price must be a number").min(0).max(100_000).nullable().optional(),
   mangadexId: z.string().max(64).nullable().optional(),
+  openLibraryKey: openLibraryKeySchema.nullable().optional(),
 });
 
 export const volumeSchema = z.object({
@@ -74,6 +78,7 @@ export const seriesVolumesSchema = z
       volumeNumber: z.number().int().min(1).max(MAX_VOLUMES),
       title: z.string().max(255).optional(),
       coverImage: z.string().refine(isAllowedCoverUrl).nullish(),
+      isbn: z.string().trim().max(32).nullish(),
     }),
   )
   .max(MAX_VOLUMES);

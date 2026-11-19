@@ -15,5 +15,6 @@ export function getSeriesFormDefaults(series?: Series | null): SeriesSchema {
     coverImage: series?.coverImage ?? "",
     description: series?.description ?? "",
     mangadexId: series?.mangadexId ?? null,
+    openLibraryKey: series?.openLibraryKey ?? null,
   };
 }

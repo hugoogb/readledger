@@ -4,7 +4,7 @@ import { requireUser } from "@/lib/auth";
 import { withResult } from "@/lib/action-result";
 import { revalidatePath } from "next/cache";
 import { cache } from "react";
-import { idSchema, seriesSchema, seriesVolumesSchema } from "@/lib/validations";
+import { idSchema, openLibraryKeySchema, seriesSchema, seriesVolumesSchema } from "@/lib/validations";
 import { checkUserActionLimit } from "@/lib/rate-limit";
 import * as seriesService from "@/services/series";
 
@@ -90,6 +90,18 @@ export async function getExistingMangadexIds(mangadexIds: string[]): Promise<str
   const user = await requireUser();
   return seriesService.getExistingMangadexIds(user.id, mangadexIds);
 }
+
+export async function getExistingOpenLibraryKeys(keys: string[]): Promise<string[]> {
+  const user = await requireUser();
+  // Bounded like a search page; anything else isn't a key we stored.
+  const valid = keys.slice(0, 50).filter((k) => openLibraryKeySchema.safeParse(k).success);
+  return seriesService.getExistingOpenLibraryKeys(user.id, valid);
+}
+
+export const getFormatCounts = cache(async function getFormatCounts() {
+  const user = await requireUser();
+  return seriesService.getFormatCounts(user.id);
+});
 
 export const getSeriesStats = cache(async function getSeriesStats() {
   const user = await requireUser();

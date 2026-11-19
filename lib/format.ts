@@ -58,3 +58,20 @@ export function formatBreakdown(series: { format: Format; ownedCount: number }[]
     .map(([format, count]) => ({ format, label: FORMAT_LABELS[format], count }))
     .sort((a, b) => b.count - a.count || FORMATS.indexOf(a.format) - FORMATS.indexOf(b.format));
 }
+
+const MANGA_GROUP: Format[] = [Format.MANGA, Format.LIGHT_NOVEL];
+
+/**
+ * Whether the add-modal search shows Open Library books before MangaDex manga:
+ * yes unless the library holds more manga/light novels than everything else.
+ * A tie (an empty library included) puts books first.
+ */
+export function booksFirstInSearch(counts: Partial<Record<Format, number>>): boolean {
+  let manga = 0;
+  let other = 0;
+  for (const [format, count] of Object.entries(counts) as [Format, number][]) {
+    if (MANGA_GROUP.includes(format)) manga += count;
+    else other += count;
+  }
+  return other >= manga;
+}

@@ -10,6 +10,8 @@ import {
   getSeriesStats,
   checkDuplicateSeries,
   getExistingMangadexIds,
+  getExistingOpenLibraryKeys,
+  getFormatCounts,
   getLibraryFormats,
 } from "@/services/series";
 
@@ -212,6 +214,31 @@ describe("createSeriesWithVolumes", () => {
     const call = prismaMock.series.create.mock.calls[0][0];
     expect(call.data.volumes.create[0].coverImage).toBeNull();
     expect(call.data.volumes.create[1].coverImage).toBeNull();
+  });
+});
+
+describe("createSeriesWithVolumes with an ISBN", () => {
+  it("stores the ISBN on the volume", async () => {
+    prismaMock.series.create.mockResolvedValue(makeSeries());
+
+    await createSeriesWithVolumes(
+      USER_ID,
+      {
+        title: "Dune",
+        status: "READING",
+        format: "NOVEL",
+        publishing: false,
+        totalVolumes: 1,
+        openLibraryKey: "OL893414W",
+      },
+      [{ volumeNumber: 1, isbn: "9780441013593" }],
+    );
+
+    const call = prismaMock.series.create.mock.calls[0][0];
+    expect(call.data.openLibraryKey).toBe("OL893414W");
+    expect(call.data.volumes.create).toEqual([
+      expect.objectContaining({ volumeNumber: 1, isbn: "9780441013593" }),
+    ]);
   });
 });
 
@@ -636,6 +663,43 @@ describe("getExistingMangadexIds", () => {
         mangadexId: { in: ["mdx-001", "mdx-002", "mdx-003"] },
       },
       select: { mangadexId: true },
+    });
+  });
+});
+
+// ---- getExistingOpenLibraryKeys -------------------------------------------
+
+describe("getExistingOpenLibraryKeys", () => {
+  it("returns the keys already in the library", async () => {
+    prismaMock.series.findMany.mockResolvedValue([{ openLibraryKey: "OL1W" }]);
+
+    expect(await getExistingOpenLibraryKeys(USER_ID, ["OL1W", "OL2W"])).toEqual(["OL1W"]);
+    expect(prismaMock.series.findMany).toHaveBeenCalledWith({
+      where: { userId: USER_ID, openLibraryKey: { in: ["OL1W", "OL2W"] } },
+      select: { openLibraryKey: true },
+    });
+  });
+
+  it("skips the query for no keys", async () => {
+    expect(await getExistingOpenLibraryKeys(USER_ID, [])).toEqual([]);
+    expect(prismaMock.series.findMany).not.toHaveBeenCalled();
+  });
+});
+
+// ---- getFormatCounts ------------------------------------------------------
+
+describe("getFormatCounts", () => {
+  it("counts titles per format", async () => {
+    prismaMock.series.groupBy.mockResolvedValue([
+      { format: "MANGA", _count: { _all: 12 } },
+      { format: "NOVEL", _count: { _all: 3 } },
+    ]);
+
+    expect(await getFormatCounts(USER_ID)).toEqual({ MANGA: 12, NOVEL: 3 });
+    expect(prismaMock.series.groupBy).toHaveBeenCalledWith({
+      by: ["format"],
+      where: { userId: USER_ID },
+      _count: { _all: true },
     });
   });
 });

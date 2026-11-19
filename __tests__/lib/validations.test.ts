@@ -3,6 +3,7 @@ import {
   bulkSetReadSchema,
   readingGoalSchema,
   seriesSchema,
+  seriesVolumesSchema,
   volumeSchema,
 } from "@/lib/validations";
 import { describe, expect, it } from "vitest";
@@ -353,5 +354,26 @@ describe("readingGoalSchema", () => {
 
   it("rejects an out-of-range year", () => {
     expect(readingGoalSchema.safeParse({ year: 1999, target: 10 }).success).toBe(false);
+  });
+});
+
+describe("seriesSchema openLibraryKey", () => {
+  const base = { title: "Dune", status: "READING", format: "NOVEL", publishing: false, totalVolumes: 1 };
+
+  it("accepts an Open Library work key or nothing", () => {
+    expect(seriesSchema.safeParse({ ...base, openLibraryKey: "OL893414W" }).success).toBe(true);
+    expect(seriesSchema.safeParse({ ...base, openLibraryKey: null }).success).toBe(true);
+    expect(seriesSchema.safeParse(base).success).toBe(true);
+  });
+
+  it.each(["/works/OL893414W", "OL7524304M", "OL", "x".repeat(70)])("rejects %s", (openLibraryKey) => {
+    expect(seriesSchema.safeParse({ ...base, openLibraryKey }).success).toBe(false);
+  });
+});
+
+describe("seriesVolumesSchema isbn", () => {
+  it("accepts an ISBN and caps its length", () => {
+    expect(seriesVolumesSchema.safeParse([{ volumeNumber: 1, isbn: "9780441013593" }]).success).toBe(true);
+    expect(seriesVolumesSchema.safeParse([{ volumeNumber: 1, isbn: "9".repeat(33) }]).success).toBe(false);
   });
 });

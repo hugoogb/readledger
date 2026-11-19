@@ -109,6 +109,8 @@ model Series {
   updatedAt    DateTime     @updatedAt
   retailPrice  Float?
   mangadexId   String?
+  /// Open Library work key without the /works/ prefix, e.g. "OL893414W".
+  openLibraryKey String?
   publishing   Boolean      @default(false)
   publisherId  String?
   user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -116,6 +118,7 @@ model Series {
   volumes      Volume[]
 
   @@unique([userId, mangadexId])
+  @@unique([userId, openLibraryKey])
   @@map("series")
 }
 

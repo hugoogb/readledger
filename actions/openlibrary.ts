@@ -10,6 +10,7 @@ import {
   type BookSearchPage,
 } from "@/lib/openlibrary-api";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { openLibraryKeySchema } from "@/lib/validations";
 import { z } from "zod";
 
 // Both actions go through the shared 1 req/s Open Library throttle, so they
@@ -20,8 +21,6 @@ const searchInput = z.object({
   query: z.string().trim().min(2).max(200),
   page: z.number().int().min(1).max(100),
 });
-
-const workKeyInput = z.string().regex(/^OL\d+W$/, "Invalid Open Library work");
 
 function limit(userId: string) {
   checkRateLimit(`openlibrary:${userId}`, 30, 60_000);
@@ -48,7 +47,7 @@ export const searchBooks = withResult(
 /** Description for the selected work; null when Open Library can't say. */
 export const getBookDetails = withResult(async (workKey: string) => {
   const user = await requireUser();
-  const key = workKeyInput.parse(workKey);
+  const key = openLibraryKeySchema.parse(workKey);
   limit(user.id);
   return fetchBookDetails(key);
 });

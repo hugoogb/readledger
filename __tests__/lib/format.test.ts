@@ -1,5 +1,6 @@
 import {
   FORMAT_LABELS,
+  booksFirstInSearch,
   formatBreakdown,
   isStandalone,
   parseFormat,
@@ -90,5 +91,18 @@ describe("formatBreakdown", () => {
     expect(formatBreakdown([{ format: "COMIC", ownedCount: 0 }])).toEqual([
       { format: "COMIC", label: "Comic", count: 0 },
     ]);
+  });
+});
+
+describe("booksFirstInSearch", () => {
+  it("puts manga first for libraries that are mostly manga and light novels", () => {
+    expect(booksFirstInSearch({ MANGA: 10 })).toBe(false);
+    expect(booksFirstInSearch({ MANGA: 2, LIGHT_NOVEL: 2, NOVEL: 3 })).toBe(false);
+  });
+
+  it("puts books first when other formats lead, or on a tie (including empty)", () => {
+    expect(booksFirstInSearch({ MANGA: 1, NOVEL: 1, COMIC: 1 })).toBe(true);
+    expect(booksFirstInSearch({ MANGA: 2, NONFICTION: 2 })).toBe(true);
+    expect(booksFirstInSearch({})).toBe(true);
   });
 });

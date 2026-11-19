@@ -13,6 +13,7 @@ export type VolumeInput = {
   volumeNumber: number;
   title?: string;
   coverImage?: string | null;
+  isbn?: string | null;
 };
 
 export type SortOption = "updated" | "title_asc" | "title_desc" | "created" | "completion" | "spent";
@@ -66,6 +67,7 @@ export async function createSeriesWithVolumes(
           volumeNumber: v.volumeNumber,
           title: v.title,
           coverImage: v.coverImage || null,
+          isbn: v.isbn || null,
           owned: false,
           read: false,
         })),
@@ -259,6 +261,27 @@ export async function getExistingMangadexIds(userId: string, mangadexIds: string
   });
 
   return existing.map((s) => s.mangadexId).filter((id): id is string => id !== null);
+}
+
+export async function getExistingOpenLibraryKeys(userId: string, keys: string[]): Promise<string[]> {
+  if (keys.length === 0) return [];
+
+  const existing = await prisma.series.findMany({
+    where: { userId, openLibraryKey: { in: keys } },
+    select: { openLibraryKey: true },
+  });
+
+  return existing.map((s) => s.openLibraryKey).filter((key): key is string => key !== null);
+}
+
+/** Titles per format in a user's library; formats they don't have are absent. */
+export async function getFormatCounts(userId: string): Promise<Partial<Record<Format, number>>> {
+  const rows = await prisma.series.groupBy({
+    by: ["format"],
+    where: { userId },
+    _count: { _all: true },
+  });
+  return Object.fromEntries(rows.map((r) => [r.format, r._count._all]));
 }
 
 export async function getSeriesStats(userId: string) {
