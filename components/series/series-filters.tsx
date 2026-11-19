@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { statusOptions } from "@/lib/constants";
-import { FORMAT_LABELS } from "@/lib/format";
+import { FORMAT_LABELS, parseFormat } from "@/lib/format";
 import type { Format } from "@/lib/generated/prisma/enums";
 import { Loader2, Search } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -33,7 +33,8 @@ export function SeriesFilters({ formats }: SeriesFiltersProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const currentStatus = searchParams.get("status") || "";
-  const currentFormat = searchParams.get("format") || "";
+  // Same parsing as the page, so a hand-typed "?format=novel" lights its chip.
+  const currentFormat = parseFormat(searchParams.get("format")) ?? "";
   const currentSearch = searchParams.get("q") || "";
   const currentSort = searchParams.get("sort") || "";
 

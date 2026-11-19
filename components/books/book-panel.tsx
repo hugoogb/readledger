@@ -27,7 +27,15 @@ type BookPanelProps = {
 type Flags = Pick<VolumeWithStore, "owned" | "read" | "wishlist">;
 type Field = keyof Flags;
 
-type EditingState = { focusField?: "readDate" } | null;
+type EditingState = {
+  focusField?: "readDate";
+  /**
+   * A toast action can fire before the refreshed server props arrive; the
+   * modal then waits until `volume` shows this flag set, so it opens on fresh
+   * data (purchase date, read date) instead of the pre-toggle copy.
+   */
+  waitFor?: "owned" | "read";
+} | null;
 
 /**
  * A standalone book's own panel: large owned/read toggles (the same server
@@ -87,7 +95,7 @@ export function BookPanel({ volume, title, retailPrice, stores }: BookPanelProps
           }),
         );
         toast.success(`${title} marked as owned`, {
-          action: { label: "Add details", onClick: () => setEditing({}) },
+          action: { label: "Add details", onClick: () => setEditing({ waitFor: "owned" }) },
         });
       }
       router.refresh();
@@ -104,7 +112,7 @@ export function BookPanel({ volume, title, retailPrice, stores }: BookPanelProps
           ? {
               action: {
                 label: "Change date",
-                onClick: () => setEditing({ focusField: "readDate" }),
+                onClick: () => setEditing({ focusField: "readDate", waitFor: "read" }),
               },
             }
           : undefined,
@@ -150,7 +158,7 @@ export function BookPanel({ volume, title, retailPrice, stores }: BookPanelProps
 
   return (
     <div className="glass rounded-2xl p-4 sm:p-6">
-      {editing && (
+      {editing && (!editing.waitFor || volume[editing.waitFor]) && (
         <VolumeDetailsModal
           volume={volume}
           label={title}

@@ -14,6 +14,7 @@ import { BulkSetReadModal } from "@/components/volumes/bulk-set-read-modal";
 import { VolumeGrid } from "@/components/volumes/volume-grid";
 import { statusConfig } from "@/lib/constants";
 import { FORMAT_LABELS, isStandalone } from "@/lib/format";
+import { Format } from "@/lib/generated/prisma/enums";
 import { getFormatCurrency } from "@/lib/currency";
 import {
   ArrowLeft,
@@ -258,12 +259,21 @@ export default async function SeriesDetailPage({ params }: Props) {
             )}
 
             {book ? (
-              <BookPanel
-                volume={book}
-                title={series.title}
-                retailPrice={series.retailPrice}
-                stores={stores}
-              />
+              <>
+                <BookPanel
+                  volume={book}
+                  title={series.title}
+                  retailPrice={series.retailPrice}
+                  stores={stores}
+                />
+                {/* A CSV import that lists only volume 1 of a manga leaves
+                    totalVolumes = 1, so it shows as a single book. */}
+                {(series.format === Format.MANGA || series.format === Format.LIGHT_NOVEL) && (
+                  <div className="mt-2">
+                    <EditSeriesModal series={series} publishers={publishers} variant="seriesHint" />
+                  </div>
+                )}
+              </>
             ) : (
               <>
                 {/* Progress Bars */}

@@ -201,6 +201,9 @@ export function AddSeriesModal({ publishers = [], booksFirst = true }: AddSeries
             }))
           : generateVolumeEntries(input.totalVolumes ?? 0);
       if (bookIsbn) {
+        // Switched to "Series" with no total: keep the looked-up ISBN by
+        // creating volume 1 for it rather than dropping it.
+        if (volumes.length === 0) volumes = [{ volumeNumber: 1 }];
         volumes = volumes.map((v) => (v.volumeNumber === 1 ? { ...v, isbn: bookIsbn } : v));
       }
 
