@@ -57,6 +57,7 @@ export async function exportCollection(format: ExportFormat) {
       coverImage: s.coverImage,
       description: s.description,
       mangadexId: s.mangadexId,
+      openLibraryKey: s.openLibraryKey,
       volumes: s.volumes.map((v) => ({
         volumeNumber: v.volumeNumber,
         owned: v.owned,
@@ -160,13 +161,17 @@ export const importCollection = withResult(async (data: string, format: ImportFo
       for (const [title, volumes] of seriesMap) {
         const meta = preview.seriesMeta[title];
 
-        // Match an existing series by MangaDex id first (titles can change),
-        // then by title. Existing series keep their own metadata, format
-        // included.
+        // Match an existing series by MangaDex id or Open Library key first
+        // (titles can change), then by title. Existing series keep their own
+        // metadata, format included.
         let series =
           (meta?.mangadexId &&
             (await tx.series.findFirst({
               where: { userId: user.id, mangadexId: meta.mangadexId },
+            }))) ||
+          (meta?.openLibraryKey &&
+            (await tx.series.findFirst({
+              where: { userId: user.id, openLibraryKey: meta.openLibraryKey },
             }))) ||
           (await tx.series.findFirst({ where: { userId: user.id, title } }));
 
@@ -186,6 +191,7 @@ export const importCollection = withResult(async (data: string, format: ImportFo
                 coverImage: meta.coverImage,
                 description: meta.description,
                 mangadexId: meta.mangadexId,
+                openLibraryKey: meta.openLibraryKey,
               }),
             },
           });

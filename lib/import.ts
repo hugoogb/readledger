@@ -2,7 +2,7 @@ import { parseCsv } from "@/lib/csv";
 import { isAllowedCoverUrl } from "@/lib/covers";
 import { Condition, Format, SeriesStatus } from "@/lib/generated/prisma/enums";
 import { parseFormat } from "@/lib/format";
-import { MAX_VOLUMES } from "@/lib/validations";
+import { MAX_VOLUMES, openLibraryKeySchema } from "@/lib/validations";
 
 export type ImportFormat = "csv" | "json";
 
@@ -37,6 +37,7 @@ export type ImportSeriesMeta = {
   coverImage: string | null;
   description: string | null;
   mangadexId: string | null;
+  openLibraryKey: string | null;
 };
 
 export type ImportPreview = {
@@ -188,6 +189,9 @@ export function parseImport(data: string, format: ImportFormat): ImportPreview {
           coverImage: cover(s.coverImage),
           description: text(s.description, "description"),
           mangadexId: typeof s.mangadexId === "string" && s.mangadexId.length <= 64 ? s.mangadexId : null,
+          openLibraryKey: openLibraryKeySchema.safeParse(s.openLibraryKey).success
+            ? (s.openLibraryKey as string)
+            : null,
         };
       } catch (err) {
         errors.push({ row: si + 1, message: `${title}: ${(err as Error).message}` });

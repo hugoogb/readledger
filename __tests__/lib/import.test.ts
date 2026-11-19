@@ -166,4 +166,17 @@ describe("public CSV template", () => {
     expect(rows).toHaveLength(3);
     expect(formats).toEqual({ "Example Series": "MANGA" });
   });
+
+  it("keeps a valid Open Library work key and drops anything else", () => {
+    const json = JSON.stringify([
+      { title: "Dune", openLibraryKey: "OL893414W", volumes: [] },
+      { title: "Emma", openLibraryKey: "/books/OL1M", volumes: [] },
+      { title: "Berserk", volumes: [] },
+    ]);
+    const { seriesMeta, errors } = parseImport(json, "json");
+    expect(errors).toEqual([]);
+    expect(seriesMeta.Dune.openLibraryKey).toBe("OL893414W");
+    expect(seriesMeta.Emma.openLibraryKey).toBeNull();
+    expect(seriesMeta.Berserk.openLibraryKey).toBeNull();
+  });
 });
