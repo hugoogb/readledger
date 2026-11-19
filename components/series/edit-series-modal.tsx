@@ -67,7 +67,7 @@ export function EditSeriesModal({ series, publishers = [] }: EditSeriesModalProp
       router.refresh();
     } catch (err) {
       toast.error(
-        err instanceof Error ? err.message : "Failed to update series",
+        err instanceof Error ? err.message : "Failed to save changes",
       );
     }
   };
@@ -80,7 +80,7 @@ export function EditSeriesModal({ series, publishers = [] }: EditSeriesModalProp
       router.push("/dashboard/library");
     } catch (err) {
       toast.error(
-        err instanceof Error ? err.message : "Failed to delete series",
+        err instanceof Error ? err.message : "Failed to delete",
       );
       setIsDeleting(false);
     }
@@ -93,8 +93,8 @@ export function EditSeriesModal({ series, publishers = [] }: EditSeriesModalProp
         size="icon"
         onClick={() => setIsOpen(true)}
         className="text-foreground-muted hover:text-foreground"
-        aria-label="Edit series settings"
-        title="Edit series"
+        aria-label="Edit details"
+        title="Edit details"
       >
         <Settings className="w-5 h-5" />
       </Button>
@@ -102,15 +102,15 @@ export function EditSeriesModal({ series, publishers = [] }: EditSeriesModalProp
       <Modal
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
-        title="Edit Series"
+        title="Edit details"
       >
         {showDeleteConfirm ? (
           <div className="space-y-4">
             <div className="p-4 bg-error/10 border border-error/20 rounded-xl">
-              <h3 className="font-semibold text-error mb-2">Delete Series?</h3>
+              <h3 className="font-semibold text-error mb-2">Delete from library?</h3>
               <p className="text-sm text-foreground-muted">
-                This will permanently delete &quot;{series.title}&quot; and all
-                its volumes. This action cannot be undone.
+                This will permanently delete &quot;{series.title}&quot; and
+                everything you tracked for it. This action cannot be undone.
               </p>
             </div>
             <div className="flex gap-3">
@@ -143,7 +143,7 @@ export function EditSeriesModal({ series, publishers = [] }: EditSeriesModalProp
                   type="button"
                   onClick={() => setShowDeleteConfirm(true)}
                   className="px-3"
-                  aria-label="Delete series"
+                  aria-label="Delete from library"
                 >
                   <Trash2 className="w-5 h-5" />
                 </Button>
