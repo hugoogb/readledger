@@ -10,6 +10,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   return [
     { url: `${SITE_URL}/` },
+    { url: `${SITE_URL}/books` },
     { url: `${SITE_URL}/manga`, lastModified: MANGA_DATA_CHECKED_ON },
     ...mangaSeries.map((series) => ({
       url: `${SITE_URL}/manga/${series.slug}`,

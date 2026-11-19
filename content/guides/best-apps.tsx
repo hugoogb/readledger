@@ -9,7 +9,7 @@ export const bestAppsMeta = {
   description:
     "Comparing manga collection trackers: ReadLedger, Libib, CLZ Comics, Manga Inventory, and more. Pricing, platforms, barcode scanning, and who each one suits best.",
   published: "2026-11-04",
-  updated: "2026-11-04",
+  updated: "2026-11-19",
 };
 
 const external = { rel: "noopener nofollow" };
@@ -40,8 +40,9 @@ export function BestAppsGuide() {
 
       <h2>ReadLedger</h2>
       <p>
-        ReadLedger is a manga-only web app, built around volume-level tracking and what you spend. You
-        search for a series and get covers and volume entries, then record what you own and have read,
+        ReadLedger is a web app built around volume-level tracking and what you spend. It started with
+        manga and now tracks novels, comics, and other books too. You search for a series or a book and
+        get covers and volume entries, then record what you own and have read,
         along with price, store, and condition. It compares what you paid with the retail price to show
         your savings, which is handy if you buy used, and it includes a wishlist, reading goals, and CSV
         or JSON import and export.
@@ -49,8 +50,7 @@ export function BestAppsGuide() {
       <p>
         <strong>What it lacks:</strong> there’s no barcode scanning and no native app, so you use it
         through your browser (you can add it to your home screen). It needs an account and an internet
-        connection, and it only covers manga. If you scan a lot, or also collect Western comics, look at
-        the options below.
+        connection. If you scan a lot, or mostly collect Western comics, look at the options below.
       </p>
 
       <h2>Libib</h2>
@@ -100,7 +100,7 @@ export function BestAppsGuide() {
           <strong>You want to scan barcodes:</strong> Libib or CLZ Comics.
         </li>
         <li>
-          <strong>You collect more than manga:</strong> Libib or CLZ Comics.
+          <strong>You collect more than manga:</strong> Libib, or ReadLedger if you want spending stats too.
         </li>
         <li>
           <strong>You switch between devices and want spending stats:</strong> ReadLedger.

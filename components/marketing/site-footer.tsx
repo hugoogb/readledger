@@ -22,6 +22,9 @@ export function SiteFooter() {
           </div>
           <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 sm:gap-x-6 text-sm text-foreground-muted">
             <ThemeToggle />
+            <Link href="/books" className={linkClass}>
+              Books
+            </Link>
             <Link href="/manga" className={linkClass}>
               Volume checklists
             </Link>
