@@ -37,7 +37,7 @@ async function FilteredSeriesList({
   sort,
   page,
 }: FilteredSeriesListProps) {
-  const series = await getAllSeries(statusFilter, sort, searchQuery);
+  const series = await getAllSeries({ status: statusFilter, sort, search: searchQuery });
 
   const totalCount = series.length;
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));

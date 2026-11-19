@@ -118,6 +118,7 @@ export function AddSeriesModal({ publishers = [] }: AddSeriesModalProps) {
         author: data.author,
         publisherId: data.publisherId || undefined,
         status: data.status,
+        format: data.format,
         publishing: data.publishing,
         totalVolumes: data.totalVolumes ?? null,
         coverImage: data.coverImage,

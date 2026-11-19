@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { NotFoundError } from "@/lib/errors";
-import { SeriesStatus } from "@/lib/generated/prisma/enums";
+import { Format, SeriesStatus } from "@/lib/generated/prisma/enums";
 import type { SeriesSchema } from "@/lib/validations";
 import { comparableSavings } from "@/lib/savings";
 import { blankToNull } from "@/lib/normalize";
@@ -17,7 +17,18 @@ export type VolumeInput = {
 
 export type SortOption = "updated" | "title_asc" | "title_desc" | "created" | "completion" | "spent";
 
+export type LibraryQuery = {
+  status?: SeriesStatus;
+  format?: Format;
+  sort?: SortOption;
+  search?: string;
+};
+
 const CLEARABLE_FIELDS = ["author", "coverImage", "description"] as const;
+
+// A one-volume title renders as a standalone book, which needs its volume row.
+const needsStandaloneVolume = (totalVolumes: number | null | undefined, volumeCount: number) =>
+  totalVolumes === 1 && volumeCount === 0;
 
 export async function createSeries(userId: string, validated: CreateSeriesInput) {
   await assertOwnedPublisher(userId, validated.publisherId);
@@ -27,6 +38,9 @@ export async function createSeries(userId: string, validated: CreateSeriesInput)
       ...blankToNull(validated, CLEARABLE_FIELDS),
       userId,
       publisherId: validated.publisherId || null,
+      ...(needsStandaloneVolume(validated.totalVolumes, 0) && {
+        volumes: { create: [{ volumeNumber: 1 }] },
+      }),
     },
   });
 }
@@ -37,6 +51,10 @@ export async function createSeriesWithVolumes(
   volumes: VolumeInput[],
 ) {
   await assertOwnedPublisher(userId, validated.publisherId);
+
+  if (needsStandaloneVolume(validated.totalVolumes, volumes.length)) {
+    volumes = [{ volumeNumber: 1 }];
+  }
 
   return prisma.series.create({
     data: {
@@ -81,14 +99,19 @@ export async function updateSeries(userId: string, id: string, validated: Update
     },
   });
 
-  // If totalVolumes increased, create new volume entries
-  if (validated.totalVolumes && validated.totalVolumes > (series.totalVolumes || 0)) {
+  // If totalVolumes increased, create new volume entries. A one-volume title
+  // also gets its volume row if it has none (older data), so it can render as
+  // a standalone book.
+  if (
+    (validated.totalVolumes && validated.totalVolumes > (series.totalVolumes || 0)) ||
+    needsStandaloneVolume(validated.totalVolumes, series.volumes.length)
+  ) {
     const existingVolumeNumbers = new Set(
       series.volumes.map((v) => v.volumeNumber),
     );
     const newVolumes = [];
 
-    for (let i = 1; i <= validated.totalVolumes; i++) {
+    for (let i = 1; i <= (validated.totalVolumes ?? 0); i++) {
       if (!existingVolumeNumbers.has(i)) {
         newVolumes.push({
           seriesId: id,
@@ -143,6 +166,7 @@ const seriesListSelect = {
   title: true,
   author: true,
   status: true,
+  format: true,
   publishing: true,
   coverImage: true,
   totalVolumes: true,
@@ -151,9 +175,7 @@ const seriesListSelect = {
 
 export async function getAllSeries(
   userId: string,
-  status?: SeriesStatus,
-  sort?: SortOption,
-  search?: string,
+  { status, format, sort, search }: LibraryQuery = {},
 ) {
   let orderBy: { [key: string]: string } = { updatedAt: "desc" };
   if (sort === "title_asc") orderBy = { title: "asc" };
@@ -164,6 +186,7 @@ export async function getAllSeries(
     where: {
       userId,
       ...(status && { status }),
+      ...(format && { format }),
       ...(search && { title: { contains: search, mode: "insensitive" as const } }),
     },
     select: seriesListSelect,
@@ -188,6 +211,17 @@ export async function getAllSeries(
   }
 
   return series;
+}
+
+/** The formats present in a user's library, in enum order. */
+export async function getLibraryFormats(userId: string): Promise<Format[]> {
+  const rows = await prisma.series.findMany({
+    where: { userId },
+    select: { format: true },
+    distinct: ["format"],
+  });
+  const order = Object.values(Format);
+  return rows.map((r) => r.format).sort((a, b) => order.indexOf(a) - order.indexOf(b));
 }
 
 export async function getRecentSeries(userId: string, take = 5) {

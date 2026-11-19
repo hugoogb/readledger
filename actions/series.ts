@@ -4,12 +4,11 @@ import { requireUser } from "@/lib/auth";
 import { withResult } from "@/lib/action-result";
 import { revalidatePath } from "next/cache";
 import { cache } from "react";
-import { SeriesStatus } from "@/lib/generated/prisma/enums";
 import { idSchema, seriesSchema, seriesVolumesSchema } from "@/lib/validations";
 import { checkUserActionLimit } from "@/lib/rate-limit";
 import * as seriesService from "@/services/series";
 
-export type { CreateSeriesInput, UpdateSeriesInput, VolumeInput, SortOption } from "@/services/series";
+export type { CreateSeriesInput, UpdateSeriesInput, VolumeInput, SortOption, LibraryQuery } from "@/services/series";
 
 export const createSeries = withResult(async (input: seriesService.CreateSeriesInput) => {
   const user = await requireUser();
@@ -72,14 +71,15 @@ export const getSeries = cache(async function getSeries(id: string) {
   return seriesService.getSeries(user.id, id);
 });
 
-export async function getAllSeries(
-  status?: SeriesStatus,
-  sort?: seriesService.SortOption,
-  search?: string,
-) {
+export async function getAllSeries(query: seriesService.LibraryQuery = {}) {
   const user = await requireUser();
-  return seriesService.getAllSeries(user.id, status, sort, search?.slice(0, 200));
+  return seriesService.getAllSeries(user.id, { ...query, search: query.search?.slice(0, 200) });
 }
+
+export const getLibraryFormats = cache(async function getLibraryFormats() {
+  const user = await requireUser();
+  return seriesService.getLibraryFormats(user.id);
+});
 
 export async function checkDuplicateSeries(mangadexId: string): Promise<boolean> {
   const user = await requireUser();

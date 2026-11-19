@@ -52,6 +52,7 @@ export function EditSeriesModal({ series, publishers = [] }: EditSeriesModalProp
         author: data.author ?? "",
         publisherId: data.publisherId || null,
         status: data.status,
+        format: data.format,
         publishing: data.publishing,
         totalVolumes: data.totalVolumes ?? undefined,
         coverImage: data.coverImage ?? "",
