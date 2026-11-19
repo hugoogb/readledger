@@ -50,6 +50,8 @@ type VolumeDetailsModalProps = {
   onClose: () => void;
   /** Focus this field when the modal opens (e.g. from the "Change date" toast). */
   focusField?: "readDate";
+  /** How to name the volume, e.g. a standalone book's title. Default "Volume N". */
+  label?: string;
 };
 
 const todayInput = () => todayInputValue();
@@ -61,8 +63,10 @@ export function VolumeDetailsModal({
   isOpen,
   onClose,
   focusField,
+  label,
 }: VolumeDetailsModalProps) {
   const router = useRouter();
+  const name = label ?? `Volume ${volume.volumeNumber}`;
   // Pending state for the secondary actions (wishlist / remove) which run
   // outside react-hook-form's submit lifecycle.
   const [isActionPending, startAction] = useTransition();
@@ -152,7 +156,7 @@ export function VolumeDetailsModal({
       };
 
       unwrap(await updateVolume(volume.id, input));
-      toast.success(`Volume ${volume.volumeNumber} updated`);
+      toast.success(`${name} updated`);
       router.refresh();
       onClose();
     } catch (err) {
@@ -176,7 +180,7 @@ export function VolumeDetailsModal({
         };
 
         unwrap(await updateVolume(volume.id, input));
-        toast.success(`Volume ${volume.volumeNumber} removed from collection`);
+        toast.success(`${name} removed from collection`);
         router.refresh();
         onClose();
       } catch (err) {
@@ -194,8 +198,8 @@ export function VolumeDetailsModal({
         unwrap(await toggleWishlist(volume.id));
         toast.success(
           volume.wishlist
-            ? `Volume ${volume.volumeNumber} removed from wishlist`
-            : `Volume ${volume.volumeNumber} added to wishlist`,
+            ? `${name} removed from wishlist`
+            : `${name} added to wishlist`,
         );
         router.refresh();
         onClose();
@@ -216,7 +220,7 @@ export function VolumeDetailsModal({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={`Volume ${volume.volumeNumber}`}
+      title={name}
     >
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         <div className="flex items-center gap-4 pb-4 border-b border-border">
@@ -236,7 +240,7 @@ export function VolumeDetailsModal({
                 width={144}
                 height={192}
                 src={coverImage}
-                alt={`Volume ${volume.volumeNumber}`}
+                alt={name}
                 className="object-cover"
               />
             ) : (
@@ -249,7 +253,7 @@ export function VolumeDetailsModal({
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
               <h3 className="text-lg font-semibold text-foreground">
-                Volume {volume.volumeNumber}
+                {name}
               </h3>
               <div className="mt-1">
                 {volume.owned ? (
@@ -276,7 +280,7 @@ export function VolumeDetailsModal({
                   loading={isActionPending}
                   variant="secondary"
                   className={`rounded-md ${isWishlisted ? "bg-error text-white hover:bg-error/90" : ""}`}
-                  aria-label={`${isWishlisted ? "Remove" : "Add"} volume ${volume.volumeNumber} ${isWishlisted ? "from" : "to"} wishlist`}
+                  aria-label={`${isWishlisted ? "Remove" : "Add"} ${name} ${isWishlisted ? "from" : "to"} wishlist`}
                 >
                   <Heart
                     className={`w-3.5 h-3.5 ${isWishlisted ? "fill-current" : ""}`}
@@ -427,7 +431,7 @@ export function VolumeDetailsModal({
               id="notes"
               {...register("notes")}
               rows={2}
-              placeholder="Any notes about this volume..."
+              placeholder="Any notes about this copy..."
               icon={<StickyNote className="w-4 h-4" />}
               error={!!errors.notes}
             />

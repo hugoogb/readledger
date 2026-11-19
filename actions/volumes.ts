@@ -26,8 +26,8 @@ export const createVolume = withResult(async (input: volumeService.CreateVolumeI
   });
 
   revalidatePath("/dashboard");
-  revalidatePath("/dashboard/series");
-  revalidatePath(`/dashboard/series/${seriesId}`);
+  revalidatePath("/dashboard/library");
+  revalidatePath(`/dashboard/library/${seriesId}`);
 
   return volume;
 });
@@ -40,7 +40,7 @@ export const updateVolume = withResult(async (id: string, input: volumeService.U
   const updated = await volumeService.updateVolume(user.id, id, validated);
 
   revalidatePath("/dashboard");
-  revalidatePath("/dashboard/series");
+  revalidatePath("/dashboard/library");
   revalidatePath("/dashboard/wishlist");
 
   return updated;
@@ -52,8 +52,8 @@ export const deleteVolume = withResult(async (id: string) => {
   const seriesId = await volumeService.deleteVolume(user.id, id);
 
   revalidatePath("/dashboard");
-  revalidatePath("/dashboard/series");
-  revalidatePath(`/dashboard/series/${seriesId}`);
+  revalidatePath("/dashboard/library");
+  revalidatePath(`/dashboard/library/${seriesId}`);
 });
 
 export const toggleVolumeRead = withResult(async (id: string, today?: string) => {
@@ -61,7 +61,10 @@ export const toggleVolumeRead = withResult(async (id: string, today?: string) =>
 
   const { updated, seriesId } = await volumeService.toggleVolumeRead(user.id, id, today);
 
-  revalidatePath(`/dashboard/series/${seriesId}`);
+  // Reading a standalone book can change its status, shown in the list too.
+  revalidatePath("/dashboard");
+  revalidatePath("/dashboard/library");
+  revalidatePath(`/dashboard/library/${seriesId}`);
 
   return updated;
 });
@@ -91,9 +94,9 @@ export const bulkMarkOwned = withResult(async (
   const seriesIds = await volumeService.bulkMarkOwned(user.id, ids, payload);
 
   revalidatePath("/dashboard");
-  revalidatePath("/dashboard/series");
+  revalidatePath("/dashboard/library");
   for (const seriesId of seriesIds) {
-    revalidatePath(`/dashboard/series/${seriesId}`);
+    revalidatePath(`/dashboard/library/${seriesId}`);
   }
 });
 
@@ -108,8 +111,8 @@ export const bulkSetRead = withResult(async (volumeIds: string[], readDate?: Dat
   const seriesIds = await volumeService.bulkSetRead(user.id, ids, readDate);
 
   revalidatePath("/dashboard");
-  revalidatePath("/dashboard/series");
+  revalidatePath("/dashboard/library");
   for (const seriesId of seriesIds) {
-    revalidatePath(`/dashboard/series/${seriesId}`);
+    revalidatePath(`/dashboard/library/${seriesId}`);
   }
 });

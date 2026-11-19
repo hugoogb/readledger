@@ -24,9 +24,15 @@ type Publisher = { id: string; name: string };
 type EditSeriesModalProps = {
   series: Series;
   publishers?: Publisher[];
+  /**
+   * "icon" (default): the gear button. "seriesHint": a "Part of a series?"
+   * link for a single book that may really be a partly imported series; it
+   * opens the same form with total volumes focused.
+   */
+  variant?: "icon" | "seriesHint";
 };
 
-export function EditSeriesModal({ series, publishers = [] }: EditSeriesModalProps) {
+export function EditSeriesModal({ series, publishers = [], variant = "icon" }: EditSeriesModalProps) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -37,13 +43,16 @@ export function EditSeriesModal({ series, publishers = [] }: EditSeriesModalProp
     defaultValues: getSeriesFormDefaults(series),
   });
 
-  const { handleSubmit, reset, formState: { isSubmitting } } = methods;
+  const { handleSubmit, reset, setFocus, formState: { isSubmitting } } = methods;
 
   useEffect(() => {
-    if (isOpen) {
-      reset(getSeriesFormDefaults(series));
-    }
-  }, [isOpen, series, reset]);
+    if (!isOpen) return;
+    reset(getSeriesFormDefaults(series));
+    if (variant !== "seriesHint") return;
+    // After the modal's focus trap has focused its first field.
+    const timer = setTimeout(() => setFocus("totalVolumes", { shouldSelect: true }), 0);
+    return () => clearTimeout(timer);
+  }, [isOpen, series, reset, setFocus, variant]);
 
   const onSubmit: SubmitHandler<SeriesSchema> = async (data) => {
     try {
@@ -52,6 +61,7 @@ export function EditSeriesModal({ series, publishers = [] }: EditSeriesModalProp
         author: data.author ?? "",
         publisherId: data.publisherId || null,
         status: data.status,
+        format: data.format,
         publishing: data.publishing,
         totalVolumes: data.totalVolumes ?? undefined,
         coverImage: data.coverImage ?? "",
@@ -66,7 +76,7 @@ export function EditSeriesModal({ series, publishers = [] }: EditSeriesModalProp
       router.refresh();
     } catch (err) {
       toast.error(
-        err instanceof Error ? err.message : "Failed to update series",
+        err instanceof Error ? err.message : "Failed to save changes",
       );
     }
   };
@@ -76,10 +86,10 @@ export function EditSeriesModal({ series, publishers = [] }: EditSeriesModalProp
     try {
       unwrap(await deleteSeries(series.id));
       toast.success(`${series.title} deleted`);
-      router.push("/dashboard/series");
+      router.push("/dashboard/library");
     } catch (err) {
       toast.error(
-        err instanceof Error ? err.message : "Failed to delete series",
+        err instanceof Error ? err.message : "Failed to delete",
       );
       setIsDeleting(false);
     }
@@ -87,29 +97,40 @@ export function EditSeriesModal({ series, publishers = [] }: EditSeriesModalProp
 
   return (
     <>
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={() => setIsOpen(true)}
-        className="text-foreground-muted hover:text-foreground"
-        aria-label="Edit series settings"
-        title="Edit series"
-      >
-        <Settings className="w-5 h-5" />
-      </Button>
+      {variant === "seriesHint" ? (
+        <Button
+          variant="link"
+          type="button"
+          onClick={() => setIsOpen(true)}
+          className="h-auto min-h-11 p-0 text-sm"
+        >
+          Part of a series? Set total volumes
+        </Button>
+      ) : (
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setIsOpen(true)}
+          className="text-foreground-muted hover:text-foreground"
+          aria-label="Edit details"
+          title="Edit details"
+        >
+          <Settings className="w-5 h-5" />
+        </Button>
+      )}
 
       <Modal
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
-        title="Edit Series"
+        title="Edit details"
       >
         {showDeleteConfirm ? (
           <div className="space-y-4">
             <div className="p-4 bg-error/10 border border-error/20 rounded-xl">
-              <h3 className="font-semibold text-error mb-2">Delete Series?</h3>
+              <h3 className="font-semibold text-error mb-2">Delete from library?</h3>
               <p className="text-sm text-foreground-muted">
-                This will permanently delete &quot;{series.title}&quot; and all
-                its volumes. This action cannot be undone.
+                This will permanently delete &quot;{series.title}&quot; and
+                everything you tracked for it. This action cannot be undone.
               </p>
             </div>
             <div className="flex gap-3">
@@ -142,7 +163,7 @@ export function EditSeriesModal({ series, publishers = [] }: EditSeriesModalProp
                   type="button"
                   onClick={() => setShowDeleteConfirm(true)}
                   className="px-3"
-                  aria-label="Delete series"
+                  aria-label="Delete from library"
                 >
                   <Trash2 className="w-5 h-5" />
                 </Button>

@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { ImageResponse } from "next/og";
 
 // Prerendered at build time, so the file read doesn't happen on the server.
-export const alt = "ReadLedger, a free manga collection tracker";
+export const alt = "ReadLedger, a free book collection tracker";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -35,10 +35,10 @@ export default async function OpengraphImage() {
         <div style={{ fontSize: 44, fontWeight: 700 }}>ReadLedger</div>
       </div>
       <div style={{ marginTop: 48, fontSize: 80, fontWeight: 700, lineHeight: 1.1 }}>
-        Your manga collection, beautifully tracked
+        Your book collection, beautifully tracked
       </div>
       <div style={{ marginTop: 32, fontSize: 34, color: "#b4b4c6" }}>
-        Volumes owned, reading progress, and spending in one place
+        Novels, manga, and comics: what you own, read, and spent
       </div>
     </div>,
     size,

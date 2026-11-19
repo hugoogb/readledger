@@ -3,6 +3,7 @@ import {
   bulkSetReadSchema,
   readingGoalSchema,
   seriesSchema,
+  seriesVolumesSchema,
   volumeSchema,
 } from "@/lib/validations";
 import { describe, expect, it } from "vitest";
@@ -13,11 +14,27 @@ describe("seriesSchema", () => {
     status: "READING",
     publishing: false,
     totalVolumes: null,
+    format: "MANGA",
   };
 
   it("accepts valid series data", () => {
     const result = seriesSchema.safeParse(validSeries);
     expect(result.success).toBe(true);
+  });
+
+  it("accepts every book format", () => {
+    const result = seriesSchema.safeParse({ ...validSeries, format: "NOVEL" });
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects an unknown format", () => {
+    const result = seriesSchema.safeParse({ ...validSeries, format: "BOOK" });
+    expect(result.success).toBe(false);
+  });
+
+  it("requires a format", () => {
+    const result = seriesSchema.safeParse({ ...validSeries, format: undefined });
+    expect(result.success).toBe(false);
   });
 
   it("requires title", () => {
@@ -117,6 +134,24 @@ describe("seriesSchema", () => {
       coverImage: "https://example.com/cover.jpg",
     });
     expect(result.success).toBe(false);
+  });
+
+  it("accepts an Open Library cover-ID URL", () => {
+    const result = seriesSchema.safeParse({
+      ...validSeries,
+      coverImage: "https://covers.openlibrary.org/b/id/14856017-L.jpg",
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it.each([
+    "https://covers.openlibrary.org/b/isbn/9780441013593-L.jpg",
+    "https://covers.openlibrary.org/b/olid/OL7524304M-L.jpg",
+    "http://covers.openlibrary.org/b/id/14856017-L.jpg",
+    "https://covers.openlibrary.org/b/id/14856017-L.jpg?default=false",
+    "https://covers.openlibrary.org/b/id/abc-L.jpg",
+  ])("rejects Open Library cover URLs that are not cover-ID URLs: %s", (coverImage) => {
+    expect(seriesSchema.safeParse({ ...validSeries, coverImage }).success).toBe(false);
   });
 
   it("rejects a non-uuid publisherId", () => {
@@ -319,5 +354,26 @@ describe("readingGoalSchema", () => {
 
   it("rejects an out-of-range year", () => {
     expect(readingGoalSchema.safeParse({ year: 1999, target: 10 }).success).toBe(false);
+  });
+});
+
+describe("seriesSchema openLibraryKey", () => {
+  const base = { title: "Dune", status: "READING", format: "NOVEL", publishing: false, totalVolumes: 1 };
+
+  it("accepts an Open Library work key or nothing", () => {
+    expect(seriesSchema.safeParse({ ...base, openLibraryKey: "OL893414W" }).success).toBe(true);
+    expect(seriesSchema.safeParse({ ...base, openLibraryKey: null }).success).toBe(true);
+    expect(seriesSchema.safeParse(base).success).toBe(true);
+  });
+
+  it.each(["/works/OL893414W", "OL7524304M", "OL", "x".repeat(70)])("rejects %s", (openLibraryKey) => {
+    expect(seriesSchema.safeParse({ ...base, openLibraryKey }).success).toBe(false);
+  });
+});
+
+describe("seriesVolumesSchema isbn", () => {
+  it("accepts an ISBN and caps its length", () => {
+    expect(seriesVolumesSchema.safeParse([{ volumeNumber: 1, isbn: "9780441013593" }]).success).toBe(true);
+    expect(seriesVolumesSchema.safeParse([{ volumeNumber: 1, isbn: "9".repeat(33) }]).success).toBe(false);
   });
 });

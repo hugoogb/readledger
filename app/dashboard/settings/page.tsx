@@ -52,7 +52,7 @@ export default async function SettingsPage() {
               Publishers
             </CardTitle>
             <CardDescription>
-              Manage publishers for your series
+              Manage publishers for your books
             </CardDescription>
           </CardHeader>
           <CardContent>

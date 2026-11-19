@@ -1,10 +1,13 @@
 "use client";
 
+import { getBookDetails } from "@/actions/openlibrary";
 import {
   checkDuplicateSeries,
   createSeries,
   createSeriesWithVolumes,
+  getExistingOpenLibraryKeys,
   type CreateSeriesInput,
+  type VolumeInput,
 } from "@/actions/series";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
@@ -14,16 +17,18 @@ import {
   type FormattedMangaData,
   type VolumeData,
 } from "@/lib/manga-api";
+import type { BookSearchResult } from "@/lib/openlibrary-api";
 import { getSeriesFormDefaults } from "@/lib/form-defaults";
+import { Format } from "@/lib/generated/prisma/enums";
 import { seriesSchema, type SeriesSchema } from "@/lib/validations";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { BookOpen, Edit3, Loader2, Plus, Search } from "lucide-react";
+import { ArrowLeft, BookOpen, Loader2, Plus, Search } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { FormProvider, useForm, type SubmitHandler } from "react-hook-form";
 import { toast } from "sonner";
-import { MangaSearch } from "./manga-search";
+import { LibrarySearch } from "./library-search";
 import { SeriesFormFields } from "./series-form-fields";
 import { unwrap } from "@/lib/unwrap";
 
@@ -31,12 +36,27 @@ type Publisher = { id: string; name: string };
 
 type AddSeriesModalProps = {
   publishers?: Publisher[];
+  /** Show Open Library results above MangaDex ones (see booksFirstInSearch). */
+  booksFirst?: boolean;
 };
 
-export function AddSeriesModal({ publishers = [] }: AddSeriesModalProps) {
+type Step = "search" | "form";
+type Kind = "single" | "series";
+// Where the form's values came from. MangaDex results are always series;
+// manual entries and Open Library books can be a single book or a series.
+type Source = "manual" | "mangadex" | "openlibrary";
+
+export function AddSeriesModal({ publishers = [], booksFirst = true }: AddSeriesModalProps) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
-  const [showSearch, setShowSearch] = useState(true);
+  const [step, setStep] = useState<Step>("search");
+  const [query, setQuery] = useState("");
+  const [source, setSource] = useState<Source>("mangadex");
+  const [kind, setKind] = useState<Kind>("series");
+  // ISBN from an Open Library ISBN lookup, stored on volume 1.
+  const [bookIsbn, setBookIsbn] = useState<string | null>(null);
+  // Ignores a late description for a book the user has already left.
+  const selection = useRef(0);
   const [volumeData, setVolumeData] = useState<VolumeData[]>([]);
   const [isFetchingVolumes, setIsFetchingVolumes] = useState(false);
   const [fetchTotal, setFetchTotal] = useState(0);
@@ -49,6 +69,7 @@ export function AddSeriesModal({ publishers = [] }: AddSeriesModalProps) {
   const {
     handleSubmit,
     setValue,
+    getValues,
     watch,
     reset,
     formState: { isSubmitting },
@@ -57,7 +78,12 @@ export function AddSeriesModal({ publishers = [] }: AddSeriesModalProps) {
   const handleOpenChange = (open: boolean) => {
     setIsOpen(open);
     if (!open) {
-      setShowSearch(true);
+      setStep("search");
+      setQuery("");
+      setSource("mangadex");
+      setKind("series");
+      setBookIsbn(null);
+      selection.current++;
       setVolumeData([]);
       setIsFetchingVolumes(false);
       reset();
@@ -74,7 +100,13 @@ export function AddSeriesModal({ publishers = [] }: AddSeriesModalProps) {
       }
     }
 
-    // Set form values immediately
+    // Set form values immediately. MangaDex can't tell light novels apart;
+    // the user can change the format in the form.
+    reset(getSeriesFormDefaults());
+    setSource("mangadex");
+    setKind("series");
+    setBookIsbn(null);
+    setValue("format", Format.MANGA);
     setValue("title", data.title);
     setValue("author", data.author);
     setValue("totalVolumes", data.totalVolumes || null);
@@ -84,7 +116,7 @@ export function AddSeriesModal({ publishers = [] }: AddSeriesModalProps) {
     setValue("mangadexId", data.mangadexId);
 
     // Show loading state while fetching volumes
-    setShowSearch(false);
+    setStep("form");
 
     if (data.totalVolumes && data.totalVolumes > 0) {
       setIsFetchingVolumes(true);
@@ -111,6 +143,38 @@ export function AddSeriesModal({ publishers = [] }: AddSeriesModalProps) {
     }
   };
 
+  const handleBookSelect = async (book: BookSearchResult) => {
+    const [existing] = await getExistingOpenLibraryKeys([book.key]);
+    if (existing) {
+      toast.warning(`"${book.title}" is already in your library`);
+      return;
+    }
+
+    // Books are added as a single book; the user can switch to Series.
+    reset({
+      ...getSeriesFormDefaults(),
+      format: book.formatGuess === "COMIC" ? Format.COMIC : Format.NOVEL,
+      title: book.title,
+      author: book.authors.join(", "),
+      coverImage: book.coverImage,
+      openLibraryKey: book.key,
+      totalVolumes: 1,
+      publishing: false,
+    });
+    setSource("openlibrary");
+    setKind("single");
+    setBookIsbn(book.isbn);
+    setVolumeData([]);
+    setStep("form");
+
+    // The description needs one more request; show the form without waiting
+    // and fill it in unless the user has typed one or moved on.
+    const token = ++selection.current;
+    const details = await getBookDetails(book.key);
+    if (token !== selection.current || !details.ok || !details.data.description) return;
+    if (!getValues("description")) setValue("description", details.data.description);
+  };
+
   const onSubmit: SubmitHandler<SeriesSchema> = async (data) => {
     try {
       const input: CreateSeriesInput = {
@@ -118,40 +182,81 @@ export function AddSeriesModal({ publishers = [] }: AddSeriesModalProps) {
         author: data.author,
         publisherId: data.publisherId || undefined,
         status: data.status,
+        format: data.format,
         publishing: data.publishing,
         totalVolumes: data.totalVolumes ?? null,
         coverImage: data.coverImage,
         description: data.description || undefined,
         retailPrice: data.retailPrice ?? null,
         mangadexId: data.mangadexId || undefined,
+        openLibraryKey: data.openLibraryKey || undefined,
       };
 
-      if (volumeData.length > 0) {
-        unwrap(await createSeriesWithVolumes(
-          input,
-          volumeData.map((v) => ({
-            volumeNumber: v.volumeNumber,
-            title: v.title,
-            coverImage: v.coverImage,
-          })),
-        ));
-      } else if (input.totalVolumes && input.totalVolumes > 0) {
-        const volumes = generateVolumeEntries(input.totalVolumes);
+      let volumes: VolumeInput[] =
+        volumeData.length > 0
+          ? volumeData.map((v) => ({
+              volumeNumber: v.volumeNumber,
+              title: v.title,
+              coverImage: v.coverImage,
+            }))
+          : generateVolumeEntries(input.totalVolumes ?? 0);
+      if (bookIsbn) {
+        // Switched to "Series" with no total: keep the looked-up ISBN by
+        // creating volume 1 for it rather than dropping it.
+        if (volumes.length === 0) volumes = [{ volumeNumber: 1 }];
+        volumes = volumes.map((v) => (v.volumeNumber === 1 ? { ...v, isbn: bookIsbn } : v));
+      }
+
+      if (volumes.length > 0) {
         unwrap(await createSeriesWithVolumes(input, volumes));
       } else {
         unwrap(await createSeries(input));
       }
 
-      toast.success(`${data.title} added to your collection`);
+      toast.success(`${data.title} added to your library`);
       handleOpenChange(false);
       router.refresh();
     } catch (err) {
       toast.error(
-        err instanceof Error ? err.message : "Failed to create series",
+        err instanceof Error ? err.message : "Failed to add to your library",
       );
     }
   };
 
+  const startManual = () => {
+    reset({
+      ...getSeriesFormDefaults(),
+      format: Format.NOVEL,
+      totalVolumes: 1,
+      publishing: false,
+    });
+    setSource("manual");
+    setKind("single");
+    setBookIsbn(null);
+    setVolumeData([]);
+    setStep("form");
+  };
+
+  const chooseKind = (next: Kind) => {
+    setKind(next);
+    if (next === "single") {
+      setValue("totalVolumes", 1);
+      setValue("publishing", false);
+    } else {
+      setValue("totalVolumes", null);
+    }
+  };
+
+  const goBack = () => {
+    selection.current++;
+    setVolumeData([]);
+    setBookIsbn(null);
+    setStep("search");
+    reset(getSeriesFormDefaults());
+  };
+
+  const canChooseKind = source !== "mangadex";
+  const isSingle = canChooseKind && kind === "single";
   const totalVolumesNum = watch("totalVolumes") || 0;
   const coverImage = watch("coverImage");
 
@@ -163,39 +268,24 @@ export function AddSeriesModal({ publishers = [] }: AddSeriesModalProps) {
     <>
       <Button onClick={() => handleOpenChange(true)} className="gap-2">
         <Plus className="w-5 h-5" />
-        Add Series
+        Add to library
       </Button>
 
       <Modal
         isOpen={isOpen}
         onClose={() => handleOpenChange(false)}
-        title={showSearch ? "Add New Series" : "Series Details"}
+        title={step === "search" ? "Add to library" : isSingle ? "Book details" : "Series details"}
         maxWidth="lg"
       >
-        {showSearch ? (
-          <div className="space-y-6">
-            <MangaSearch onSelect={handleSearchSelect} />
-
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-border" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="bg-background-secondary px-4 text-foreground-muted">
-                  or
-                </span>
-              </div>
-            </div>
-
-            <Button
-              variant="outline"
-              onClick={() => setShowSearch(false)}
-              className="w-full h-14"
-            >
-              <Edit3 className="w-5 h-5" />
-              Enter manually
-            </Button>
-          </div>
+        {step === "search" ? (
+          <LibrarySearch
+            query={query}
+            onQueryChange={setQuery}
+            booksFirst={booksFirst}
+            onSelectManga={handleSearchSelect}
+            onSelectBook={handleBookSelect}
+            onAddManually={startManual}
+          />
         ) : isFetchingVolumes ? (
           <div className="flex flex-col items-center justify-center py-12 gap-4">
             <Loader2 className="w-8 h-8 animate-spin text-accent" />
@@ -209,14 +299,11 @@ export function AddSeriesModal({ publishers = [] }: AddSeriesModalProps) {
               <Button
                 variant="link"
                 type="button"
-                onClick={() => {
-                  setShowSearch(true);
-                  setVolumeData([]);
-                }}
+                onClick={goBack}
                 className="h-auto p-0 gap-1 text-sm"
               >
-                <Search className="w-4 h-4" />
-                Search again
+                {source === "manual" ? <ArrowLeft className="w-4 h-4" /> : <Search className="w-4 h-4" />}
+                {source === "manual" ? "Back" : "Search again"}
               </Button>
 
               {coverImage && (
@@ -231,10 +318,38 @@ export function AddSeriesModal({ publishers = [] }: AddSeriesModalProps) {
                 </div>
               )}
 
-              <SeriesFormFields publishers={publishers} />
+              <SeriesFormFields
+                publishers={publishers}
+                kind={isSingle ? "single" : "series"}
+                afterFormat={
+                  canChooseKind && (
+                    <div
+                      role="group"
+                      aria-label="Single book or series"
+                      className="grid grid-cols-2 gap-1 rounded-xl bg-background-tertiary p-1"
+                    >
+                      {(["single", "series"] as const).map((k) => (
+                        <button
+                          key={k}
+                          type="button"
+                          onClick={() => chooseKind(k)}
+                          aria-pressed={kind === k}
+                          className={`min-h-11 rounded-lg text-sm font-semibold transition-colors ${
+                            kind === k
+                              ? "bg-background text-foreground shadow-sm"
+                              : "text-foreground-muted hover:text-foreground"
+                          }`}
+                        >
+                          {k === "single" ? "Single book" : "Series"}
+                        </button>
+                      ))}
+                    </div>
+                  )
+                }
+              />
 
               {/* Volume cover preview */}
-              {volumeData.length > 0 ? (
+              {isSingle ? null : volumeData.length > 0 ? (
                 <div className="p-4 bg-accent/5 border border-accent/20 rounded-xl space-y-3">
                   <div className="flex items-center gap-3">
                     <BookOpen className="w-5 h-5 text-accent shrink-0" />
@@ -319,7 +434,7 @@ export function AddSeriesModal({ publishers = [] }: AddSeriesModalProps) {
                   loading={isSubmitting}
                   className="flex-1 gap-2"
                 >
-                  Add Series
+                  {isSingle ? "Add book" : "Add series"}
                 </Button>
               </div>
             </form>

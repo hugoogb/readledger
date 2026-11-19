@@ -97,7 +97,7 @@ export function GoalCard({ year, readCount, progress }: GoalCardProps) {
       ) : (
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <p className="text-foreground-muted">
-            {readCount} volume{readCount !== 1 ? "s" : ""} read in {year}. Set a target to track your pace.
+            {readCount} book{readCount !== 1 ? "s" : ""} read in {year}. Set a target to track your pace.
           </p>
           <Button onClick={() => setIsOpen(true)} variant="success" className="gap-2 shrink-0">
             <Target className="w-4 h-4" />

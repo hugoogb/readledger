@@ -22,6 +22,9 @@ export function SiteFooter() {
           </div>
           <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 sm:gap-x-6 text-sm text-foreground-muted">
             <ThemeToggle />
+            <Link href="/books" className={linkClass}>
+              Books
+            </Link>
             <Link href="/manga" className={linkClass}>
               Volume checklists
             </Link>
@@ -36,13 +39,17 @@ export function SiteFooter() {
             </Link>
           </div>
         </div>
-        {/* MangaDex's API policy requires this credit. */}
+        {/* MangaDex's API policy requires this credit; Open Library asks for a courtesy link. */}
         <p className="text-center sm:text-left text-xs text-foreground-muted">
-          Series data from{" "}
+          Manga data from{" "}
           <a href="https://mangadex.org" rel="noopener" className="underline hover:text-foreground">
             MangaDex
+          </a>{" "}
+          and book data from{" "}
+          <a href="https://openlibrary.org" rel="noopener" className="underline hover:text-foreground">
+            Open Library
           </a>
-          . ReadLedger is not affiliated with MangaDex or any publisher.
+          . ReadLedger is not affiliated with MangaDex, Open Library or any publisher.
         </p>
         <p className="text-center sm:text-left text-xs text-foreground-muted">
           Built by{" "}

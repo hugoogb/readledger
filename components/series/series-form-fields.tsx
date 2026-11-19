@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { statusOptions } from "@/lib/constants";
+import { formatOptions } from "@/lib/format";
 import type { SeriesSchema } from "@/lib/validations";
 import { useRouter } from "next/navigation";
 import { useFormContext } from "react-hook-form";
@@ -19,9 +20,17 @@ type Publisher = { id: string; name: string };
 
 type SeriesFormFieldsProps = {
   publishers?: Publisher[];
+  /**
+   * "single" hides the series-only fields (total volumes, still publishing);
+   * the caller keeps totalVolumes at 1. Omitted = show everything.
+   */
+  kind?: "single" | "series";
+  /** Rendered between Format and Title, e.g. the single/series switch. */
+  afterFormat?: React.ReactNode;
 };
 
-export function SeriesFormFields({ publishers = [] }: SeriesFormFieldsProps) {
+export function SeriesFormFields({ publishers = [], kind = "series", afterFormat }: SeriesFormFieldsProps) {
+  const isSingle = kind === "single";
   const router = useRouter();
   const {
     register,
@@ -35,6 +44,18 @@ export function SeriesFormFields({ publishers = [] }: SeriesFormFieldsProps) {
 
   return (
     <>
+      <FormField label="Format" htmlFor="format" required error={errors.format?.message}>
+        <Select id="format" {...register("format")} error={!!errors.format}>
+          {formatOptions.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </Select>
+      </FormField>
+
+      {afterFormat}
+
       <FormField
         label="Title"
         htmlFor="title"
@@ -45,7 +66,7 @@ export function SeriesFormFields({ publishers = [] }: SeriesFormFieldsProps) {
           id="title"
           type="text"
           {...register("title")}
-          placeholder="One Piece"
+          placeholder="Dune"
           error={!!errors.title}
         />
       </FormField>
@@ -60,7 +81,7 @@ export function SeriesFormFields({ publishers = [] }: SeriesFormFieldsProps) {
             id="author"
             type="text"
             {...register("author")}
-            placeholder="Eiichiro Oda"
+            placeholder="Frank Herbert"
             error={!!errors.author}
           />
         </FormField>
@@ -100,7 +121,8 @@ export function SeriesFormFields({ publishers = [] }: SeriesFormFieldsProps) {
         </FormField>
       </FormSection>
 
-      <FormSection columns={2}>
+      <FormSection columns={isSingle ? 1 : 2}>
+        {!isSingle && (
         <FormField
           label="Total Volumes"
           htmlFor="totalVolumes"
@@ -114,10 +136,11 @@ export function SeriesFormFields({ publishers = [] }: SeriesFormFieldsProps) {
             min="0"
             max="1000"
             {...register("totalVolumes", { valueAsNumber: true })}
-            placeholder="100"
+            placeholder="12"
             error={!!errors.totalVolumes}
           />
         </FormField>
+        )}
 
         <FormField
           label="Retail Price"
@@ -138,7 +161,7 @@ export function SeriesFormFields({ publishers = [] }: SeriesFormFieldsProps) {
         </FormField>
       </FormSection>
 
-      <FormSection columns={2}>
+      <FormSection columns={isSingle ? 1 : 2}>
         <FormField
           label="Reading Status"
           htmlFor="status"
@@ -154,13 +177,15 @@ export function SeriesFormFields({ publishers = [] }: SeriesFormFieldsProps) {
           </Select>
         </FormField>
 
-        <div className="flex items-end pb-1">
-          <Checkbox
-            checked={publishing}
-            onChange={(checked) => setValue("publishing", checked)}
-            label="Still Publishing"
-          />
-        </div>
+        {!isSingle && (
+          <div className="flex items-end pb-1">
+            <Checkbox
+              checked={publishing}
+              onChange={(checked) => setValue("publishing", checked)}
+              label="Still Publishing"
+            />
+          </div>
+        )}
       </FormSection>
 
       <FormField

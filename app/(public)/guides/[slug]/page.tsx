@@ -38,7 +38,11 @@ export default async function GuidePage({ params }: Props) {
 
   const url = `/guides/${guide.slug}`;
   const { Body } = guide;
-  const others = guides.filter((other) => other.slug !== guide.slug).slice(0, 3);
+  // Same-audience guides first, so a manga reader keeps reading about manga.
+  const others = guides
+    .filter((other) => other.slug !== guide.slug)
+    .sort((a, b) => Number(b.audience === guide.audience) - Number(a.audience === guide.audience))
+    .slice(0, 3);
 
   return (
     <>
@@ -77,7 +81,7 @@ export default async function GuidePage({ params }: Props) {
 
       <SignUpCta
         title="Track your collection with ReadLedger"
-        body="Volumes, reading progress, and spending in one place. Free, and it works on your phone."
+        body="Books, reading progress, and spending in one place. Free, and it works on your phone."
       />
 
       <section className="mt-10">

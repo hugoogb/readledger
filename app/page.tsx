@@ -5,9 +5,9 @@ import {
   BookMarked,
   BookOpen,
   ChevronDown,
-  Heart,
   Library,
   PiggyBank,
+  Search,
   Sparkles,
   TrendingUp,
   Wallet,
@@ -16,8 +16,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { JsonLd } from "@/components/marketing/content-parts";
 import { SiteFooter } from "@/components/marketing/site-footer";
+import { FormatStrip } from "@/components/marketing/format-strip";
 import { SiteHeader } from "@/components/marketing/site-header";
-import { guides } from "@/content/guides";
+import { guidesFor } from "@/content/guides";
 import { getMangaSeries } from "@/lib/content/manga-series";
 import { REPOSITORY_URL, SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site";
 
@@ -62,15 +63,22 @@ const structuredData = {
 
 const features = [
   {
-    title: "Collection management",
-    body: "Track every volume across all your series. See what you own, what's missing, and what to buy next.",
+    title: "One library for every format",
+    body: "Novels, manga, comics, and non-fiction side by side. See what you own, which series volumes are missing, and keep a wishlist of what to buy next.",
     icon: Library,
     iconClass: "text-accent",
     tileClass: "bg-accent/10 border-accent/20",
   },
   {
+    title: "Add in a couple of taps",
+    body: "Search by title, author, or ISBN. Book details and covers come from Open Library, and manga from MangaDex, so you rarely type anything yourself.",
+    icon: Search,
+    iconClass: "text-accent",
+    tileClass: "bg-accent/10 border-accent/20",
+  },
+  {
     title: "Reading progress",
-    body: "Mark volumes as read, set a yearly reading goal, and watch completion rates climb. Always know where you left off.",
+    body: "Mark books as read, set a yearly reading goal, and keep an eye on the unread pile. Always know where you left off.",
     icon: BarChart3,
     iconClass: "text-success",
     tileClass: "bg-success/10 border-success/20",
@@ -84,17 +92,10 @@ const features = [
   },
   {
     title: "Second-hand savings",
-    body: "Compare what you paid against retail price and see how much buying used has saved you, with condition and store on every volume.",
+    body: "Compare what you paid against retail price and see how much buying used has saved you, with condition and store on every copy.",
     icon: PiggyBank,
     iconClass: "text-success",
     tileClass: "bg-success/10 border-success/20",
-  },
-  {
-    title: "Wishlist",
-    body: "Keep a list of the volumes you want next, with an estimate of what they'll cost, and stop buying duplicates.",
-    icon: Heart,
-    iconClass: "text-accent",
-    tileClass: "bg-accent/10 border-accent/20",
   },
   {
     title: "CSV and JSON import",
@@ -112,7 +113,7 @@ const faqs = [
   {
     question: "What is ReadLedger?",
     answer:
-      "ReadLedger is a manga collection tracker for people who collect physical volumes. It records which volumes you own, which you've read, and what you paid for them, then turns that into stats about your collection.",
+      "ReadLedger is a book collection tracker for people who keep physical books: novels, manga, comics, non-fiction. It records which books you own, which you've read, and what you paid for them, then turns that into stats about your collection.",
   },
   {
     question: "Is ReadLedger free?",
@@ -120,19 +121,29 @@ const faqs = [
       "Yes, ReadLedger is free to use. You sign up with your email address, with no credit card and no password to remember.",
   },
   {
+    question: "How do I add books to my collection?",
+    answer:
+      "Search by title, author, or ISBN and add a book in a couple of taps. Book details and covers come from Open Library, and manga series come from MangaDex. Anything the search doesn't find, you can add by hand.",
+  },
+  {
+    question: "Does ReadLedger scan barcodes?",
+    answer:
+      "Yes, on your phone. Tap Scan when adding a book and point the camera at the ISBN barcode on the back cover, and ReadLedger looks up that edition. You can also type or paste the ISBN.",
+  },
+  {
+    question: "How do I track how much I've spent on books?",
+    answer:
+      "Log the price you paid for each book, along with the store and its condition. ReadLedger adds it up into totals, averages, and trends in your chosen currency, and shows your savings wherever a retail price is set.",
+  },
+  {
     question: "Can ReadLedger replace my manga spreadsheet?",
     answer:
       "Yes. You can import your collection from a CSV file instead of retyping it, and you get covers, missing-volume tracking, and spending charts that a spreadsheet makes you build by hand. You can export to CSV or JSON at any time.",
   },
   {
-    question: "How do I track how much I've spent on manga?",
+    question: "Does it still work well for manga collectors?",
     answer:
-      "Log the price you paid for each volume, along with the store and its condition. ReadLedger adds it up into totals, averages, and trends in your chosen currency, and shows your savings wherever a retail price is set.",
-  },
-  {
-    question: "How do I add a series to my collection?",
-    answer:
-      "Search for the title and add it in a couple of taps. Series details and cover art come from MangaDex, so you don't have to enter them yourself.",
+      "Yes. ReadLedger started as a manga tracker. Search MangaDex to add a whole series with its volumes, mark runs as owned or read, and see which volumes you're missing.",
   },
   {
     question: "Is there a ReadLedger mobile app?",
@@ -145,8 +156,8 @@ const faqs = [
 // not real data — they mirror the layout of the actual /dashboard so visitors
 // see what the app looks like before signing up.
 const previewStats = [
-  { label: "Volumes", value: "342", icon: Library },
-  { label: "Series", value: "28", icon: BookMarked },
+  { label: "Books", value: "342", icon: Library },
+  { label: "Titles", value: "64", icon: BookMarked },
   { label: "Read", value: "76%", icon: BookOpen },
   { label: "Spent", value: "$1,284", icon: Wallet },
 ];
@@ -158,6 +169,9 @@ const previewSpines = [
   true, false, true, true, true, true, true, true, false, true,
   true, true, false, true, true, true, false, true, true, true,
 ];
+
+const mangaGuides = guidesFor("manga").slice(0, 4);
+const bookGuides = guidesFor("books");
 
 const popularChecklists = [
   "one-piece",
@@ -188,18 +202,19 @@ export default function Home() {
           <div className="text-center max-w-3xl mx-auto animate-fade-in">
             <span className="inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/10 px-3 py-1 text-sm font-medium text-accent">
               <Sparkles className="w-3.5 h-3.5" />
-              Built for manga collectors
+              For every book you own
             </span>
             <h1 className="mt-6 text-4xl sm:text-6xl font-bold tracking-tight leading-[1.1]">
-              Your manga collection,
+              Your book collection,
               <span className="gradient-text"> beautifully tracked</span>
             </h1>
             <p className="mt-6 text-lg sm:text-xl text-foreground-muted leading-relaxed">
-              ReadLedger is a free manga collection tracker. Know exactly which
-              volumes you own, which you&apos;ve read, and what you&apos;ve spent
-              — all in one place, with insights that actually look good on your
+              ReadLedger is a free book collection tracker. Know exactly which
+              books you own, which you&apos;ve read, and what you&apos;ve spent,
+              from novels to manga and comics, with stats that work on your
               phone.
             </p>
+            <FormatStrip className="mt-6 justify-center" />
             <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-3">
               <Link
                 href="/login"
@@ -216,7 +231,7 @@ export default function Home() {
               </Link>
             </div>
             <p className="mt-5 text-sm text-foreground-muted">
-              Free to use · Works great on mobile · Your data stays yours
+              Free to use · Works on your phone, no install · Your data stays yours
             </p>
           </div>
 
@@ -261,10 +276,10 @@ export default function Home() {
                 <div className="mt-5">
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-sm font-semibold">
-                      Your collection
+                      Your library
                     </span>
                     <span className="text-xs text-foreground-muted">
-                      28 series
+                      64 titles
                     </span>
                   </div>
                   <div className="grid grid-cols-10 gap-1.5 sm:gap-2">
@@ -288,10 +303,10 @@ export default function Home() {
           <section className="mt-24 sm:mt-32">
             <div className="text-center max-w-2xl mx-auto mb-12">
               <h2 className="text-3xl font-bold">
-                A manga tracker for your whole shelf
+                A book tracker for your whole shelf
               </h2>
               <p className="mt-3 text-foreground-muted">
-                Your volumes, reading, and spending, always in sync.
+                What you own, what you&apos;ve read, and what you&apos;ve spent, always in sync.
               </p>
             </div>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -319,10 +334,10 @@ export default function Home() {
                 <div className="w-12 h-12 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center mx-auto mb-4 text-accent font-bold text-lg">
                   1
                 </div>
-                <h3 className="text-lg font-semibold mb-2">Add your series</h3>
+                <h3 className="text-lg font-semibold mb-2">Add your books</h3>
                 <p className="text-foreground-muted">
-                  Search manga titles and add them to your collection in
-                  seconds — covers and details included.
+                  Search by title or ISBN and add books and series in
+                  seconds, covers and details included.
                 </p>
               </div>
 
@@ -330,10 +345,10 @@ export default function Home() {
                 <div className="w-12 h-12 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center mx-auto mb-4 text-accent font-bold text-lg">
                   2
                 </div>
-                <h3 className="text-lg font-semibold mb-2">Track volumes</h3>
+                <h3 className="text-lg font-semibold mb-2">Track every copy</h3>
                 <p className="text-foreground-muted">
-                  Mark volumes owned or read, log prices, and note condition as
-                  your shelf grows.
+                  Mark books owned or read, log prices, and note condition as
+                  your shelves grow.
                 </p>
               </div>
 
@@ -346,6 +361,57 @@ export default function Home() {
                   Watch spending trends, reading progress, and collection stats
                   come together at a glance.
                 </p>
+              </div>
+            </div>
+          </section>
+
+          {/* Manga stays first-class: crawl paths into the checklists and manga guides. */}
+          <section className="mt-24 sm:mt-32">
+            <div className="text-center max-w-2xl mx-auto mb-10">
+              <h2 className="text-3xl font-bold">For manga collectors</h2>
+              <p className="mt-3 text-foreground-muted">
+                ReadLedger started as a manga tracker. Add a whole series from
+                MangaDex, mark runs as owned or read, and see which volumes
+                you&apos;re missing.
+              </p>
+            </div>
+            <div className="grid gap-10 md:grid-cols-2">
+              <div>
+                <h3 className="text-xl font-bold">Manga volume checklists</h3>
+                <p className="mt-2 text-foreground-muted">
+                  See how many volumes a series has and tick off what you own.
+                  No account needed.
+                </p>
+                <ul className="mt-4 grid grid-cols-2 gap-2">
+                  {popularChecklists.map((series) => (
+                    <li key={series.slug}>
+                      <Link href={`/manga/${series.slug}`} className="flex min-h-12 items-center rounded-xl border border-border bg-background-secondary px-3 py-2 text-sm font-medium transition-colors hover:border-border-hover">
+                        {series.title}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+                <Link href="/manga" className="mt-4 inline-block py-1 text-sm font-medium text-accent underline">
+                  See all checklists
+                </Link>
+              </div>
+              <div>
+                <h3 className="text-xl font-bold">Manga guides</h3>
+                <p className="mt-2 text-foreground-muted">
+                  Practical advice on tracking, budgeting, and buying used.
+                </p>
+                <ul className="mt-4 space-y-2">
+                  {mangaGuides.map((guide) => (
+                    <li key={guide.slug}>
+                      <Link href={`/guides/${guide.slug}`} className="flex min-h-12 items-center rounded-xl border border-border bg-background-secondary px-3 py-2 text-sm font-medium transition-colors hover:border-border-hover">
+                        {guide.title}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+                <Link href="/guides" className="mt-4 inline-block py-1 text-sm font-medium text-accent underline">
+                  See all guides
+                </Link>
               </div>
             </div>
           </section>
@@ -368,47 +434,26 @@ export default function Home() {
             </div>
           </section>
 
-          {/* Crawl paths into the checklists and guides. */}
-          <section className="mt-24 sm:mt-32 grid gap-10 md:grid-cols-2">
-            <div>
-              <h2 className="text-2xl font-bold">Manga volume checklists</h2>
-              <p className="mt-2 text-foreground-muted">
-                See how many volumes a series has and tick off what you own. No
-                account needed.
-              </p>
-              <ul className="mt-4 grid grid-cols-2 gap-2">
-                {popularChecklists.map((series) => (
-                  <li key={series.slug}>
-                    <Link
-                      href={`/manga/${series.slug}`}
-                      className="flex min-h-12 items-center rounded-xl border border-border bg-background-secondary px-3 py-2 text-sm font-medium transition-colors hover:border-border-hover"
-                    >
-                      {series.title}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-              <Link href="/manga" className="mt-4 inline-block py-1 text-sm font-medium text-accent underline">
-                See all checklists
+          {/* Crawl paths into the general guides and the /books page. */}
+          <section className="mt-24 sm:mt-32 max-w-3xl mx-auto">
+            <h2 className="text-2xl font-bold">Guides for book collectors</h2>
+            <p className="mt-2 text-foreground-muted">
+              Practical advice on cataloging your shelves and keeping track of
+              what they cost.
+            </p>
+            <ul className="mt-4 space-y-2">
+              {bookGuides.map((guide) => (
+                <li key={guide.slug}>
+                  <Link href={`/guides/${guide.slug}`} className="flex min-h-12 items-center rounded-xl border border-border bg-background-secondary px-3 py-2 text-sm font-medium transition-colors hover:border-border-hover">
+                    {guide.title}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+            <div className="mt-4 flex flex-wrap gap-x-6">
+              <Link href="/books" className="mt-4 inline-block py-1 text-sm font-medium text-accent underline">
+                How ReadLedger tracks books
               </Link>
-            </div>
-            <div>
-              <h2 className="text-2xl font-bold">Guides for collectors</h2>
-              <p className="mt-2 text-foreground-muted">
-                Practical advice on tracking, budgeting, and buying used.
-              </p>
-              <ul className="mt-4 space-y-2">
-                {guides.slice(0, 4).map((guide) => (
-                  <li key={guide.slug}>
-                    <Link
-                      href={`/guides/${guide.slug}`}
-                      className="flex min-h-12 items-center rounded-xl border border-border bg-background-secondary px-3 py-2 text-sm font-medium transition-colors hover:border-border-hover"
-                    >
-                      {guide.title}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
               <Link href="/guides" className="mt-4 inline-block py-1 text-sm font-medium text-accent underline">
                 See all guides
               </Link>
@@ -425,8 +470,8 @@ export default function Home() {
                   Start tracking your collection today
                 </h2>
                 <p className="mt-4 text-foreground-muted text-lg">
-                  Free to start, no clutter. Bring order to your manga shelf in
-                  a few taps.
+                  Free to start, no clutter. Bring order to your shelves in a few
+                  taps.
                 </p>
                 <Link
                   href="/login"

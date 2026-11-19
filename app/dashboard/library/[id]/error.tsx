@@ -17,7 +17,7 @@ export default function SeriesDetailError({
           <AlertTriangle className="w-8 h-8 text-error" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold mb-2">Failed to Load Series</h1>
+          <h1 className="text-2xl font-bold mb-2">Failed to Load This Title</h1>
           <p className="text-foreground-muted">
             {process.env.NODE_ENV === "development"
               ? error.message || "Could not load this series. It may have been deleted or you may not have access."
@@ -26,11 +26,11 @@ export default function SeriesDetailError({
         </div>
         <div className="flex gap-3 justify-center">
           <Link
-            href="/dashboard/series"
+            href="/dashboard/library"
             className="inline-flex items-center gap-2 px-5 py-2.5 border border-border hover:bg-background-tertiary rounded-xl font-medium transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            Back to Series
+            Back to Library
           </Link>
           <button
             onClick={reset}

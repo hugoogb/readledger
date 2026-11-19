@@ -2,6 +2,8 @@
  * In-memory sliding window rate limiter.
  */
 
+import { AppError } from "./errors";
+
 type RateLimitEntry = {
   timestamps: number[];
   // Each key keeps its own window so cleanup doesn't cut long windows short
@@ -71,19 +73,47 @@ export function checkUserActionLimit(userId: string): void {
 }
 
 /**
- * Delay helper for throttling external API calls.
- * MangaDex recommends max 5 requests per second.
+ * Serialised outbound throttle: callers are given slots `intervalMs` apart.
+ * The slot is reserved before awaiting, so concurrent callers can't all see
+ * the same "last request" time and fire together. A caller whose slot would
+ * be more than `maxWaitMs` away is rejected (without reserving) instead of
+ * queueing indefinitely.
  */
-let lastMangadexRequest = 0;
-
-export async function throttleMangadex(): Promise<void> {
-  const now = Date.now();
-  const elapsed = now - lastMangadexRequest;
-  const minInterval = 200; // 5 req/s
-
-  if (elapsed < minInterval) {
-    await new Promise((resolve) => setTimeout(resolve, minInterval - elapsed));
-  }
-
-  lastMangadexRequest = Date.now();
+export function createThrottle(
+  intervalMs: number,
+  maxWaitMs: number,
+  busyMessage = "Search is busy. Please try again in a moment.",
+): () => Promise<void> {
+  let nextSlot = 0;
+  return async () => {
+    const now = Date.now();
+    const slot = Math.max(now, nextSlot);
+    const wait = slot - now;
+    if (wait > maxWaitMs) {
+      throw new AppError(busyMessage, "UPSTREAM_BUSY", 503);
+    }
+    nextSlot = slot + intervalMs;
+    if (wait > 0) await new Promise((resolve) => setTimeout(resolve, wait));
+  };
 }
+
+/**
+ * MangaDex asks for at most 5 requests/second per client. One server IP
+ * serves every user.
+ */
+export const throttleMangadex = createThrottle(
+  200,
+  5000,
+  "Manga search is busy. Please try again in a moment.",
+);
+
+/**
+ * Open Library allows 3 requests/second for clients that identify themselves
+ * with a contact email in the User-Agent (we do; see lib/openlibrary-api.ts),
+ * 1/s otherwise. One server IP serves every user.
+ */
+export const throttleOpenLibrary = createThrottle(
+  334,
+  5000,
+  "Book search is busy. Please try again in a moment.",
+);

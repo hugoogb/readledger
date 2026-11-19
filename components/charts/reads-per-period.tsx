@@ -55,7 +55,7 @@ export function ReadsPerPeriod({ data, granularity }: ReadsPerPeriodProps) {
           }}
           labelFormatter={(label) => (isMonth ? formatChartMonth(String(label)) : String(label))}
           formatter={(value) => [
-            `${value} volume${Number(value) !== 1 ? "s" : ""}`,
+            `${value} book${Number(value) !== 1 ? "s" : ""}`,
             "Read",
           ]}
         />

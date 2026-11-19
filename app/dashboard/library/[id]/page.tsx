@@ -2,6 +2,7 @@ import { getPublishers } from "@/actions/publishers";
 import { getSeries } from "@/actions/series";
 import { getStores } from "@/actions/stores";
 import { getVolumeStats } from "@/actions/volumes";
+import { BookPanel } from "@/components/books/book-panel";
 import { EditSeriesModal } from "@/components/series/edit-series-modal";
 import { SeriesTimeline } from "@/components/series/series-timeline";
 import { Badge } from "@/components/ui/badge";
@@ -12,6 +13,8 @@ import { BulkMarkOwnedModal } from "@/components/volumes/bulk-mark-owned-modal";
 import { BulkSetReadModal } from "@/components/volumes/bulk-set-read-modal";
 import { VolumeGrid } from "@/components/volumes/volume-grid";
 import { statusConfig } from "@/lib/constants";
+import { FORMAT_LABELS, isStandalone } from "@/lib/format";
+import { Format } from "@/lib/generated/prisma/enums";
 import { getFormatCurrency } from "@/lib/currency";
 import {
   ArrowLeft,
@@ -41,7 +44,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   if (!series) {
     return {
-      title: "Series Not Found",
+      title: "Not Found",
     };
   }
 
@@ -163,17 +166,22 @@ export default async function SeriesDetailPage({ params }: Props) {
   }
 
   const statusInfo = statusConfig[series.status] || statusConfig.READING;
+  // A standalone book shows its single copy instead of a volume grid. The
+  // migration and the series service guarantee the row exists.
+  const book = isStandalone(series.totalVolumes, series.volumes.length)
+    ? series.volumes[0]
+    : undefined;
 
   return (
     <div className="p-4 lg:p-8">
       {/* Header */}
       <div className="mb-8">
         <Link
-          href="/dashboard/series"
+          href="/dashboard/library"
           className="inline-flex items-center gap-2 py-2 -my-2 text-foreground-muted hover:text-foreground transition-colors mb-4"
         >
           <ArrowLeft className="w-4 h-4" />
-          Back to Series
+          Library
         </Link>
 
         <div className="flex flex-col lg:flex-row gap-8">
@@ -215,10 +223,11 @@ export default async function SeriesDetailPage({ params }: Props) {
                   {series.retailPrice && (
                     <span className="flex items-center gap-2">
                       <Wallet className="w-4 h-4" />
-                      {formatCurrency(series.retailPrice)}/vol (retail)
+                      {formatCurrency(series.retailPrice)}
+                      {book ? " (retail)" : "/vol (retail)"}
                     </span>
                   )}
-                  {series.retailPrice && series.totalVolumes && (
+                  {!book && series.retailPrice && series.totalVolumes && (
                     <span className="flex items-center gap-2">
                       <WalletCards className="w-4 h-4" />
                       Total retail:{" "}
@@ -227,7 +236,10 @@ export default async function SeriesDetailPage({ params }: Props) {
                   )}
                 </div>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 flex-wrap">
+                <Badge variant="secondary" className="px-3 py-1">
+                  {FORMAT_LABELS[series.format]}
+                </Badge>
                 <Badge variant={statusInfo.variant} className="px-3 py-1">
                   {statusInfo.label}
                 </Badge>
@@ -246,15 +258,38 @@ export default async function SeriesDetailPage({ params }: Props) {
               </p>
             )}
 
-            {/* Progress Bars */}
-            <Suspense fallback={null}>
-              <SeriesProgressSection seriesId={id} />
-            </Suspense>
+            {book ? (
+              <>
+                <BookPanel
+                  volume={book}
+                  title={series.title}
+                  retailPrice={series.retailPrice}
+                  stores={stores}
+                />
+                {/* A CSV import that lists only volume 1 of a manga leaves
+                    totalVolumes = 1, so it shows as a single book. */}
+                {(series.format === Format.MANGA || series.format === Format.LIGHT_NOVEL) && (
+                  <div className="mt-2">
+                    <EditSeriesModal series={series} publishers={publishers} variant="seriesHint" />
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
+                {/* Progress Bars */}
+                <Suspense fallback={null}>
+                  <SeriesProgressSection seriesId={id} />
+                </Suspense>
 
-            <SeriesTimeline volumes={series.volumes} />
+                <SeriesTimeline volumes={series.volumes} />
+              </>
+            )}
           </div>
         </div>
       </div>
+
+      {!book && (
+      <>
 
       {/* Stats Cards */}
       <Suspense
@@ -327,6 +362,8 @@ export default async function SeriesDetailPage({ params }: Props) {
           stores={stores}
         />
       </div>
+      </>
+      )}
     </div>
   );
 }

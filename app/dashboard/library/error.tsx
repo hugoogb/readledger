@@ -17,11 +17,11 @@ export default function SeriesError({
           <AlertTriangle className="w-8 h-8 text-error" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold mb-2">Failed to Load Series</h1>
+          <h1 className="text-2xl font-bold mb-2">Failed to Load Library</h1>
           <p className="text-foreground-muted">
             {process.env.NODE_ENV === "development"
-              ? error.message || "Could not load your series. Please try again."
-              : "Could not load your series. Please try again."}
+              ? error.message || "Could not load your library. Please try again."
+              : "Could not load your library. Please try again."}
           </p>
         </div>
         <div className="flex gap-3 justify-center">

@@ -1,17 +1,48 @@
 import Link from "next/link";
-import { BookOpen, User } from "lucide-react";
+import { BookMarked, BookOpen, Package, User } from "lucide-react";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import Image from "next/image";
 import type { SeriesCardData } from "@/types";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { statusConfig } from "@/lib/constants";
+import { FORMAT_LABELS, isStandalone } from "@/lib/format";
 
 type SeriesCardProps = {
   series: SeriesCardData;
+  /** Show the format badge; only useful when the library mixes formats. */
+  showFormat?: boolean;
 };
 
-export function SeriesCard({ series }: SeriesCardProps) {
+/** Compact on/off state for a standalone book, e.g. "Owned" / "Not owned". */
+function StatePill({
+  on,
+  icon: Icon,
+  onLabel,
+  offLabel,
+  tone,
+}: {
+  on: boolean;
+  icon: typeof Package;
+  onLabel: string;
+  offLabel: string;
+  tone: "accent" | "success";
+}) {
+  const onClass = tone === "accent" ? "bg-accent/15 text-accent" : "bg-success/15 text-success";
+  return (
+    <span
+      className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-bold uppercase tracking-wide ${
+        on ? onClass : "bg-background-tertiary text-foreground-muted"
+      }`}
+    >
+      <Icon className="w-3 h-3" aria-hidden="true" />
+      {on ? onLabel : offLabel}
+    </span>
+  );
+}
+
+export function SeriesCard({ series, showFormat = false }: SeriesCardProps) {
+  const standalone = isStandalone(series.totalVolumes, series.volumes.length);
   const owned = series.volumes.filter((v) => v.owned).length;
   const read = series.volumes.filter((v) => v.read).length;
   const total = series.totalVolumes || series.volumes.length;
@@ -21,7 +52,7 @@ export function SeriesCard({ series }: SeriesCardProps) {
 
   return (
     <Link
-      href={`/dashboard/series/${series.id}`}
+      href={`/dashboard/library/${series.id}`}
       className="transition-all group"
     >
       <Card className="overflow-hidden border-none shadow-lg group-hover:shadow-2xl transition-all duration-300">
@@ -41,8 +72,13 @@ export function SeriesCard({ series }: SeriesCardProps) {
               <BookOpen className="w-16 h-16 text-foreground-muted/30" />
             </div>
           )}
-          {/* Status badges */}
+          {/* Format + status badges, stacked so they never collide on narrow cards */}
           <div className="absolute top-3 right-3 flex flex-col gap-1.5 items-end">
+            {showFormat && (
+              <Badge variant="secondary" className="bg-black/60 text-white border-none">
+                {FORMAT_LABELS[series.format]}
+              </Badge>
+            )}
             <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
             {series.publishing && <Badge variant="success">Publishing</Badge>}
           </div>
@@ -60,6 +96,24 @@ export function SeriesCard({ series }: SeriesCardProps) {
             </p>
           )}
 
+          {standalone ? (
+            <div className="flex flex-wrap gap-1.5">
+              <StatePill
+                on={owned > 0}
+                icon={Package}
+                onLabel="Owned"
+                offLabel="Not owned"
+                tone="accent"
+              />
+              <StatePill
+                on={read > 0}
+                icon={BookMarked}
+                onLabel="Read"
+                offLabel="Unread"
+                tone="success"
+              />
+            </div>
+          ) : (
           <div className="space-y-4">
             <div>
               <div className="flex items-center justify-between text-[10px] uppercase font-bold tracking-wider mb-1.5 text-foreground-muted">
@@ -90,6 +144,7 @@ export function SeriesCard({ series }: SeriesCardProps) {
               />
             </div>
           </div>
+          )}
         </div>
       </Card>
     </Link>
