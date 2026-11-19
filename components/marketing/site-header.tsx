@@ -2,8 +2,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 
+// md:whitespace-nowrap: with all nav links showing, tablet widths would otherwise wrap "Sign in".
 const linkClass =
-  "text-sm font-medium text-foreground-muted hover:text-foreground transition-colors px-2 py-2";
+  "text-sm font-medium text-foreground-muted hover:text-foreground transition-colors px-2 py-2 md:whitespace-nowrap";
 
 export function SiteHeader() {
   return (
@@ -20,9 +21,12 @@ export function SiteHeader() {
           <span className="text-lg sm:text-xl font-bold">ReadLedger</span>
         </Link>
         <div className="flex items-center gap-2 sm:gap-4">
-          {/* On phones these two live in the footer, to keep the header on one line. */}
+          {/* On phones these live in the footer, to keep the header on one line. */}
+          <Link href="/books" className={`hidden md:block ${linkClass}`}>
+            Books
+          </Link>
           <Link href="/manga" className={`hidden md:block ${linkClass}`}>
-            Checklists
+            Manga
           </Link>
           <Link href="/guides" className={`hidden md:block ${linkClass}`}>
             Guides
@@ -35,7 +39,7 @@ export function SiteHeader() {
           </Link>
           <Link
             href="/login"
-            className="bg-accent hover:bg-accent-hover text-white text-sm font-medium py-2 px-3 sm:px-4 rounded-xl transition-colors"
+            className="bg-accent hover:bg-accent-hover text-white text-sm font-medium py-2 px-3 sm:px-4 rounded-xl transition-colors md:whitespace-nowrap"
           >
             Get started
           </Link>
