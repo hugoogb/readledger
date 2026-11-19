@@ -4,7 +4,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "ReadLedger",
     short_name: "ReadLedger",
-    description: "Track your manga collection, reading progress, and spending.",
+    description: "Track your book collection, reading progress, and spending.",
     start_url: "/dashboard",
     scope: "/",
     display: "standalone",

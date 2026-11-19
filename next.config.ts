@@ -14,9 +14,17 @@ const nextConfig: NextConfig = {
         hostname: "uploads.mangadex.org",
         pathname: "/covers/**",
       },
+      // Cover-ID URLs only: Open Library rate-limits ISBN/OLID-keyed cover
+      // URLs per IP, and every cover is fetched from this one server.
+      {
+        protocol: "https",
+        hostname: "covers.openlibrary.org",
+        pathname: "/b/id/**",
+      },
     ],
     // MangaDex cover URLs are content-addressed (a new cover gets a new file
-    // name), so optimized covers can be cached for 30 days.
+    // name) and Open Library cover IDs are immutable, so optimized covers can
+    // be cached for 30 days.
     minimumCacheTTL: 2_592_000,
   },
   experimental: {

@@ -30,7 +30,7 @@ export function Pagination({
       params.set("page", String(page));
     }
     startTransition(() => {
-      router.push(`/dashboard/series?${params.toString()}`);
+      router.push(`/dashboard/library?${params.toString()}`);
     });
   }
 
@@ -58,7 +58,7 @@ export function Pagination({
   return (
     <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
       <p className="text-sm text-foreground-muted">
-        Showing {start}-{end} of {totalCount} series
+        Showing {start}-{end} of {totalCount} titles
       </p>
       <div
         className={`flex items-center gap-1 transition-opacity ${isPending ? "opacity-60" : ""}`}

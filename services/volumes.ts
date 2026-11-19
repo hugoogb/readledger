@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { NotFoundError, ValidationError } from "@/lib/errors";
-import { Condition } from "@/lib/generated/prisma/enums";
+import { Condition, type SeriesStatus } from "@/lib/generated/prisma/enums";
+import type { Prisma } from "@/lib/generated/prisma/client";
+import { isStandalone, standaloneStatusAfterRead } from "@/lib/format";
 import type { VolumeSchema } from "@/lib/validations";
 import { comparableSavings } from "@/lib/savings";
 import { parseDateInput, startOfUtcDay } from "@/utils/date";
@@ -13,6 +15,35 @@ export type CreateVolumeInput = VolumeSchema & { seriesId: string };
 export type UpdateVolumeInput = Partial<VolumeSchema>;
 
 const CLEARABLE_FIELDS = ["title", "coverImage", "notes"] as const;
+
+// What a volume lookup needs from its title: ownership plus the inputs of the
+// standalone status sync.
+const seriesForSync = {
+  select: {
+    userId: true,
+    status: true,
+    totalVolumes: true,
+    _count: { select: { volumes: true } },
+  },
+} as const;
+
+type SyncSeries = { status: SeriesStatus; totalVolumes: number | null; _count: { volumes: number } };
+
+/**
+ * Standalone books keep their status in step with being read: reading one
+ * completes it, un-reading a completed one reopens it. Series are untouched.
+ * Runs inside the caller's transaction so every read change gets it.
+ */
+async function syncStandaloneStatus(
+  tx: Prisma.TransactionClient,
+  seriesId: string,
+  series: SyncSeries,
+  read: boolean,
+) {
+  if (!isStandalone(series.totalVolumes, series._count.volumes)) return;
+  const status = standaloneStatusAfterRead(series.status, read);
+  if (status) await tx.series.update({ where: { id: seriesId }, data: { status } });
+}
 
 export async function createVolume(userId: string, validated: CreateVolumeInput) {
   const series = await prisma.series.findFirst({
@@ -43,7 +74,7 @@ export async function createVolume(userId: string, validated: CreateVolumeInput)
 export async function updateVolume(userId: string, id: string, validated: UpdateVolumeInput) {
   const volume = await prisma.volume.findFirst({
     where: { id },
-    include: { series: true },
+    include: { series: seriesForSync },
   });
 
   if (!volume || volume.series.userId !== userId) {
@@ -52,17 +83,25 @@ export async function updateVolume(userId: string, id: string, validated: Update
 
   await assertOwnedStore(userId, validated.storeId);
 
-  return prisma.volume.update({
-    where: { id },
-    data: {
-      ...blankToNull(validated, CLEARABLE_FIELDS),
-      // Owning a volume takes it off the wishlist (as bulkMarkOwned does), so
-      // removing it from the collection later doesn't resurrect the wish.
-      ...(validated.owned === true && { wishlist: false }),
-      storeId: validated.storeId !== undefined ? (validated.storeId || null) : undefined,
-      condition: validated.condition ? (validated.condition as Condition) : validated.condition === null ? null : undefined,
-      readDate: resolveReadDate(validated, volume.readDate),
-    },
+  const readChanged = validated.read !== undefined && validated.read !== volume.read;
+
+  return prisma.$transaction(async (tx) => {
+    const updated = await tx.volume.update({
+      where: { id },
+      data: {
+        ...blankToNull(validated, CLEARABLE_FIELDS),
+        // Owning a volume takes it off the wishlist (as bulkMarkOwned does), so
+        // removing it from the collection later doesn't resurrect the wish.
+        ...(validated.owned === true && { wishlist: false }),
+        storeId: validated.storeId !== undefined ? (validated.storeId || null) : undefined,
+        condition: validated.condition ? (validated.condition as Condition) : validated.condition === null ? null : undefined,
+        readDate: resolveReadDate(validated, volume.readDate),
+      },
+    });
+    if (readChanged) {
+      await syncStandaloneStatus(tx, volume.seriesId, volume.series, validated.read!);
+    }
+    return updated;
   });
 }
 
@@ -102,19 +141,24 @@ export async function deleteVolume(userId: string, id: string) {
 export async function toggleVolumeRead(userId: string, id: string, today?: string) {
   const volume = await prisma.volume.findFirst({
     where: { id },
-    include: { series: true },
+    include: { series: seriesForSync },
   });
 
   if (!volume || volume.series.userId !== userId) {
     throw new NotFoundError("Volume");
   }
 
-  const updated = await prisma.volume.update({
-    where: { id },
-    data: {
-      read: !volume.read,
-      readDate: !volume.read ? (parseDateInput(today) ?? startOfUtcDay()) : null,
-    },
+  const read = !volume.read;
+  const updated = await prisma.$transaction(async (tx) => {
+    const result = await tx.volume.update({
+      where: { id },
+      data: {
+        read,
+        readDate: read ? (parseDateInput(today) ?? startOfUtcDay()) : null,
+      },
+    });
+    await syncStandaloneStatus(tx, volume.seriesId, volume.series, read);
+    return result;
   });
 
   return { updated, seriesId: volume.seriesId };
@@ -229,7 +273,7 @@ export async function bulkSetRead(
 
   const volumes = await prisma.volume.findMany({
     where: { id: { in: volumeIds } },
-    include: { series: true },
+    include: { series: seriesForSync },
   });
 
   if (volumes.length !== volumeIds.length) {
@@ -244,12 +288,20 @@ export async function bulkSetRead(
     seriesIds.add(volume.seriesId);
   }
 
-  await prisma.volume.updateMany({
-    where: { id: { in: volumeIds }, owned: true, read: false },
-    data: {
-      read: true,
-      readDate: readDate ?? startOfUtcDay(),
-    },
+  await prisma.$transaction(async (tx) => {
+    await tx.volume.updateMany({
+      where: { id: { in: volumeIds }, owned: true, read: false },
+      data: {
+        read: true,
+        readDate: readDate ?? startOfUtcDay(),
+      },
+    });
+    // Only the volumes this update actually marks read change their title.
+    for (const volume of volumes) {
+      if (volume.owned && !volume.read) {
+        await syncStandaloneStatus(tx, volume.seriesId, volume.series, true);
+      }
+    }
   });
 
   return seriesIds;

@@ -42,7 +42,7 @@ function PublisherTooltip({ active, payload, label }: BaseTooltipProps) {
     >
       <p style={{ fontWeight: 600, marginBottom: 4 }}>{label}</p>
       <p style={{ fontSize: 13 }}>
-        {volumes} volume{volumes !== 1 ? "s" : ""}
+        {volumes} book{volumes !== 1 ? "s" : ""}
       </p>
       {spent > 0 && (
         <p style={{ fontSize: 13, color: "var(--color-foreground-muted)" }}>
@@ -80,7 +80,7 @@ export function PublisherBreakdown({ data }: PublisherBreakdownProps) {
           dataKey="volumes"
           fill="var(--color-accent)"
           radius={[0, 4, 4, 0]}
-          name="Volumes"
+          name="Books"
         />
       </BarChart>
     </ResponsiveContainer>

@@ -21,7 +21,7 @@ export type SeriesDefaults = {
 /** The subset of a series the grid card and list sorts need. */
 export type SeriesCardData = Pick<
   Series,
-  "id" | "title" | "author" | "status" | "publishing" | "coverImage" | "totalVolumes"
+  "id" | "title" | "author" | "status" | "format" | "publishing" | "coverImage" | "totalVolumes"
 > & {
   volumes: Pick<Volume, "owned" | "read">[];
 };

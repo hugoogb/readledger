@@ -5,6 +5,7 @@ import { serializeCsv } from "@/lib/csv";
 import { withResult } from "@/lib/action-result";
 import { ValidationError } from "@/lib/errors";
 import { type ImportFormat, type ImportPreview, type ImportRow, parseImport } from "@/lib/import";
+import { Format } from "@/lib/generated/prisma/enums";
 import { prisma } from "@/lib/prisma";
 import { checkUserActionLimit } from "@/lib/rate-limit";
 import { revalidatePath } from "next/cache";
@@ -24,6 +25,8 @@ const CSV_HEADERS = [
   "read_date",
   "notes",
   "isbn",
+  // Last, so spreadsheets built on the older column order keep working.
+  "format",
 ];
 
 type ExportFormat = ImportFormat;
@@ -45,6 +48,7 @@ export async function exportCollection(format: ExportFormat) {
   if (format === "json") {
     const data = series.map((s) => ({
       title: s.title,
+      format: s.format,
       author: s.author,
       status: s.status,
       publishing: s.publishing,
@@ -53,6 +57,7 @@ export async function exportCollection(format: ExportFormat) {
       coverImage: s.coverImage,
       description: s.description,
       mangadexId: s.mangadexId,
+      openLibraryKey: s.openLibraryKey,
       volumes: s.volumes.map((v) => ({
         volumeNumber: v.volumeNumber,
         owned: v.owned,
@@ -89,6 +94,7 @@ export async function exportCollection(format: ExportFormat) {
         v.readDate?.toISOString().split("T")[0] || "",
         v.notes || "",
         v.isbn || "",
+        s.format,
       ]);
     }
   }
@@ -155,12 +161,17 @@ export const importCollection = withResult(async (data: string, format: ImportFo
       for (const [title, volumes] of seriesMap) {
         const meta = preview.seriesMeta[title];
 
-        // Match an existing series by MangaDex id first (titles can change),
-        // then by title. Existing series keep their own metadata.
+        // Match an existing series by MangaDex id or Open Library key first
+        // (titles can change), then by title. Existing series keep their own
+        // metadata, format included.
         let series =
           (meta?.mangadexId &&
             (await tx.series.findFirst({
               where: { userId: user.id, mangadexId: meta.mangadexId },
+            }))) ||
+          (meta?.openLibraryKey &&
+            (await tx.series.findFirst({
+              where: { userId: user.id, openLibraryKey: meta.openLibraryKey },
             }))) ||
           (await tx.series.findFirst({ where: { userId: user.id, title } }));
 
@@ -170,6 +181,7 @@ export const importCollection = withResult(async (data: string, format: ImportFo
             data: {
               userId: user.id,
               title,
+              format: preview.formats[title] ?? Format.MANGA,
               totalVolumes: Math.max(meta?.totalVolumes ?? 0, maxVolume),
               ...(meta && {
                 author: meta.author,
@@ -179,6 +191,7 @@ export const importCollection = withResult(async (data: string, format: ImportFo
                 coverImage: meta.coverImage,
                 description: meta.description,
                 mangadexId: meta.mangadexId,
+                openLibraryKey: meta.openLibraryKey,
               }),
             },
           });

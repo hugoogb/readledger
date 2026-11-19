@@ -1,6 +1,7 @@
 "use server";
 
 import { requireUser } from "@/lib/auth";
+import { formatBreakdown } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 
 export async function getSpendingOverTime() {
@@ -110,6 +111,21 @@ export async function getPublisherBreakdown() {
   return Array.from(publisherMap.entries())
     .map(([name, data]) => ({ name, ...data }))
     .sort((a, b) => b.volumes - a.volumes);
+}
+
+/** Owned books per format; every format in the library appears, even at 0. */
+export async function getFormatBreakdown() {
+  const user = await requireUser();
+
+  const series = await prisma.series.findMany({
+    where: { userId: user.id },
+    select: {
+      format: true,
+      _count: { select: { volumes: { where: { owned: true } } } },
+    },
+  });
+
+  return formatBreakdown(series.map((s) => ({ format: s.format, ownedCount: s._count.volumes })));
 }
 
 export async function getConditionDistribution() {

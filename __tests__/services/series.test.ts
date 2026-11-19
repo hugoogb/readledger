@@ -10,6 +10,9 @@ import {
   getSeriesStats,
   checkDuplicateSeries,
   getExistingMangadexIds,
+  getExistingOpenLibraryKeys,
+  getFormatCounts,
+  getLibraryFormats,
 } from "@/services/series";
 
 // ---------------------------------------------------------------------------
@@ -77,6 +80,7 @@ describe("createSeries", () => {
       title: "Chainsaw Man",
       author: "Tatsuki Fujimoto",
       status: "READING" as const,
+      format: "MANGA" as const,
       publishing: true,
       totalVolumes: 17,
       publisherId: "pub-001",
@@ -101,6 +105,7 @@ describe("createSeries", () => {
     const input = {
       title: "Solo Leveling",
       status: "PLAN_TO_READ" as const,
+      format: "MANGA" as const,
       publishing: false,
       totalVolumes: null,
       publisherId: "",
@@ -116,6 +121,41 @@ describe("createSeries", () => {
   });
 });
 
+describe("createSeries for a standalone book", () => {
+  it("stores the format and creates volume 1 when totalVolumes is 1", async () => {
+    prismaMock.series.create.mockResolvedValue(makeSeries());
+
+    await createSeries(USER_ID, {
+      title: "Dune",
+      status: "READING",
+      format: "NOVEL",
+      publishing: false,
+      totalVolumes: 1,
+    });
+
+    expect(prismaMock.series.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        format: "NOVEL",
+        volumes: { create: [{ volumeNumber: 1 }] },
+      }),
+    });
+  });
+
+  it("creates no volumes for other totals", async () => {
+    prismaMock.series.create.mockResolvedValue(makeSeries());
+
+    await createSeries(USER_ID, {
+      title: "Berserk",
+      status: "READING",
+      format: "MANGA",
+      publishing: true,
+      totalVolumes: 5,
+    });
+
+    expect(prismaMock.series.create.mock.calls[0][0].data.volumes).toBeUndefined();
+  });
+});
+
 // ---- createSeriesWithVolumes ----------------------------------------------
 
 describe("createSeriesWithVolumes", () => {
@@ -123,6 +163,7 @@ describe("createSeriesWithVolumes", () => {
     const input = {
       title: "Spy x Family",
       status: "READING" as const,
+      format: "MANGA" as const,
       publishing: true,
       totalVolumes: 13,
     };
@@ -157,6 +198,7 @@ describe("createSeriesWithVolumes", () => {
     const input = {
       title: "Jujutsu Kaisen",
       status: "READING" as const,
+      format: "MANGA" as const,
       publishing: true,
       totalVolumes: 5,
     };
@@ -172,6 +214,48 @@ describe("createSeriesWithVolumes", () => {
     const call = prismaMock.series.create.mock.calls[0][0];
     expect(call.data.volumes.create[0].coverImage).toBeNull();
     expect(call.data.volumes.create[1].coverImage).toBeNull();
+  });
+});
+
+describe("createSeriesWithVolumes with an ISBN", () => {
+  it("stores the ISBN on the volume", async () => {
+    prismaMock.series.create.mockResolvedValue(makeSeries());
+
+    await createSeriesWithVolumes(
+      USER_ID,
+      {
+        title: "Dune",
+        status: "READING",
+        format: "NOVEL",
+        publishing: false,
+        totalVolumes: 1,
+        openLibraryKey: "OL893414W",
+      },
+      [{ volumeNumber: 1, isbn: "9780441013593" }],
+    );
+
+    const call = prismaMock.series.create.mock.calls[0][0];
+    expect(call.data.openLibraryKey).toBe("OL893414W");
+    expect(call.data.volumes.create).toEqual([
+      expect.objectContaining({ volumeNumber: 1, isbn: "9780441013593" }),
+    ]);
+  });
+});
+
+describe("createSeriesWithVolumes for a standalone book", () => {
+  it("creates volume 1 when no volumes are given", async () => {
+    prismaMock.series.create.mockResolvedValue(makeSeries());
+
+    await createSeriesWithVolumes(
+      USER_ID,
+      { title: "Dune", status: "READING", format: "NOVEL", publishing: false, totalVolumes: 1 },
+      [],
+    );
+
+    const call = prismaMock.series.create.mock.calls[0][0];
+    expect(call.data.volumes.create).toEqual([
+      expect.objectContaining({ volumeNumber: 1, owned: false, read: false }),
+    ]);
   });
 });
 
@@ -229,6 +313,29 @@ describe("updateSeries", () => {
       updateSeries(USER_ID, SERIES_ID, { publisherId: "someone-elses" }),
     ).rejects.toThrow(NotFoundError);
     expect(prismaMock.series.update).not.toHaveBeenCalled();
+  });
+
+  it("creates volume 1 for a one-volume title that has no volume rows", async () => {
+    prismaMock.series.findFirst.mockResolvedValue(makeSeries({ totalVolumes: 1, volumes: [] }));
+    prismaMock.series.update.mockResolvedValue(makeSeries({ totalVolumes: 1 }));
+
+    await updateSeries(USER_ID, SERIES_ID, { totalVolumes: 1 });
+
+    expect(prismaMock.volume.createMany).toHaveBeenCalledWith({
+      data: [{ seriesId: SERIES_ID, volumeNumber: 1, owned: false, read: false }],
+      skipDuplicates: true,
+    });
+  });
+
+  it("does not add volumes to a one-volume title that already has its row", async () => {
+    prismaMock.series.findFirst.mockResolvedValue(
+      makeSeries({ totalVolumes: 1, volumes: [{ volumeNumber: 1 }] }),
+    );
+    prismaMock.series.update.mockResolvedValue(makeSeries({ totalVolumes: 1 }));
+
+    await updateSeries(USER_ID, SERIES_ID, { totalVolumes: 1 });
+
+    expect(prismaMock.volume.createMany).not.toHaveBeenCalled();
   });
 
   it("throws NotFoundError when series does not exist", async () => {
@@ -326,11 +433,24 @@ describe("getAllSeries", () => {
   it("searches titles case-insensitively in the database", async () => {
     prismaMock.series.findMany.mockResolvedValue([]);
 
-    await getAllSeries(USER_ID, undefined, undefined, "chain");
+    await getAllSeries(USER_ID, { search: "chain" });
 
     expect(prismaMock.series.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: { userId: USER_ID, title: { contains: "chain", mode: "insensitive" } },
+      }),
+    );
+  });
+
+  it("filters by format", async () => {
+    prismaMock.series.findMany.mockResolvedValue([]);
+
+    await getAllSeries(USER_ID, { format: "NOVEL", status: "COMPLETED" });
+
+    expect(prismaMock.series.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { userId: USER_ID, status: "COMPLETED", format: "NOVEL" },
+        select: expect.objectContaining({ format: true }),
       }),
     );
   });
@@ -357,7 +477,7 @@ describe("getAllSeries", () => {
     // A = 1/10 = 10%, B = 2/4 = 50%  => B should come first
     prismaMock.series.findMany.mockResolvedValue([seriesA, seriesB]);
 
-    const result = await getAllSeries(USER_ID, undefined, "completion");
+    const result = await getAllSeries(USER_ID, { sort: "completion" });
 
     expect(result[0].id).toBe("series-b");
     expect(result[1].id).toBe("series-a");
@@ -380,10 +500,25 @@ describe("getAllSeries", () => {
     // High = 35, Low = 5  => High should come first
     prismaMock.series.findMany.mockResolvedValue([seriesLow, seriesHigh]);
 
-    const result = await getAllSeries(USER_ID, undefined, "spent");
+    const result = await getAllSeries(USER_ID, { sort: "spent" });
 
     expect(result[0].id).toBe("series-high");
     expect(result[1].id).toBe("series-low");
+  });
+});
+
+describe("getLibraryFormats", () => {
+  it("returns the distinct formats in enum order", async () => {
+    prismaMock.series.findMany.mockResolvedValue([{ format: "NOVEL" }, { format: "MANGA" }]);
+
+    const result = await getLibraryFormats(USER_ID);
+
+    expect(result).toEqual(["MANGA", "NOVEL"]);
+    expect(prismaMock.series.findMany).toHaveBeenCalledWith({
+      where: { userId: USER_ID },
+      select: { format: true },
+      distinct: ["format"],
+    });
   });
 });
 
@@ -528,6 +663,43 @@ describe("getExistingMangadexIds", () => {
         mangadexId: { in: ["mdx-001", "mdx-002", "mdx-003"] },
       },
       select: { mangadexId: true },
+    });
+  });
+});
+
+// ---- getExistingOpenLibraryKeys -------------------------------------------
+
+describe("getExistingOpenLibraryKeys", () => {
+  it("returns the keys already in the library", async () => {
+    prismaMock.series.findMany.mockResolvedValue([{ openLibraryKey: "OL1W" }]);
+
+    expect(await getExistingOpenLibraryKeys(USER_ID, ["OL1W", "OL2W"])).toEqual(["OL1W"]);
+    expect(prismaMock.series.findMany).toHaveBeenCalledWith({
+      where: { userId: USER_ID, openLibraryKey: { in: ["OL1W", "OL2W"] } },
+      select: { openLibraryKey: true },
+    });
+  });
+
+  it("skips the query for no keys", async () => {
+    expect(await getExistingOpenLibraryKeys(USER_ID, [])).toEqual([]);
+    expect(prismaMock.series.findMany).not.toHaveBeenCalled();
+  });
+});
+
+// ---- getFormatCounts ------------------------------------------------------
+
+describe("getFormatCounts", () => {
+  it("counts titles per format", async () => {
+    prismaMock.series.groupBy.mockResolvedValue([
+      { format: "MANGA", _count: { _all: 12 } },
+      { format: "NOVEL", _count: { _all: 3 } },
+    ]);
+
+    expect(await getFormatCounts(USER_ID)).toEqual({ MANGA: 12, NOVEL: 3 });
+    expect(prismaMock.series.groupBy).toHaveBeenCalledWith({
+      by: ["format"],
+      where: { userId: USER_ID },
+      _count: { _all: true },
     });
   });
 });

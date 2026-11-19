@@ -32,7 +32,7 @@ function vol(overrides: Partial<ReadingVolume> = {}): ReadingVolume {
     purchaseDate: null,
     readDate: null,
     coverImage: null,
-    series: { title: "Berserk", coverImage: null },
+    series: { title: "Berserk", coverImage: null, standalone: false },
     ...overrides,
   };
 }
@@ -234,11 +234,11 @@ describe("backlogTrend", () => {
 describe("topSeries", () => {
   it("ranks series by reads in the period, ties by title", () => {
     const volumes = [
-      read("2026-01-01", { seriesId: "a", series: { title: "Vagabond", coverImage: null } }),
-      read("2026-01-02", { seriesId: "b", series: { title: "Berserk", coverImage: "b.jpg" } }),
-      read("2026-01-03", { seriesId: "c", series: { title: "Monster", coverImage: null } }),
-      read("2026-01-04", { seriesId: "c", series: { title: "Monster", coverImage: null } }),
-      read("2025-01-04", { seriesId: "a", series: { title: "Vagabond", coverImage: null } }),
+      read("2026-01-01", { seriesId: "a", series: { title: "Vagabond", coverImage: null, standalone: false } }),
+      read("2026-01-02", { seriesId: "b", series: { title: "Berserk", coverImage: "b.jpg", standalone: false } }),
+      read("2026-01-03", { seriesId: "c", series: { title: "Monster", coverImage: null, standalone: false } }),
+      read("2026-01-04", { seriesId: "c", series: { title: "Monster", coverImage: null, standalone: false } }),
+      read("2025-01-04", { seriesId: "a", series: { title: "Vagabond", coverImage: null, standalone: false } }),
     ];
     expect(topSeries(volumes, 2026, 2)).toEqual([
       { seriesId: "c", title: "Monster", coverImage: null, count: 2 },

@@ -68,7 +68,7 @@ export function CollectionGrowth({ data }: CollectionGrowthProps) {
           }}
           labelFormatter={(label) => formatChartMonth(String(label))}
           formatter={(value, name) => [
-            `${value} volume${Number(value) !== 1 ? "s" : ""}`,
+            `${value} book${Number(value) !== 1 ? "s" : ""}`,
             name === "added" ? "Added" : "Total",
           ]}
         />

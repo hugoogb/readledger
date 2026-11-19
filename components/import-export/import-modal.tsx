@@ -66,7 +66,7 @@ export function ImportModal() {
     try {
       const result = unwrap(await importCollection(fileData.content, fileData.format));
       toast.success(
-        `Imported ${result.volumeCount} volumes across ${result.seriesCount} series`,
+        `Imported ${result.volumeCount} book${result.volumeCount !== 1 ? "s" : ""} across ${result.seriesCount} title${result.seriesCount !== 1 ? "s" : ""}`,
       );
       router.refresh();
       handleClose();
@@ -152,10 +152,10 @@ export function ImportModal() {
               {/* Stats */}
               <div className="flex gap-3">
                 <Badge variant="default" className="gap-1">
-                  {preview.seriesCount} series
+                  {preview.seriesCount} title{preview.seriesCount !== 1 ? "s" : ""}
                 </Badge>
                 <Badge variant="default" className="gap-1">
-                  {preview.volumeCount} volumes
+                  {preview.volumeCount} book{preview.volumeCount !== 1 ? "s" : ""}
                 </Badge>
               </div>
 
@@ -185,7 +185,7 @@ export function ImportModal() {
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-border bg-background-tertiary/50">
-                        <th className="text-left px-3 py-2 font-medium">Series</th>
+                        <th className="text-left px-3 py-2 font-medium">Title</th>
                         <th className="text-left px-3 py-2 font-medium">Vol</th>
                         <th className="text-left px-3 py-2 font-medium">Owned</th>
                         <th className="text-left px-3 py-2 font-medium">Read</th>

@@ -10,7 +10,7 @@ export const toggleWishlist = withResult(async (volumeId: string) => {
 
   const { updated, seriesId } = await wishlistService.toggleWishlist(user.id, volumeId);
 
-  revalidatePath(`/dashboard/series/${seriesId}`);
+  revalidatePath(`/dashboard/library/${seriesId}`);
   revalidatePath("/dashboard/wishlist");
 
   return updated;

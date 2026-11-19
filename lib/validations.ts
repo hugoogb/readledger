@@ -1,32 +1,36 @@
 import { z } from "zod";
-import { Condition, SeriesStatus } from "./generated/prisma/enums";
+import { Condition, Format, SeriesStatus } from "./generated/prisma/enums";
+import { isAllowedCoverUrl } from "./covers";
 
 /** Upper bound for volumes in one series — keeps volume generation bounded. */
 export const MAX_VOLUMES = 1000;
 
-const MANGADEX_COVER_URL = /^https:\/\/uploads\.mangadex\.org\/covers\//;
-
-// Covers render through next/image, which only allows MangaDex covers (see
-// next.config.ts). Any other host would crash the page that shows it.
+// Covers render through next/image, which only allows the hosts in
+// lib/covers.ts (see next.config.ts). Any other URL would crash the page.
 const coverImageSchema = z
   .url("Must be a valid URL")
-  .regex(MANGADEX_COVER_URL, "Cover must be a MangaDex cover URL")
+  .refine(isAllowedCoverUrl, "Cover must be a MangaDex or Open Library cover URL")
   .optional()
   .or(z.literal(""));
 
 export const idSchema = z.uuid("Invalid id");
+
+/** Open Library work key without the /works/ prefix, e.g. "OL893414W". */
+export const openLibraryKeySchema = z.string().regex(/^OL\d+W$/, "Invalid Open Library work");
 
 export const seriesSchema = z.object({
   title: z.string().trim().min(1, "Title is required").max(255),
   author: z.string().max(255).optional().or(z.literal("")),
   publisherId: idSchema.nullable().optional().or(z.literal("")),
   status: z.enum(SeriesStatus),
+  format: z.enum(Format),
   publishing: z.boolean(),
   totalVolumes: z.number("Total volumes is required and must be a number").int().min(0).max(MAX_VOLUMES, `At most ${MAX_VOLUMES} volumes`).nullable(),
   coverImage: coverImageSchema,
   description: z.string().max(2000).optional().or(z.literal("")),
   retailPrice: z.number("Retail price must be a number").min(0).max(100_000).nullable().optional(),
   mangadexId: z.string().max(64).nullable().optional(),
+  openLibraryKey: openLibraryKeySchema.nullable().optional(),
 });
 
 export const volumeSchema = z.object({
@@ -73,7 +77,8 @@ export const seriesVolumesSchema = z
     z.object({
       volumeNumber: z.number().int().min(1).max(MAX_VOLUMES),
       title: z.string().max(255).optional(),
-      coverImage: z.string().regex(MANGADEX_COVER_URL).nullish(),
+      coverImage: z.string().refine(isAllowedCoverUrl).nullish(),
+      isbn: z.string().trim().max(32).nullish(),
     }),
   )
   .max(MAX_VOLUMES);

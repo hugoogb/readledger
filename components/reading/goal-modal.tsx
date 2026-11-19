@@ -38,7 +38,7 @@ export function GoalModal({ year, currentTarget, isOpen, onClose }: GoalModalPro
     startSave(async () => {
       try {
         unwrap(await setReadingGoal(year, parsed.data));
-        toast.success(`Goal for ${year} set to ${parsed.data} volumes`);
+        toast.success(`Goal for ${year} set to ${parsed.data} books`);
         router.refresh();
         onClose();
       } catch (err) {
@@ -65,7 +65,7 @@ export function GoalModal({ year, currentTarget, isOpen, onClose }: GoalModalPro
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={`Reading goal for ${year}`} maxWidth="sm">
       <form onSubmit={handleSubmit} className="space-y-5">
-        <FormField label="Volumes to read" htmlFor="goalTarget" error={error} required>
+        <FormField label="Books to read" htmlFor="goalTarget" error={error} required>
           <Input
             id="goalTarget"
             type="number"

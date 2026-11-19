@@ -8,6 +8,7 @@ import {
   RecentSeriesListSkeleton,
 } from "@/components/ui/skeletons";
 import { StatsCard } from "@/components/ui/stats-card";
+import { isStandalone, volumeLabel } from "@/lib/format";
 import { goalProgress, readCount, recentlyRead } from "@/lib/reading-stats";
 import { getFormatCurrency } from "@/lib/currency";
 import { formatRelativeDate } from "@/utils/date";
@@ -49,7 +50,7 @@ async function DashboardStats() {
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
       <div>
         <StatsCard
-          title="Total Series"
+          title="Titles"
           value={stats.totalSeries}
           subtitle={`${stats.byStatus.reading} currently reading`}
           icon={Library}
@@ -58,7 +59,7 @@ async function DashboardStats() {
       </div>
       <div>
         <StatsCard
-          title="Volumes Owned"
+          title="Books Owned"
           value={stats.totalVolumesOwned}
           subtitle={`${stats.totalExpectedVolumes - stats.totalVolumesOwned} missing`}
           icon={BookOpen}
@@ -67,7 +68,7 @@ async function DashboardStats() {
       </div>
       <div>
         <StatsCard
-          title="Volumes Read"
+          title="Books Read"
           value={stats.totalVolumesRead}
           subtitle={`${stats.totalVolumesOwned - stats.totalVolumesRead} unread`}
           icon={BookMarked}
@@ -91,7 +92,7 @@ async function DashboardStats() {
         <StatsCard
           title="Total Spent"
           value={formatCurrency(stats.totalSpent)}
-          subtitle={`${formatCurrency(stats.averagePrice)} avg per volume`}
+          subtitle={`${formatCurrency(stats.averagePrice)} avg per book`}
           icon={Wallet}
           variant="warning"
         />
@@ -159,7 +160,7 @@ async function ProgressSection() {
           <div>
             <h2 className="text-lg font-semibold">Reading Progress</h2>
             <p className="text-sm text-foreground-muted">
-              Volumes read vs owned
+              Books read vs owned
             </p>
           </div>
         </div>
@@ -235,9 +236,9 @@ async function StatusAndRecentSection() {
       {/* Recent Series */}
       <div className="lg:col-span-2 glass rounded-2xl p-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold">Recent Series</h2>
+          <h2 className="text-lg font-semibold">Recently Updated</h2>
           <Link
-            href="/dashboard/series"
+            href="/dashboard/library"
             className="text-sm text-accent hover:text-accent-hover transition-colors"
           >
             View all
@@ -246,12 +247,12 @@ async function StatusAndRecentSection() {
         {topSeries.length === 0 ? (
           <div className="text-center py-8">
             <Library className="w-12 h-12 text-foreground-muted mx-auto mb-3" />
-            <p className="text-foreground-muted mb-4">No series added yet</p>
+            <p className="text-foreground-muted mb-4">Your library is empty</p>
             <Link
-              href="/dashboard/series"
+              href="/dashboard/library"
               className="inline-flex items-center gap-2 text-accent hover:text-accent-hover transition-colors"
             >
-              Add your first series
+              Add your first book or series
             </Link>
           </div>
         ) : (
@@ -260,11 +261,12 @@ async function StatusAndRecentSection() {
               const owned = series.volumes.filter((v) => v.owned).length;
               const total = series.totalVolumes || series.volumes.length;
               const progress = total > 0 ? (owned / total) * 100 : 0;
+              const standalone = isStandalone(series.totalVolumes, series.volumes.length);
 
               return (
                 <Link
                   key={series.id}
-                  href={`/dashboard/series/${series.id}`}
+                  href={`/dashboard/library/${series.id}`}
                   className="flex items-center gap-4 p-3 rounded-xl hover:bg-background-tertiary transition-colors"
                 >
                   {series.coverImage ? (
@@ -283,7 +285,11 @@ async function StatusAndRecentSection() {
                   <div className="flex-1 min-w-0">
                     <h3 className="font-medium truncate">{series.title}</h3>
                     <p className="text-sm text-foreground-muted">
-                      {owned} / {total} volumes
+                      {standalone
+                        ? owned > 0
+                          ? "Owned"
+                          : "Not owned"
+                        : `${owned} / ${total} volumes`}
                     </p>
                     <ProgressBar
                       value={progress}
@@ -318,12 +324,12 @@ async function RecentlyReadSection() {
         </Link>
       </div>
       <CoverList
-        emptyText="Volumes you mark as read will show up here."
+        emptyText="Books you mark as read will show up here."
         items={recentlyRead(volumes).map((v) => ({
           key: v.id,
-          href: `/dashboard/series/${v.seriesId}`,
-          title: v.series.title,
-          subtitle: `Vol ${v.volumeNumber} · ${formatRelativeDate(v.readDate, now)}`,
+          href: `/dashboard/library/${v.seriesId}`,
+          title: volumeLabel(v.series.title, v.volumeNumber, v.series.standalone),
+          subtitle: formatRelativeDate(v.readDate, now),
           coverImage: v.coverImage ?? v.series.coverImage,
         }))}
       />
@@ -338,7 +344,7 @@ export default function DashboardPage() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold">Dashboard</h1>
         <p className="text-foreground-muted mt-1">
-          Overview of your manga collection
+          Overview of your collection
         </p>
       </div>
 

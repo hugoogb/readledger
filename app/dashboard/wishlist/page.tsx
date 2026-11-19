@@ -2,6 +2,7 @@ import { getWishlistVolumes } from "@/actions/wishlist";
 import { wishlistStats } from "@/services/wishlist";
 import { Badge } from "@/components/ui/badge";
 import { getFormatCurrency } from "@/lib/currency";
+import { volumeLabel } from "@/lib/format";
 import { Heart, Package, Wallet } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -10,7 +11,7 @@ import { WishlistActions } from "@/components/wishlist/wishlist-actions";
 
 export const metadata: Metadata = {
   title: "Wishlist",
-  description: "Volumes you want to buy",
+  description: "Books you want to buy",
 };
 
 export default async function WishlistPage() {
@@ -26,7 +27,7 @@ export default async function WishlistPage() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-1">Wishlist</h1>
         <p className="text-foreground-muted">
-          Volumes you want to add to your collection
+          Books you want to add to your collection
         </p>
       </div>
 
@@ -38,7 +39,7 @@ export default async function WishlistPage() {
           </div>
           <div>
             <p className="text-2xl font-bold">{stats.count}</p>
-            <p className="text-sm text-foreground-muted">Wishlisted volumes</p>
+            <p className="text-sm text-foreground-muted">Wishlisted books</p>
           </div>
         </div>
         <div className="glass rounded-xl p-4 flex items-center gap-4">
@@ -47,7 +48,7 @@ export default async function WishlistPage() {
           </div>
           <div>
             <p className="text-2xl font-bold">{stats.seriesCount}</p>
-            <p className="text-sm text-foreground-muted">Series</p>
+            <p className="text-sm text-foreground-muted">Titles</p>
           </div>
         </div>
         <div className="glass rounded-xl p-4 flex items-center gap-4">
@@ -67,9 +68,9 @@ export default async function WishlistPage() {
       {groups.length === 0 ? (
         <div className="text-center py-16">
           <Heart className="w-16 h-16 text-foreground-muted/30 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold mb-2">No wishlisted volumes</h3>
+          <h3 className="text-xl font-semibold mb-2">No wishlisted books</h3>
           <p className="text-foreground-muted">
-            Click the heart icon on any volume to add it to your wishlist
+            Tap the heart on any book or volume to add it to your wishlist
           </p>
         </div>
       ) : (
@@ -81,7 +82,7 @@ export default async function WishlistPage() {
             >
               <div className="flex items-center gap-4 mb-4">
                 <Link
-                  href={`/dashboard/series/${group.series.id}`}
+                  href={`/dashboard/library/${group.series.id}`}
                   className="flex items-center gap-4 flex-1 min-w-0 hover:text-accent transition-colors"
                 >
                   {group.series.coverImage ? (
@@ -102,8 +103,9 @@ export default async function WishlistPage() {
                       {group.series.title}
                     </h3>
                     <p className="text-sm text-foreground-muted">
-                      {group.volumes.length} volume
-                      {group.volumes.length !== 1 ? "s" : ""} wishlisted
+                      {group.series.standalone
+                        ? "Wishlisted"
+                        : `${group.volumes.length} volume${group.volumes.length !== 1 ? "s" : ""} wishlisted`}
                     </p>
                   </div>
                 </Link>
@@ -116,7 +118,12 @@ export default async function WishlistPage() {
 
               <div className="flex flex-wrap gap-2">
                 {group.volumes.map((vol) => (
-                  <WishlistActions key={vol.id} volume={vol} />
+                  <WishlistActions
+                    key={vol.id}
+                    volume={vol}
+                    chipLabel={group.series.standalone ? "Remove" : `Vol. ${vol.volumeNumber}`}
+                    name={volumeLabel(group.series.title, vol.volumeNumber, group.series.standalone)}
+                  />
                 ))}
               </div>
             </div>

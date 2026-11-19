@@ -13,6 +13,8 @@ const baseSeries = {
   title: "Test",
   coverImage: null,
   retailPrice: 9.99,
+  totalVolumes: 10,
+  _count: { volumes: 10 },
 };
 
 const baseVolume = {
@@ -119,6 +121,27 @@ describe("getWishlistVolumes", () => {
     expect(result[0].volumes).toHaveLength(2);
     expect(result[1].series.id).toBe("s-2");
     expect(result[1].volumes).toHaveLength(1);
+  });
+
+  it("flags standalone books so they can be named by title alone", async () => {
+    prismaMock.volume.findMany.mockResolvedValue([
+      { ...baseVolume, wishlist: true },
+      {
+        id: "vol-9",
+        seriesId: "s-9",
+        volumeNumber: 1,
+        owned: false,
+        wishlist: true,
+        series: { ...baseSeries, id: "s-9", title: "Dune", totalVolumes: 1, _count: { volumes: 1 } },
+      },
+    ]);
+
+    const result = await getWishlistVolumes("user-1");
+
+    expect(result.map((g) => [g.series.title, g.series.standalone])).toEqual([
+      ["Test", false],
+      ["Dune", true],
+    ]);
   });
 
   it("returns empty array when no wishlist items exist", async () => {

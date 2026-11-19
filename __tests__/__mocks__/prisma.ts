@@ -5,6 +5,7 @@ export const prismaMock = {
     create: vi.fn(),
     findFirst: vi.fn(),
     findMany: vi.fn(),
+    groupBy: vi.fn(),
     update: vi.fn(),
     delete: vi.fn(),
   },
