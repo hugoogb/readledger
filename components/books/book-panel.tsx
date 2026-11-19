@@ -61,9 +61,12 @@ export function BookPanel({ volume, title, retailPrice, stores }: BookPanelProps
     });
   };
 
-  const handleOwned = () =>
+  // Handlers decide from the optimistic flags (what the button shows), not the
+  // server props, so a second tap before the first save lands still flips it.
+  const handleOwned = () => {
+    const wasOwned = flags.owned;
     run("owned", async () => {
-      if (volume.owned) {
+      if (wasOwned) {
         // Clears the purchase details but keeps "read": you can have read a
         // book you've since given away.
         unwrap(
@@ -89,10 +92,11 @@ export function BookPanel({ volume, title, retailPrice, stores }: BookPanelProps
       }
       router.refresh();
     });
+  };
 
-  const handleRead = () =>
+  const handleRead = () => {
+    const willBeRead = !flags.read;
     run("read", async () => {
-      const willBeRead = !volume.read;
       unwrap(await toggleVolumeRead(volume.id, todayInputValue()));
       toast.success(
         `${title} marked as ${willBeRead ? "read" : "unread"}`,
@@ -106,15 +110,17 @@ export function BookPanel({ volume, title, retailPrice, stores }: BookPanelProps
           : undefined,
       );
     });
+  };
 
-  const handleWishlist = () =>
+  const handleWishlist = () => {
+    const willBeWishlisted = !flags.wishlist;
     run("wishlist", async () => {
-      const willBeWishlisted = !volume.wishlist;
       unwrap(await toggleWishlist(volume.id));
       toast.success(
         willBeWishlisted ? `${title} added to wishlist` : `${title} removed from wishlist`,
       );
     });
+  };
 
   const saved =
     retailPrice != null && volume.pricePaid != null && retailPrice > volume.pricePaid
@@ -156,12 +162,19 @@ export function BookPanel({ volume, title, retailPrice, stores }: BookPanelProps
         />
       )}
 
-      <div className={`grid gap-3 ${flags.owned ? "grid-cols-2" : "grid-cols-[1fr_1fr_auto]"}`}>
+      {/* minmax(0,1fr) lets the toggles shrink below their label width on narrow phones. */}
+      <div
+        className={`grid gap-2 sm:gap-3 ${
+          flags.owned
+            ? "grid-cols-[minmax(0,1fr)_minmax(0,1fr)]"
+            : "grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]"
+        }`}
+      >
         <Button
           variant={flags.owned ? "default" : "secondary"}
           onClick={handleOwned}
           aria-pressed={flags.owned}
-          className="h-14 text-base"
+          className="h-14 min-w-0 gap-1.5 px-3 text-sm sm:text-base"
         >
           {flags.owned ? <Check /> : <Package />}
           {flags.owned ? "Owned" : "Not owned"}
@@ -170,7 +183,7 @@ export function BookPanel({ volume, title, retailPrice, stores }: BookPanelProps
           variant={flags.read ? "success" : "secondary"}
           onClick={handleRead}
           aria-pressed={flags.read}
-          className="h-14 text-base"
+          className="h-14 min-w-0 gap-1.5 px-3 text-sm sm:text-base"
         >
           {flags.read ? <Check /> : <BookMarked />}
           {flags.read ? "Read" : "Unread"}
