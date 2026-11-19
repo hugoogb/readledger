@@ -3,7 +3,8 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { parseImport } from "@/lib/import";
 import { mangaSeries, relatedSeries } from "@/lib/content/manga-series";
-import { guides } from "@/content/guides";
+import { guides, guidesFor } from "@/content/guides";
+import { SITE_URL } from "@/lib/site";
 import { TEMPLATE_PATH } from "@/content/guides/spreadsheet-template";
 import sitemap from "@/app/sitemap";
 
@@ -47,6 +48,25 @@ describe("guides", () => {
       expect(guide.description.length, guide.slug).toBeLessThanOrEqual(170);
     }
   });
+
+  it("keep every original manga guide slug, since they already rank", () => {
+    const slugs = guidesFor("manga").map((guide) => guide.slug);
+    expect(slugs).toEqual(
+      expect.arrayContaining([
+        "how-to-track-your-manga-collection",
+        "best-manga-collection-tracker-apps",
+        "manga-collection-spreadsheet-template",
+        "manga-spreadsheet-vs-notion-vs-app",
+        "how-much-does-a-manga-collection-cost",
+        "buying-used-manga-condition-guide",
+      ]),
+    );
+  });
+
+  it("split into general and manga guides with nothing left out", () => {
+    expect(guidesFor("books").length).toBeGreaterThanOrEqual(2);
+    expect(guidesFor("books").length + guidesFor("manga").length).toBe(guides.length);
+  });
 });
 
 describe("spreadsheet template", () => {
@@ -63,6 +83,7 @@ describe("sitemap", () => {
   it("lists every public page exactly once", () => {
     const urls = sitemap().map((entry) => entry.url);
     expect(new Set(urls).size).toBe(urls.length);
-    expect(urls).toHaveLength(3 + mangaSeries.length + guides.length);
+    expect(urls).toHaveLength(4 + mangaSeries.length + guides.length);
+    expect(urls).toContain(`${SITE_URL}/books`);
   });
 });
