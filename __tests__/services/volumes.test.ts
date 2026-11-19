@@ -55,7 +55,13 @@ function makeSeries(overrides = {}) {
 function makeVolumeWithSeries(volOverrides = {}, seriesOverrides = {}) {
   return {
     ...makeVolume(volOverrides),
-    series: { userId: "user-1", ...seriesOverrides },
+    series: {
+      userId: "user-1",
+      status: "READING",
+      totalVolumes: 10,
+      _count: { volumes: 10 },
+      ...seriesOverrides,
+    },
   };
 }
 
@@ -429,5 +435,130 @@ describe("bulkSetRead", () => {
 
     const call = prismaMock.volume.updateMany.mock.calls[0][0];
     expect(call.data.readDate).toBe(readDate);
+  });
+});
+
+// --- status sync for standalone books ---
+
+const book = (status: string) => ({ status, totalVolumes: 1, _count: { volumes: 1 } });
+
+describe("status sync for standalone books", () => {
+  it("completes a book when toggled to read", async () => {
+    prismaMock.volume.findFirst.mockResolvedValue(
+      makeVolumeWithSeries({ owned: true, read: false }, book("READING")),
+    );
+    prismaMock.volume.update.mockResolvedValue(makeVolume({ read: true }));
+
+    await toggleVolumeRead("user-1", "vol-1");
+
+    expect(prismaMock.series.update).toHaveBeenCalledWith({
+      where: { id: "series-1" },
+      data: { status: "COMPLETED" },
+    });
+    expect(prismaMock.$transaction).toHaveBeenCalled();
+  });
+
+  it("reopens a completed book when toggled to unread", async () => {
+    prismaMock.volume.findFirst.mockResolvedValue(
+      makeVolumeWithSeries({ owned: true, read: true }, book("COMPLETED")),
+    );
+    prismaMock.volume.update.mockResolvedValue(makeVolume({ read: false }));
+
+    await toggleVolumeRead("user-1", "vol-1");
+
+    expect(prismaMock.series.update).toHaveBeenCalledWith({
+      where: { id: "series-1" },
+      data: { status: "READING" },
+    });
+  });
+
+  it("keeps a dropped book's status when toggled to unread", async () => {
+    prismaMock.volume.findFirst.mockResolvedValue(
+      makeVolumeWithSeries({ owned: true, read: true }, book("DROPPED")),
+    );
+    prismaMock.volume.update.mockResolvedValue(makeVolume({ read: false }));
+
+    await toggleVolumeRead("user-1", "vol-1");
+
+    expect(prismaMock.series.update).not.toHaveBeenCalled();
+  });
+
+  it("leaves a series' status alone", async () => {
+    prismaMock.volume.findFirst.mockResolvedValue(
+      makeVolumeWithSeries(
+        { owned: true, read: false },
+        { status: "READING", totalVolumes: 10, _count: { volumes: 10 } },
+      ),
+    );
+    prismaMock.volume.update.mockResolvedValue(makeVolume({ read: true }));
+
+    await toggleVolumeRead("user-1", "vol-1");
+
+    expect(prismaMock.series.update).not.toHaveBeenCalled();
+  });
+
+  it("treats one total volume with several rows as a series", async () => {
+    prismaMock.volume.findFirst.mockResolvedValue(
+      makeVolumeWithSeries(
+        { owned: true, read: false },
+        { status: "READING", totalVolumes: 1, _count: { volumes: 2 } },
+      ),
+    );
+    prismaMock.volume.update.mockResolvedValue(makeVolume({ read: true }));
+
+    await toggleVolumeRead("user-1", "vol-1");
+
+    expect(prismaMock.series.update).not.toHaveBeenCalled();
+  });
+
+  it("completes a book marked read from the details form", async () => {
+    prismaMock.volume.findFirst.mockResolvedValue(
+      makeVolumeWithSeries({ owned: true, read: false }, book("PLAN_TO_READ")),
+    );
+    prismaMock.volume.update.mockResolvedValue(makeVolume({ read: true }));
+
+    await updateVolume("user-1", "vol-1", { read: true });
+
+    expect(prismaMock.series.update).toHaveBeenCalledWith({
+      where: { id: "series-1" },
+      data: { status: "COMPLETED" },
+    });
+  });
+
+  it("does not touch status when the read flag is unchanged", async () => {
+    prismaMock.volume.findFirst.mockResolvedValue(
+      makeVolumeWithSeries({ owned: true, read: true }, book("READING")),
+    );
+    prismaMock.volume.update.mockResolvedValue(makeVolume());
+
+    await updateVolume("user-1", "vol-1", { read: true, pricePaid: 5 });
+    await updateVolume("user-1", "vol-1", { pricePaid: 5 });
+
+    expect(prismaMock.series.update).not.toHaveBeenCalled();
+  });
+
+  it("completes standalone books in a bulk read", async () => {
+    prismaMock.volume.findMany.mockResolvedValue([
+      makeVolumeWithSeries({ id: "vol-1", owned: true, read: false }, book("READING")),
+    ]);
+    prismaMock.volume.updateMany.mockResolvedValue({ count: 1 });
+
+    await bulkSetRead("user-1", ["vol-1"]);
+
+    expect(prismaMock.series.update).toHaveBeenCalledWith({
+      where: { id: "series-1" },
+      data: { status: "COMPLETED" },
+    });
+  });
+
+  it("skips standalone books a bulk read doesn't change", async () => {
+    prismaMock.volume.findMany.mockResolvedValue([
+      makeVolumeWithSeries({ id: "vol-1", owned: false, read: false }, book("READING")),
+    ]);
+    prismaMock.volume.updateMany.mockResolvedValue({ count: 0 });
+
+    await bulkSetRead("user-1", ["vol-1"]);
+
+    expect(prismaMock.series.update).not.toHaveBeenCalled();
   });
 });
