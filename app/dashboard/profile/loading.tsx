@@ -9,9 +9,9 @@ export default function ProfileLoading() {
       </div>
 
       <div className="max-w-2xl space-y-6">
-        <Skeleton className="h-56 rounded-2xl" />
-        <Skeleton className="h-36 rounded-2xl" />
-        <Skeleton className="h-28 rounded-2xl" />
+        <Skeleton className="h-56 rounded-lg" />
+        <Skeleton className="h-36 rounded-lg" />
+        <Skeleton className="h-28 rounded-lg" />
       </div>
     </div>
   );

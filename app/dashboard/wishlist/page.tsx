@@ -3,8 +3,8 @@ import { wishlistStats } from "@/services/wishlist";
 import { Badge } from "@/components/ui/badge";
 import { getFormatCurrency } from "@/lib/currency";
 import { volumeLabel } from "@/lib/format";
-import { Heart, Package, Wallet } from "lucide-react";
-import Image from "next/image";
+import { CoverImage } from "@/components/books/cover-image";
+import { Ledger, LedgerRow, LedgerTotal } from "@/components/ui/ledger";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { WishlistActions } from "@/components/wishlist/wishlist-actions";
@@ -22,84 +22,43 @@ export default async function WishlistPage() {
   const stats = wishlistStats(groups);
 
   return (
-    <div className="p-4 lg:p-8">
+    <div className="mx-auto max-w-[1200px] p-4 lg:p-8">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-1">Wishlist</h1>
+        <h1 className="font-serif text-3xl font-medium mb-1">Wishlist</h1>
         <p className="text-foreground-muted">
           Books you want to add to your collection
         </p>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-        <div className="glass rounded-xl p-4 flex items-center gap-4">
-          <div className="w-10 h-10 rounded-lg bg-error/10 flex items-center justify-center">
-            <Heart className="w-5 h-5 text-error" />
-          </div>
-          <div>
-            <p className="text-2xl font-bold">{stats.count}</p>
-            <p className="text-sm text-foreground-muted">Wishlisted books</p>
-          </div>
-        </div>
-        <div className="glass rounded-xl p-4 flex items-center gap-4">
-          <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center">
-            <Package className="w-5 h-5 text-accent" />
-          </div>
-          <div>
-            <p className="text-2xl font-bold">{stats.seriesCount}</p>
-            <p className="text-sm text-foreground-muted">Titles</p>
-          </div>
-        </div>
-        <div className="glass rounded-xl p-4 flex items-center gap-4">
-          <div className="w-10 h-10 rounded-lg bg-warning/10 flex items-center justify-center">
-            <Wallet className="w-5 h-5 text-warning" />
-          </div>
-          <div>
-            <p className="text-2xl font-bold">
-              {formatCurrency(stats.estimatedCost)}
-            </p>
-            <p className="text-sm text-foreground-muted">Estimated cost</p>
-          </div>
-        </div>
-      </div>
+      <Ledger className="mb-10 max-w-[40rem]">
+        <LedgerRow label="Wishlisted books" value={stats.count} />
+        <LedgerRow label="Titles" value={stats.seriesCount} />
+        <LedgerTotal label="Estimated cost" value={formatCurrency(stats.estimatedCost)} />
+      </Ledger>
 
       {/* Wishlist Groups */}
       {groups.length === 0 ? (
-        <div className="text-center py-16">
-          <Heart className="w-16 h-16 text-foreground-muted/30 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold mb-2">No wishlisted books</h3>
-          <p className="text-foreground-muted">
+        <div className="border-t-2 border-foreground py-8">
+          <h3 className="font-serif text-2xl font-medium">No wishlisted books</h3>
+          <p className="mt-1 text-foreground-muted">
             Tap the heart on any book or volume to add it to your wishlist
           </p>
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="border-t border-border">
           {groups.map((group) => (
-            <div
-              key={group.series.id}
-              className="glass rounded-2xl p-6"
-            >
+            <div key={group.series.id} className="border-b border-border py-5">
               <div className="flex items-center gap-4 mb-4">
                 <Link
                   href={`/dashboard/library/${group.series.id}`}
                   className="flex items-center gap-4 flex-1 min-w-0 hover:text-accent transition-colors"
                 >
-                  {group.series.coverImage ? (
-                    <Image
-                      width={40}
-                      height={56}
-                      src={group.series.coverImage}
-                      alt={group.series.title}
-                      className="w-10 h-14 rounded-lg object-cover shrink-0"
-                    />
-                  ) : (
-                    <div className="w-10 h-14 rounded-lg bg-background-tertiary flex items-center justify-center shrink-0">
-                      <Package className="w-4 h-4 text-foreground-muted/30" />
-                    </div>
-                  )}
+                  <div className="w-12 shrink-0">
+                    <CoverImage src={group.series.coverImage} title={group.series.title} sizes="48px" />
+                  </div>
                   <div className="min-w-0">
-                    <h3 className="font-semibold truncate">
+                    <h3 className="font-serif text-lg font-medium leading-snug truncate">
                       {group.series.title}
                     </h3>
                     <p className="text-sm text-foreground-muted">

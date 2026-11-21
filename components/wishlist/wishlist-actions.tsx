@@ -60,7 +60,7 @@ export function WishlistActions({ volume, chipLabel, name }: WishlistActionsProp
       onClick={handleRemove}
       disabled={isPending}
       aria-label={`Remove ${name} from wishlist`}
-      className={`group relative flex min-h-11 items-center gap-2 px-3 py-2 rounded-lg bg-background-tertiary/50 border border-border hover:border-error/50 hover:bg-error/5 transition-all duration-200 cursor-pointer disabled:cursor-default ${
+      className={`group relative flex min-h-11 items-center gap-2 px-3 py-2 rounded-lg bg-background-secondary border border-border hover:border-error/50 hover:bg-error/5 transition-all duration-200 cursor-pointer disabled:cursor-default ${
         removing ? "opacity-0 scale-90 pointer-events-none" : "opacity-100"
       }`}
     >
@@ -69,7 +69,7 @@ export function WishlistActions({ volume, chipLabel, name }: WishlistActionsProp
       ) : (
         <Heart className="w-3.5 h-3.5 text-error fill-error group-hover:scale-110 transition-transform" />
       )}
-      <span className="text-sm font-semibold">{chipLabel}</span>
+      <span className="text-sm font-medium">{chipLabel}</span>
     </button>
   );
 }

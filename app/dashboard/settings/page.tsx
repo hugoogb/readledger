@@ -12,7 +12,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { requireUser } from "@/lib/auth";
-import { Building2, Store, UserRound } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
+import Link from "next/link";
 
 export default async function SettingsPage() {
   const [user, publishers, stores] = await Promise.all([
@@ -23,8 +24,15 @@ export default async function SettingsPage() {
 
   return (
     <div className="p-4 lg:p-8">
+      <Link
+        href="/dashboard/profile"
+        className="mb-3 inline-flex items-center gap-2 py-2 text-sm text-foreground-muted transition-colors hover:text-foreground"
+      >
+        <ArrowLeft className="size-4" aria-hidden="true" />
+        Profile
+      </Link>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold">Settings</h1>
+        <h1 className="font-serif text-3xl font-medium">Settings</h1>
         <p className="text-foreground-muted mt-1">
           Manage your account, publishers and stores
         </p>
@@ -33,10 +41,7 @@ export default async function SettingsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-4xl">
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <UserRound className="w-5 h-5" />
-              Account
-            </CardTitle>
+            <CardTitle>Account</CardTitle>
             <CardDescription>Your name and how prices are shown</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -47,10 +52,7 @@ export default async function SettingsPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Building2 className="w-5 h-5" />
-              Publishers
-            </CardTitle>
+            <CardTitle>Publishers</CardTitle>
             <CardDescription>
               Manage publishers for your books
             </CardDescription>
@@ -62,10 +64,7 @@ export default async function SettingsPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Store className="w-5 h-5" />
-              Stores
-            </CardTitle>
+            <CardTitle>Stores</CardTitle>
             <CardDescription>
               Manage stores where you buy volumes
             </CardDescription>

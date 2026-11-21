@@ -104,7 +104,7 @@ export function PublisherList({ publishers }: PublisherListProps) {
       {publishers.map((pub) => (
         <div
           key={pub.id}
-          className="flex items-center gap-2 p-3 rounded-xl bg-background-tertiary border border-border/50"
+          className="flex items-center gap-2 p-3 rounded-md bg-background-tertiary border border-border/50"
         >
           {editingId === pub.id ? (
             <>
