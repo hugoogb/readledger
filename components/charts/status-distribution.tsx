@@ -12,23 +12,23 @@ type StatusDistributionProps = {
 const STATUS_CONFIG = {
   READING: {
     label: "Reading",
-    color: "var(--color-accent)",
+    color: "var(--color-chart-1)",
   },
   COMPLETED: {
     label: "Completed",
-    color: "var(--color-success)",
+    color: "var(--color-chart-2)",
   },
   ON_HOLD: {
     label: "On Hold",
-    color: "var(--color-warning)",
+    color: "var(--color-chart-4)",
   },
   DROPPED: {
     label: "Dropped",
-    color: "var(--color-error)",
+    color: "var(--color-chart-3)",
   },
   PLAN_TO_READ: {
     label: "Plan to Read",
-    color: "var(--color-foreground-muted)",
+    color: "var(--color-chart-6)",
   },
 } as const;
 
@@ -52,7 +52,7 @@ function StatusTooltip({ active, payload }: BaseTooltipProps) {
       style={{
         backgroundColor: "var(--color-background-secondary)",
         border: "1px solid var(--color-border)",
-        borderRadius: "0.75rem",
+        borderRadius: "8px",
         color: "var(--color-foreground)",
         padding: "0.5rem 0.75rem",
       }}
@@ -63,7 +63,7 @@ function StatusTooltip({ active, payload }: BaseTooltipProps) {
       <p style={{ fontSize: 13 }}>
         {count} title{count !== 1 ? "s" : ""}
         {_total && _total > 0 && (
-          <span style={{ color: "var(--color-foreground-muted)" }}>
+          <span style={{ color: "var(--color-chart-6)" }}>
             {" "}
             ({Math.round((count / _total) * 100)}%)
           </span>
@@ -100,7 +100,7 @@ export function StatusDistribution({ data }: StatusDistributionProps) {
               return (
                 <Sector
                   {...props}
-                  fill={STATUS_CONFIG[status]?.color ?? "var(--color-accent)"}
+                  fill={STATUS_CONFIG[status]?.color ?? "var(--color-chart-1)"}
                 />
               );
             }}
@@ -118,7 +118,7 @@ export function StatusDistribution({ data }: StatusDistributionProps) {
               <div
                 className="w-3 h-3 rounded-full"
                 style={{
-                  backgroundColor: config?.color ?? "var(--color-accent)",
+                  backgroundColor: config?.color ?? "var(--color-chart-1)",
                 }}
               />
               <span className="text-foreground-muted">

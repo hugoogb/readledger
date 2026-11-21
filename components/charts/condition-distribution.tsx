@@ -12,7 +12,7 @@ type ConditionDistributionProps = {
 const CONDITION_CONFIG = {
   NEW: {
     label: "New",
-    color: "var(--color-accent)",
+    color: "var(--color-chart-1)",
   },
   LIKE_NEW: {
     label: "Like New",
@@ -56,7 +56,7 @@ function ConditionTooltip({ active, payload }: BaseTooltipProps) {
       style={{
         backgroundColor: "var(--color-background-secondary)",
         border: "1px solid var(--color-border)",
-        borderRadius: "0.75rem",
+        borderRadius: "8px",
         color: "var(--color-foreground)",
         padding: "0.5rem 0.75rem",
       }}
@@ -104,7 +104,7 @@ export function ConditionDistribution({ data }: ConditionDistributionProps) {
               return (
                 <Sector
                   {...props}
-                  fill={CONDITION_CONFIG[condition]?.color ?? "var(--color-accent)"}
+                  fill={CONDITION_CONFIG[condition]?.color ?? "var(--color-chart-1)"}
                 />
               );
             }}
@@ -122,7 +122,7 @@ export function ConditionDistribution({ data }: ConditionDistributionProps) {
               <div
                 className="w-3 h-3 rounded-full"
                 style={{
-                  backgroundColor: config?.color ?? "var(--color-accent)",
+                  backgroundColor: config?.color ?? "var(--color-chart-1)",
                 }}
               />
               <span className="text-foreground-muted">

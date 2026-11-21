@@ -30,15 +30,15 @@ export function SpendingOverTime({ data }: SpendingOverTimeProps) {
       <AreaChart data={data}>
         <defs>
           <linearGradient id="spendingGradient" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor="var(--color-accent)" stopOpacity={0.3} />
-            <stop offset="95%" stopColor="var(--color-accent)" stopOpacity={0} />
+            <stop offset="5%" stopColor="var(--color-chart-1)" stopOpacity={0.2} />
+            <stop offset="95%" stopColor="var(--color-chart-1)" stopOpacity={0} />
           </linearGradient>
           <linearGradient id="cumulativeGradient" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor="var(--color-success)" stopOpacity={0.15} />
-            <stop offset="95%" stopColor="var(--color-success)" stopOpacity={0} />
+            <stop offset="5%" stopColor="var(--color-chart-2)" stopOpacity={0.15} />
+            <stop offset="95%" stopColor="var(--color-chart-2)" stopOpacity={0} />
           </linearGradient>
         </defs>
-        <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+        <CartesianGrid strokeDasharray="2 4" stroke="var(--color-border)" />
         <XAxis
           dataKey="month"
           tick={{ fill: "var(--color-foreground-muted)", fontSize: 12 }}
@@ -54,8 +54,9 @@ export function SpendingOverTime({ data }: SpendingOverTimeProps) {
           contentStyle={{
             backgroundColor: "var(--color-background-secondary)",
             border: "1px solid var(--color-border)",
-            borderRadius: "0.75rem",
+            borderRadius: "8px",
             color: "var(--color-foreground)",
+            boxShadow: "none",
           }}
           labelFormatter={(label) => formatChartMonth(String(label))}
           formatter={(value, name) => [
@@ -69,7 +70,7 @@ export function SpendingOverTime({ data }: SpendingOverTimeProps) {
         <Area
           type="monotone"
           dataKey="amount"
-          stroke="var(--color-accent)"
+          stroke="var(--color-chart-1)"
           fill="url(#spendingGradient)"
           strokeWidth={2}
           name="Monthly"
@@ -77,7 +78,7 @@ export function SpendingOverTime({ data }: SpendingOverTimeProps) {
         <Area
           type="monotone"
           dataKey="cumulative"
-          stroke="var(--color-success)"
+          stroke="var(--color-chart-2)"
           fill="url(#cumulativeGradient)"
           strokeWidth={2}
           strokeDasharray="5 5"

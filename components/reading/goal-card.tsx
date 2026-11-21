@@ -50,10 +50,9 @@ export function GoalCard({ year, readCount, progress }: GoalCardProps) {
   const pace = progress ? paceText(progress) : null;
 
   return (
-    <section className="glass rounded-2xl p-4 sm:p-6">
+    <section className="rounded-lg border border-border bg-background-secondary p-4 sm:p-6">
       <div className="flex items-center justify-between gap-3 mb-4">
-        <h2 className="text-lg font-semibold flex items-center gap-2">
-          <Target className="w-5 h-5 text-success" />
+        <h2 className="font-serif text-xl font-medium">
           {year} goal
         </h2>
         {progress && (
@@ -68,12 +67,12 @@ export function GoalCard({ year, readCount, progress }: GoalCardProps) {
         <div className="flex items-center gap-5">
           <div className="relative">
             <ProgressRing value={progress.read / progress.target} />
-            <span className="absolute inset-0 flex items-center justify-center text-sm font-bold">
+            <span className="absolute inset-0 flex items-center justify-center figure text-sm">
               {Math.round((progress.read / progress.target) * 100)}%
             </span>
           </div>
           <div className="min-w-0">
-            <p className="text-3xl font-bold">
+            <p className="font-serif text-3xl font-medium">
               {progress.read}
               <span className="text-lg text-foreground-muted font-medium"> / {progress.target}</span>
             </p>

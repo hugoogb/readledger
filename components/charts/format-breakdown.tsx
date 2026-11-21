@@ -19,7 +19,7 @@ function FormatTooltip({ active, payload, label }: BaseTooltipProps) {
       style={{
         backgroundColor: "var(--color-background-secondary)",
         border: "1px solid var(--color-border)",
-        borderRadius: "0.75rem",
+        borderRadius: "8px",
         color: "var(--color-foreground)",
         padding: "0.5rem 0.75rem",
       }}
@@ -41,7 +41,7 @@ export function FormatBreakdown({ data }: FormatBreakdownProps) {
   return (
     <ResponsiveContainer width="100%" height={Math.max(160, data.length * 48)}>
       <BarChart data={data} layout="vertical">
-        <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+        <CartesianGrid strokeDasharray="2 4" stroke="var(--color-border)" />
         <XAxis
           type="number"
           tick={{ fill: "var(--color-foreground-muted)", fontSize: 12 }}
@@ -56,7 +56,7 @@ export function FormatBreakdown({ data }: FormatBreakdownProps) {
           tickLine={false}
         />
         <Tooltip content={<FormatTooltip />} />
-        <Bar dataKey="count" fill="var(--color-accent)" radius={[0, 4, 4, 0]} name="Books" />
+        <Bar dataKey="count" fill="var(--color-chart-1)" radius={[0, 4, 4, 0]} name="Books" />
       </BarChart>
     </ResponsiveContainer>
   );

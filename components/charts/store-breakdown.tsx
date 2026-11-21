@@ -35,7 +35,7 @@ function StoreTooltip({ active, payload, label }: BaseTooltipProps) {
       style={{
         backgroundColor: "var(--color-background-secondary)",
         border: "1px solid var(--color-border)",
-        borderRadius: "0.75rem",
+        borderRadius: "8px",
         color: "var(--color-foreground)",
         padding: "0.5rem 0.75rem",
       }}
@@ -61,7 +61,7 @@ export function StoreBreakdown({ data }: StoreBreakdownProps) {
   return (
     <ResponsiveContainer width="100%" height={300}>
       <BarChart data={data.slice(0, 10)} layout="vertical">
-        <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+        <CartesianGrid strokeDasharray="2 4" stroke="var(--color-border)" />
         <XAxis
           type="number"
           tick={{ fill: "var(--color-foreground-muted)", fontSize: 12 }}
@@ -78,7 +78,7 @@ export function StoreBreakdown({ data }: StoreBreakdownProps) {
         <Tooltip content={<StoreTooltip />} />
         <Bar
           dataKey="count"
-          fill="var(--color-success)"
+          fill="var(--color-chart-1)"
           radius={[0, 4, 4, 0]}
           name="Books"
         />

@@ -3,7 +3,7 @@ import { BacklogTrend } from "@/components/charts/backlog-trend";
 import { ReadsPerPeriod } from "@/components/charts/reads-per-period";
 import { CoverList } from "@/components/reading/cover-list";
 import { GoalCard } from "@/components/reading/goal-card";
-import { StatsCard } from "@/components/ui/stats-card";
+import { Ledger, LedgerRow } from "@/components/ui/ledger";
 import {
   availableYears,
   averageBuyToRead,
@@ -22,7 +22,7 @@ import {
 } from "@/lib/reading-stats";
 import { volumeLabel } from "@/lib/format";
 import { formatRelativeDate } from "@/utils/date";
-import { BookMarked, CalendarRange, Flame, Hourglass, Target } from "lucide-react";
+import { Check, Target } from "lucide-react";
 import { ChartCard } from "./chart-card";
 import { ChipNav } from "./chip-nav";
 import { UndatedNote } from "./undated-note";
@@ -96,40 +96,20 @@ export async function ReadingTab({ yearParam }: { yearParam?: string }) {
         />
       )}
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
-        <StatsCard
-          compact
-          title={isAll ? "Total read" : `Read in ${period}`}
+      <Ledger className="max-w-[40rem]">
+        <LedgerRow
+          label={isAll ? "Total read" : `Read in ${period}`}
+          note={comparisonText ? `· ${comparisonText}` : undefined}
           value={total}
-          subtitle={comparisonText}
-          icon={BookMarked}
-          variant="success"
         />
-        <StatsCard
-          compact
-          title={isAll ? "Best year" : "Best month"}
+        <LedgerRow
+          label={isAll ? "Best year" : "Best month"}
+          note={best ? `· ${plural(best.count, "book")}` : undefined}
           value={best ? (isAll ? best.label : monthName(best.label)) : "—"}
-          subtitle={best ? plural(best.count, "book") : undefined}
-          icon={CalendarRange}
-          variant="accent"
         />
-        <StatsCard
-          compact
-          title="Buy → read"
-          value={avgLag === null ? "—" : plural(avgLag, "day")}
-          subtitle="average wait"
-          icon={Hourglass}
-          variant="warning"
-        />
-        <StatsCard
-          compact
-          title="Streak"
-          value={plural(streak, "week")}
-          subtitle="in a row"
-          icon={Flame}
-          variant="default"
-        />
-      </div>
+        <LedgerRow label="Buy to read" note="· average wait" value={avgLag === null ? "—" : plural(avgLag, "day")} />
+        <LedgerRow label="Streak" note="· weeks in a row" value={plural(streak, "week")} />
+      </Ledger>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <ChartCard title="Books Read">
@@ -191,9 +171,9 @@ function GoalHistory({
                 <Target className={`w-4 h-4 ${reached ? "text-success" : "text-foreground-muted"}`} />
                 {g.year}
               </span>
-              <span className={`tabular-nums font-semibold ${reached ? "text-success" : ""}`}>
+              <span className={`figure ${reached ? "text-success" : ""}`}>
                 {read} / {g.target}
-                {reached && " ✓"}
+                {reached && <Check className="ml-1 inline size-4 align-[-2px]" aria-label="Goal reached" />}
               </span>
             </li>
           );
