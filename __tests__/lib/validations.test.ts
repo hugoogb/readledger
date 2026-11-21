@@ -154,6 +154,19 @@ describe("seriesSchema", () => {
     expect(seriesSchema.safeParse({ ...validSeries, coverImage }).success).toBe(false);
   });
 
+  it("accepts a Google Books thumbnail URL", () => {
+    const coverImage = "https://books.google.com/books/content?id=abc_-1&printsec=frontcover&img=1&zoom=1&source=gbs_api";
+    expect(seriesSchema.safeParse({ ...validSeries, coverImage }).success).toBe(true);
+  });
+
+  it.each([
+    "http://books.google.com/books/content?id=abc&img=1",
+    "https://books.google.com.evil.com/books/content?id=abc",
+    "https://books.google.com/books?id=abc",
+  ])("rejects other Google Books URLs: %s", (coverImage) => {
+    expect(seriesSchema.safeParse({ ...validSeries, coverImage }).success).toBe(false);
+  });
+
   it("rejects a non-uuid publisherId", () => {
     const result = seriesSchema.safeParse({ ...validSeries, publisherId: "pub-1" });
     expect(result.success).toBe(false);
@@ -372,6 +385,15 @@ describe("seriesSchema openLibraryKey", () => {
 });
 
 describe("seriesVolumesSchema isbn", () => {
+  it("keeps an owned flag", () => {
+    expect(seriesVolumesSchema.parse([{ volumeNumber: 1, owned: true }])[0].owned).toBe(true);
+  });
+
+  it("stores ISBNs as bare ISBN-13", () => {
+    const parsed = seriesVolumesSchema.parse([{ volumeNumber: 1, isbn: "84-9759-220-4" }]);
+    expect(parsed[0].isbn).toBe("9788497592208");
+  });
+
   it("accepts an ISBN and caps its length", () => {
     expect(seriesVolumesSchema.safeParse([{ volumeNumber: 1, isbn: "9780441013593" }]).success).toBe(true);
     expect(seriesVolumesSchema.safeParse([{ volumeNumber: 1, isbn: "9".repeat(33) }]).success).toBe(false);

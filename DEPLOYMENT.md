@@ -61,6 +61,7 @@ development.
 | `AUTH_SECRET` | HMAC key for login codes, at least 32 characters (`openssl rand -base64 48`) |
 | `BREVO_API_KEY` | Brevo transactional email API key for login codes |
 | `EMAIL_FROM` / `EMAIL_FROM_NAME` | Sender, e.g. `hello@readledger.app` / `ReadLedger` |
+| `GOOGLE_BOOKS_API_KEY` | Optional. Google Books API key for ISBNs Open Library doesn't know; without it that fallback is skipped |
 
 There are no `NEXT_PUBLIC_` variables: nothing is exposed to the browser.
 

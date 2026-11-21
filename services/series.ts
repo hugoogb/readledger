@@ -5,6 +5,7 @@ import type { SeriesSchema } from "@/lib/validations";
 import { comparableSavings } from "@/lib/savings";
 import { blankToNull } from "@/lib/normalize";
 import { assertOwnedPublisher } from "@/services/ownership";
+import { startOfUtcDay } from "@/utils/date";
 
 export type CreateSeriesInput = SeriesSchema;
 export type UpdateSeriesInput = Partial<SeriesSchema>;
@@ -14,6 +15,8 @@ export type VolumeInput = {
   title?: string;
   coverImage?: string | null;
   isbn?: string | null;
+  /** Created already owned (bought today), e.g. the volume that was just scanned. */
+  owned?: boolean;
 };
 
 export type SortOption = "updated" | "title_asc" | "title_desc" | "created" | "completion" | "spent";
@@ -68,7 +71,8 @@ export async function createSeriesWithVolumes(
           title: v.title,
           coverImage: v.coverImage || null,
           isbn: v.isbn || null,
-          owned: false,
+          owned: v.owned ?? false,
+          purchaseDate: v.owned ? startOfUtcDay() : null,
           read: false,
         })),
       },

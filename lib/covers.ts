@@ -8,6 +8,11 @@ export const MANGADEX_COVER_URL = /^https:\/\/uploads\.mangadex\.org\/covers\//;
 // per IP, and next/image fetches every cover from our one server IP.
 export const OPENLIBRARY_COVER_URL = /^https:\/\/covers\.openlibrary\.org\/b\/id\/\d+-[SML]\.jpg$/;
 
+// Google Books thumbnails (ISBN fallback, see lib/googlebooks-api.ts).
+export const GOOGLE_BOOKS_COVER_URL = /^https:\/\/books\.google\.com\/books\/content\?/;
+
 export function isAllowedCoverUrl(url: string): boolean {
-  return MANGADEX_COVER_URL.test(url) || OPENLIBRARY_COVER_URL.test(url);
+  return (
+    MANGADEX_COVER_URL.test(url) || OPENLIBRARY_COVER_URL.test(url) || GOOGLE_BOOKS_COVER_URL.test(url)
+  );
 }

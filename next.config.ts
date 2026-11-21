@@ -21,6 +21,12 @@ const nextConfig: NextConfig = {
         hostname: "covers.openlibrary.org",
         pathname: "/b/id/**",
       },
+      // Google Books thumbnails, for ISBNs Open Library doesn't know.
+      {
+        protocol: "https",
+        hostname: "books.google.com",
+        pathname: "/books/content",
+      },
     ],
     // MangaDex cover URLs are content-addressed (a new cover gets a new file
     // name) and Open Library cover IDs are immutable, so optimized covers can

@@ -19,6 +19,7 @@ import {
 } from "@/lib/manga-api";
 import type { BookSearchResult } from "@/lib/openlibrary-api";
 import { getSeriesFormDefaults } from "@/lib/form-defaults";
+import { withScannedVolume } from "@/lib/scanned-volume";
 import { Format } from "@/lib/generated/prisma/enums";
 import { seriesSchema, type SeriesSchema } from "@/lib/validations";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -29,6 +30,7 @@ import { useRef, useState } from "react";
 import { FormProvider, useForm, type SubmitHandler } from "react-hook-form";
 import { toast } from "sonner";
 import { LibrarySearch } from "./library-search";
+import type { NewSeriesMatch } from "./volume-match-card";
 import { SeriesFormFields } from "./series-form-fields";
 import { unwrap } from "@/lib/unwrap";
 
@@ -55,6 +57,8 @@ export function AddSeriesModal({ publishers = [], booksFirst = true }: AddSeries
   const [kind, setKind] = useState<Kind>("series");
   // ISBN from an Open Library ISBN lookup, stored on volume 1.
   const [bookIsbn, setBookIsbn] = useState<string | null>(null);
+  // A scanned volume of a new series: created owned, with its ISBN.
+  const [pendingVolume, setPendingVolume] = useState<{ volumeNumber: number; isbn: string } | null>(null);
   // Ignores a late description for a book the user has already left.
   const selection = useRef(0);
   const [volumeData, setVolumeData] = useState<VolumeData[]>([]);
@@ -83,6 +87,7 @@ export function AddSeriesModal({ publishers = [], booksFirst = true }: AddSeries
       setSource("mangadex");
       setKind("series");
       setBookIsbn(null);
+      setPendingVolume(null);
       selection.current++;
       setVolumeData([]);
       setIsFetchingVolumes(false);
@@ -90,7 +95,10 @@ export function AddSeriesModal({ publishers = [], booksFirst = true }: AddSeries
     }
   };
 
-  const handleSearchSelect = async (data: FormattedMangaData) => {
+  const handleSearchSelect = async (
+    data: FormattedMangaData,
+    scanned?: { volumeNumber: number; isbn: string; useMangadexCovers: boolean },
+  ) => {
     // Check for duplicate
     if (data.mangadexId) {
       const isDuplicate = await checkDuplicateSeries(data.mangadexId);
@@ -106,6 +114,7 @@ export function AddSeriesModal({ publishers = [], booksFirst = true }: AddSeries
     setSource("mangadex");
     setKind("series");
     setBookIsbn(null);
+    setPendingVolume(scanned ? { volumeNumber: scanned.volumeNumber, isbn: scanned.isbn } : null);
     setValue("format", Format.MANGA);
     setValue("title", data.title);
     setValue("author", data.author);
@@ -118,7 +127,13 @@ export function AddSeriesModal({ publishers = [], booksFirst = true }: AddSeries
     // Show loading state while fetching volumes
     setStep("form");
 
-    if (data.totalVolumes && data.totalVolumes > 0) {
+    // An edition numbered differently from MangaDex (kanzenban, 3-in-1...)
+    // gets plain volume entries: MangaDex's covers would show other books.
+    if (data.totalVolumes && data.totalVolumes > 0 && scanned && !scanned.useMangadexCovers) {
+      setVolumeData(
+        generateVolumeEntries(data.totalVolumes).map((v) => ({ ...v, coverImage: null, isbn: null })),
+      );
+    } else if (data.totalVolumes && data.totalVolumes > 0) {
       setIsFetchingVolumes(true);
       setFetchTotal(data.totalVolumes);
       try {
@@ -143,11 +158,19 @@ export function AddSeriesModal({ publishers = [], booksFirst = true }: AddSeries
     }
   };
 
+  const startNewSeriesFromScan = (match: NewSeriesMatch, volumeNumber: number) =>
+    handleSearchSelect(
+      { ...match.manga, totalVolumes: match.totalVolumes ?? match.manga.totalVolumes },
+      { volumeNumber, isbn: match.isbn, useMangadexCovers: match.useMangadexCovers },
+    );
+
   const handleBookSelect = async (book: BookSearchResult) => {
-    const [existing] = await getExistingOpenLibraryKeys([book.key]);
-    if (existing) {
-      toast.warning(`"${book.title}" is already in your library`);
-      return;
+    if (book.source === "openlibrary") {
+      const [existing] = await getExistingOpenLibraryKeys([book.key]);
+      if (existing) {
+        toast.warning(`"${book.title}" is already in your library`);
+        return;
+      }
     }
 
     // Books are added as a single book; the user can switch to Series.
@@ -157,15 +180,19 @@ export function AddSeriesModal({ publishers = [], booksFirst = true }: AddSeries
       title: book.title,
       author: book.authors.join(", "),
       coverImage: book.coverImage,
-      openLibraryKey: book.key,
+      openLibraryKey: book.source === "openlibrary" ? book.key : undefined,
       totalVolumes: 1,
       publishing: false,
     });
     setSource("openlibrary");
     setKind("single");
     setBookIsbn(book.isbn);
+    setPendingVolume(null);
     setVolumeData([]);
     setStep("form");
+
+    // Google Books results have no Open Library work to describe them.
+    if (book.source !== "openlibrary") return;
 
     // The description needs one more request; show the form without waiting
     // and fill it in unless the user has typed one or moved on.
@@ -206,6 +233,11 @@ export function AddSeriesModal({ publishers = [], booksFirst = true }: AddSeries
         if (volumes.length === 0) volumes = [{ volumeNumber: 1 }];
         volumes = volumes.map((v) => (v.volumeNumber === 1 ? { ...v, isbn: bookIsbn } : v));
       }
+      if (pendingVolume) {
+        const applied = withScannedVolume(volumes, input.totalVolumes, pendingVolume);
+        volumes = applied.volumes;
+        input.totalVolumes = applied.totalVolumes;
+      }
 
       if (volumes.length > 0) {
         unwrap(await createSeriesWithVolumes(input, volumes));
@@ -233,8 +265,14 @@ export function AddSeriesModal({ publishers = [], booksFirst = true }: AddSeries
     setSource("manual");
     setKind("single");
     setBookIsbn(null);
+    setPendingVolume(null);
     setVolumeData([]);
     setStep("form");
+  };
+
+  const startManualWithIsbn = (isbn: string) => {
+    startManual();
+    setBookIsbn(isbn);
   };
 
   const chooseKind = (next: Kind) => {
@@ -251,6 +289,7 @@ export function AddSeriesModal({ publishers = [], booksFirst = true }: AddSeries
     selection.current++;
     setVolumeData([]);
     setBookIsbn(null);
+    setPendingVolume(null);
     setStep("search");
     reset(getSeriesFormDefaults());
   };
@@ -285,6 +324,9 @@ export function AddSeriesModal({ publishers = [], booksFirst = true }: AddSeries
             onSelectManga={handleSearchSelect}
             onSelectBook={handleBookSelect}
             onAddManually={startManual}
+            onAddManuallyWithIsbn={startManualWithIsbn}
+            onStartNewSeries={startNewSeriesFromScan}
+            onClose={() => handleOpenChange(false)}
           />
         ) : isFetchingVolumes ? (
           <div className="flex flex-col items-center justify-center py-12 gap-4">
@@ -361,6 +403,11 @@ export function AddSeriesModal({ publishers = [], booksFirst = true }: AddSeries
                         <p className="text-sm text-foreground-muted mt-0.5">
                           {volumesWithCovers.length} with cover images from
                           MangaDex
+                        </p>
+                      )}
+                      {pendingVolume && (
+                        <p className="text-sm text-foreground-muted mt-0.5">
+                          Vol. {pendingVolume.volumeNumber} (the one you scanned) will be marked as owned
                         </p>
                       )}
                     </div>

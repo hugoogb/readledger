@@ -6,7 +6,9 @@ import { revalidatePath } from "next/cache";
 import { cache } from "react";
 import { idSchema, openLibraryKeySchema, seriesSchema, seriesVolumesSchema } from "@/lib/validations";
 import { checkUserActionLimit } from "@/lib/rate-limit";
+import { parseIsbnQuery, toStoredIsbn } from "@/lib/isbn";
 import * as seriesService from "@/services/series";
+import { findVolumeByIsbn } from "@/services/isbn-volume";
 
 export type { CreateSeriesInput, UpdateSeriesInput, VolumeInput, SortOption, LibraryQuery } from "@/services/series";
 
@@ -96,6 +98,14 @@ export async function getExistingOpenLibraryKeys(keys: string[]): Promise<string
   // Bounded like a search page; anything else isn't a key we stored.
   const valid = keys.slice(0, 50).filter((k) => openLibraryKeySchema.safeParse(k).success);
   return seriesService.getExistingOpenLibraryKeys(user.id, valid);
+}
+
+/** Whether any volume in the user's library holds this ISBN. */
+export async function isIsbnInLibrary(isbn: string): Promise<boolean> {
+  const user = await requireUser();
+  const parsed = parseIsbnQuery(isbn);
+  if (!parsed) return false;
+  return (await findVolumeByIsbn(user.id, toStoredIsbn(parsed))) !== null;
 }
 
 export const getFormatCounts = cache(async function getFormatCounts() {

@@ -1,7 +1,12 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
+
+vi.mock("@/lib/rate-limit", () => ({ throttleMangadex: vi.fn(async () => {}) }));
+
 import {
   formatMangaForSeries,
+  findTopManga,
   generateVolumeEntries,
+  searchMangaPaginated,
   type MangaSearchResult,
 } from "@/lib/manga-api";
 
@@ -24,6 +29,7 @@ describe("formatMangaForSeries", () => {
     ],
     score: 9.1,
     demographic: "shounen",
+    altTitles: [],
   };
 
   it("maps manga to series format", () => {
@@ -96,5 +102,85 @@ describe("generateVolumeEntries", () => {
 
   it("returns empty array for negative number", () => {
     expect(generateVolumeEntries(-1)).toEqual([]);
+  });
+});
+
+describe("searchMangaPaginated", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("keeps every alt title, in any language", async () => {
+    const manga = {
+      id: "ds-1",
+      type: "manga",
+      attributes: {
+        title: { en: "Demon Slayer: Kimetsu no Yaiba" },
+        altTitles: [{ es: "Guardianes de la noche" }, { ja: "鬼滅の刃" }],
+        description: {},
+        links: null,
+        originalLanguage: "ja",
+        lastVolume: "23",
+        lastChapter: null,
+        publicationDemographic: null,
+        status: "completed",
+        year: 2016,
+        contentRating: "safe",
+        tags: [],
+      },
+      relationships: [],
+    };
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => ({
+        ok: !url.includes("/statistics/"),
+        json: async () => ({ data: [manga], total: 1, limit: 10, offset: 0 }),
+      })),
+    );
+
+    const page = await searchMangaPaginated("guardianes alt titles", 1);
+
+    expect(page.data[0].altTitles).toEqual(["Guardianes de la noche", "鬼滅の刃"]);
+  });
+});
+
+describe("findTopManga", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  const raw = (lastVolume: string | null) => ({
+    id: "md-9",
+    type: "manga",
+    attributes: {
+      title: { en: "Dr. Slump" },
+      altTitles: [],
+      description: {},
+      links: null,
+      originalLanguage: "ja",
+      lastVolume,
+      lastChapter: null,
+      publicationDemographic: null,
+      status: "completed",
+      year: 1980,
+      contentRating: "safe",
+      tags: [],
+    },
+    relationships: [],
+  });
+
+  it("asks for one result and skips the statistics request", async () => {
+    const fetchMock = vi.fn<(url: string) => Promise<unknown>>(async () => ({
+      ok: true,
+      json: async () => ({ data: [raw("18")], total: 1 }),
+    }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const manga = await findTopManga("dr slump top");
+
+    expect(manga?.lastVolume).toBe(18);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(new URL(fetchMock.mock.calls[0][0]).searchParams.get("limit")).toBe("1");
+  });
+
+  it("returns null when nothing matches", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => ({ ok: true, json: async () => ({ data: [], total: 0 }) })));
+    expect(await findTopManga("nothing here")).toBeNull();
   });
 });

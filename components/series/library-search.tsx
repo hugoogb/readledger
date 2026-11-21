@@ -2,7 +2,7 @@
 
 import { searchBooks } from "@/actions/openlibrary";
 import { searchManga } from "@/actions/mangadex";
-import { getExistingMangadexIds, getExistingOpenLibraryKeys } from "@/actions/series";
+import { getExistingMangadexIds, getExistingOpenLibraryKeys, isIsbnInLibrary } from "@/actions/series";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,6 +26,7 @@ import {
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import { VolumeMatchCard, type NewSeriesMatch } from "./volume-match-card";
 
 // Lazy: the barcode library loads only when someone taps Scan.
 const IsbnScanner = dynamic(() => import("./isbn-scanner").then((m) => m.IsbnScanner), {
@@ -45,6 +46,12 @@ type LibrarySearchProps = {
   onSelectManga: (data: FormattedMangaData) => void;
   onSelectBook: (book: BookSearchResult) => void;
   onAddManually: () => void;
+  /** "No book found" for an ISBN: open the manual form keeping that ISBN. */
+  onAddManuallyWithIsbn: (isbn: string) => void;
+  /** A scanned volume of a MangaDex series not in the library yet. */
+  onStartNewSeries: (match: NewSeriesMatch, volumeNumber: number) => void;
+  /** A scanned volume was filed; the add flow is finished. */
+  onClose: () => void;
 };
 
 const MIN_QUERY = 2;
@@ -61,6 +68,9 @@ export function LibrarySearch({
   onSelectManga,
   onSelectBook,
   onAddManually,
+  onAddManuallyWithIsbn,
+  onStartNewSeries,
+  onClose,
 }: LibrarySearchProps) {
   const [debounced, setDebounced] = useState(query.trim());
   const [scanning, setScanning] = useState(false);
@@ -76,7 +86,15 @@ export function LibrarySearch({
   const searching = debounced.length >= MIN_QUERY;
   const isbn = parseIsbnQuery(debounced);
 
-  const books = <BookResults key={`b:${debounced}`} query={debounced} isbn={isbn} onSelect={onSelectBook} />;
+  const books = (
+    <BookResults
+      key={`b:${debounced}`}
+      query={debounced}
+      isbn={isbn}
+      onSelect={onSelectBook}
+      onAddManually={onAddManuallyWithIsbn}
+    />
+  );
   const manga = <MangaResults key={`m:${debounced}`} query={debounced} onSelect={onSelectManga} />;
 
   if (scanning) {
@@ -123,7 +141,17 @@ export function LibrarySearch({
 
       {searching ? (
         isbn ? (
-          books
+          // The card goes below the (single) book row: when it appears or
+          // collapses, the row a thumb is aiming at doesn't move.
+          <>
+            {books}
+            <VolumeMatchCard
+              key={isbn}
+              isbn={isbn}
+              onStartNewSeries={onStartNewSeries}
+              onDone={onClose}
+            />
+          </>
         ) : booksFirst ? (
           <>
             {books}
@@ -137,7 +165,7 @@ export function LibrarySearch({
         )
       ) : (
         <p className="text-sm text-foreground-muted text-center py-2">
-          Find books on Open Library and manga on MangaDex.
+          Find books on Open Library and manga on MangaDex. Scan a barcode to look up its ISBN.
         </p>
       )}
 
@@ -205,6 +233,7 @@ function SearchSection<T>({
   sourceUrl,
   search: { state, setPage, retry },
   emptyText,
+  emptyAction,
   renderItem,
 }: {
   title: string;
@@ -212,6 +241,7 @@ function SearchSection<T>({
   sourceUrl: string;
   search: ReturnType<typeof usePagedSearch<T>>;
   emptyText: string;
+  emptyAction?: React.ReactNode;
   renderItem: (item: T) => React.ReactNode;
 }) {
   return (
@@ -239,7 +269,10 @@ function SearchSection<T>({
           </Button>
         </div>
       ) : state.status === "done" && state.items.length === 0 ? (
-        <p className="text-sm text-foreground-muted px-1 py-2">{emptyText}</p>
+        <div className="space-y-2">
+          <p className="text-sm text-foreground-muted px-1 py-2">{emptyText}</p>
+          {emptyAction}
+        </div>
       ) : state.status === "done" ? (
         <>
           <div className="space-y-1.5">
@@ -346,31 +379,46 @@ function BookResults({
   query,
   isbn,
   onSelect,
+  onAddManually,
 }: {
   query: string;
   isbn: string | null;
   onSelect: (book: BookSearchResult) => void;
+  onAddManually: (isbn: string) => void;
 }) {
   const search = usePagedSearch<BookSearchResult>(async (page) => {
     const result = await searchBooks(query, page);
     if (!result.ok) throw new Error(result.error);
-    const keys = result.data.data.map((b) => b.key);
-    const existing = keys.length > 0 ? await getExistingOpenLibraryKeys(keys) : [];
-    return {
-      items: result.data.data,
-      hasNextPage: result.data.pagination.hasNextPage,
-      existing: new Set(existing),
-    };
+    const books = result.data.data;
+    const keys = books.filter((b) => b.source === "openlibrary").map((b) => b.key);
+    const [existingKeys, isbnInLibrary] = await Promise.all([
+      keys.length > 0 ? getExistingOpenLibraryKeys(keys) : Promise.resolve([]),
+      isbn ? isIsbnInLibrary(isbn) : Promise.resolve(false),
+    ]);
+    const existing = new Set(existingKeys);
+    // An ISBN already on one of the user's volumes: that edition is in the library.
+    if (isbnInLibrary) for (const b of books) existing.add(b.key);
+    return { items: books, hasNextPage: result.data.pagination.hasNextPage, existing };
   });
   const existing = search.state.status === "done" ? search.state.existing : new Set<string>();
+  // Google Books only answers ISBN lookups, so a page is from one source.
+  const fromGoogle = search.state.status === "done" && search.state.items[0]?.source === "googlebooks";
 
   return (
     <SearchSection
       title="Books"
-      source="Open Library"
-      sourceUrl="https://openlibrary.org"
+      source={fromGoogle ? "Google Books" : "Open Library"}
+      sourceUrl={fromGoogle ? "https://books.google.com" : "https://openlibrary.org"}
       search={search}
       emptyText={isbn ? `No book found for ISBN ${isbn}` : `No books found for "${query}"`}
+      emptyAction={
+        isbn && (
+          <Button variant="outline" type="button" className="min-h-11 w-full" onClick={() => onAddManually(isbn)}>
+            <Edit3 className="w-4 h-4" />
+            Add it manually
+          </Button>
+        )
+      }
       renderItem={(book) => {
         const inLibrary = existing.has(book.key);
         return (
