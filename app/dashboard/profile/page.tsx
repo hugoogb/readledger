@@ -2,16 +2,14 @@ import { signOut } from "@/actions/auth";
 import { ExportButton } from "@/components/import-export/export-button";
 import { ImportModal } from "@/components/import-export/import-modal";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Ledger, LedgerRow } from "@/components/ui/ledger";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { getCurrentUser } from "@/lib/auth";
-import { Calendar, Database, LogOut, Mail, User } from "lucide-react";
+import { ChevronRight, LogOut } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
+
+const sectionTitle = "font-serif text-xl font-medium";
 
 export default async function ProfilePage() {
   const user = await getCurrentUser();
@@ -20,101 +18,72 @@ export default async function ProfilePage() {
     return null;
   }
 
+  const memberSince = new Intl.DateTimeFormat("en-US", { dateStyle: "long" }).format(user.createdAt);
+
   return (
     <div className="p-4 lg:p-8">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold">Profile</h1>
-        <p className="text-foreground-muted mt-1">Manage your account</p>
-      </div>
+      <div className="mx-auto max-w-[40rem]">
+        <header className="flex items-center gap-4">
+          {user.avatarUrl && (
+            <Image
+              width={56}
+              height={56}
+              src={user.avatarUrl}
+              alt=""
+              className="size-14 rounded-full object-cover"
+            />
+          )}
+          <div className="min-w-0">
+            <h1 className="truncate font-serif text-3xl font-medium leading-tight">
+              {user.name || "Your profile"}
+            </h1>
+            <p className="truncate text-sm text-foreground-muted">{user.email}</p>
+          </div>
+        </header>
 
-      <div className="max-w-2xl space-y-6">
-        {/* Profile Card */}
-        <Card>
-          <CardHeader className="flex flex-row items-center gap-4">
-            {user.avatarUrl ? (
-              <Image
-                width={80}
-                height={80}
-                src={user.avatarUrl}
-                alt={user.name || "User avatar"}
-                className="rounded-2xl object-cover shadow-md"
-              />
-            ) : (
-              <div className="w-20 h-20 rounded-2xl bg-accent/10 border border-accent/20 flex items-center justify-center">
-                <User className="w-10 h-10 text-accent" />
-              </div>
-            )}
-            <div>
-              <CardTitle className="text-xl">
-                {user.name || "Anonymous"}
-              </CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center gap-3 p-4 rounded-xl bg-background-tertiary border border-border/50">
-              <Mail className="w-5 h-5 text-foreground-muted" />
-              <div className="min-w-0 flex-1">
-                <p className="text-xs text-foreground-muted uppercase font-bold tracking-wider">
-                  Email
-                </p>
-                <p className="max-w-full font-medium truncate">{user.email}</p>
-              </div>
-            </div>
+        <Ledger className="mt-6">
+          <LedgerRow label="Member since" value={<span className="text-base">{memberSince}</span>} />
+        </Ledger>
 
-            <div className="flex items-center gap-3 p-4 rounded-xl bg-background-tertiary border border-border/50">
-              <Calendar className="w-5 h-5 text-foreground-muted" />
-              <div>
-                <p className="text-xs text-foreground-muted uppercase font-bold tracking-wider">
-                  Member since
-                </p>
-                <p className="font-medium">
-                  {new Intl.DateTimeFormat("en-US", {
-                    dateStyle: "long",
-                  }).format(user.createdAt)}
-                </p>
-              </div>
+        <section className="mt-10">
+          <h2 className={sectionTitle}>Preferences</h2>
+          <div className="mt-3 border-t border-border">
+            <Link
+              href="/dashboard/settings"
+              className="flex min-h-12 items-center justify-between border-b border-border py-3 transition-colors hover:text-accent"
+            >
+              <span>
+                Settings
+                <span className="block text-sm text-foreground-muted">
+                  Display name, currency, stores and publishers
+                </span>
+              </span>
+              <ChevronRight className="size-5 text-foreground-muted" aria-hidden="true" />
+            </Link>
+            <div className="flex min-h-12 items-center justify-between gap-4 border-b border-border py-3">
+              <span>Appearance</span>
+              <ThemeToggle />
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </section>
 
-        {/* Import / Export */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Database className="w-5 h-5" />
-              Data
-            </CardTitle>
-            <CardDescription>
-              Export or import your collection data
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-3">
-              <ExportButton />
-              <ImportModal />
-            </div>
-          </CardContent>
-        </Card>
+        <section className="mt-10">
+          <h2 className={sectionTitle}>Your data</h2>
+          <p className="mt-1 text-sm text-foreground-muted">Export or import your collection.</p>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <ExportButton />
+            <ImportModal />
+          </div>
+        </section>
 
-        {/* Sign Out */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Account Actions</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form action={signOut}>
-              <Button
-                variant="ghost"
-                type="submit"
-                className="text-error hover:bg-error/10 hover:text-error gap-2 -ml-2"
-              >
-                <LogOut className="w-5 h-5" />
-                Sign out
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
+        <section className="mt-10 border-t border-border pt-6">
+          <form action={signOut}>
+            <Button variant="outline" type="submit" className="text-error">
+              <LogOut />
+              Sign out
+            </Button>
+          </form>
+        </section>
       </div>
     </div>
   );

@@ -5,6 +5,7 @@ import {
   checkDuplicateSeries,
   createSeries,
   createSeriesWithVolumes,
+  getAddBookOptions,
   getExistingOpenLibraryKeys,
   type CreateSeriesInput,
   type VolumeInput,
@@ -22,10 +23,10 @@ import { getSeriesFormDefaults } from "@/lib/form-defaults";
 import { Format } from "@/lib/generated/prisma/enums";
 import { seriesSchema, type SeriesSchema } from "@/lib/validations";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowLeft, BookOpen, Loader2, Plus, Search } from "lucide-react";
+import { ArrowLeft, BookOpen, Loader2, Search } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { FormProvider, useForm, type SubmitHandler } from "react-hook-form";
 import { toast } from "sonner";
 import { LibrarySearch } from "./library-search";
@@ -35,9 +36,8 @@ import { unwrap } from "@/lib/unwrap";
 type Publisher = { id: string; name: string };
 
 type AddSeriesModalProps = {
-  publishers?: Publisher[];
-  /** Show Open Library results above MangaDex ones (see booksFirstInSearch). */
-  booksFirst?: boolean;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 };
 
 type Step = "search" | "form";
@@ -46,9 +46,12 @@ type Kind = "single" | "series";
 // manual entries and Open Library books can be a single book or a series.
 type Source = "manual" | "mangadex" | "openlibrary";
 
-export function AddSeriesModal({ publishers = [], booksFirst = true }: AddSeriesModalProps) {
+export function AddSeriesModal({ open: isOpen, onOpenChange }: AddSeriesModalProps) {
   const router = useRouter();
-  const [isOpen, setIsOpen] = useState(false);
+  // Loaded when the modal opens, so no page pays for it on load. Until then,
+  // search shows books first and the publisher list is empty.
+  const [publishers, setPublishers] = useState<Publisher[]>([]);
+  const [booksFirst, setBooksFirst] = useState(true);
   const [step, setStep] = useState<Step>("search");
   const [query, setQuery] = useState("");
   const [source, setSource] = useState<Source>("mangadex");
@@ -75,8 +78,24 @@ export function AddSeriesModal({ publishers = [], booksFirst = true }: AddSeries
     formState: { isSubmitting },
   } = methods;
 
+  useEffect(() => {
+    if (!isOpen) return;
+    let current = true;
+    getAddBookOptions()
+      .then((options) => {
+        if (!current) return;
+        setPublishers(options.publishers);
+        setBooksFirst(options.booksFirst);
+      })
+      // Non-essential: the flow still works with the defaults.
+      .catch(() => {});
+    return () => {
+      current = false;
+    };
+  }, [isOpen]);
+
   const handleOpenChange = (open: boolean) => {
-    setIsOpen(open);
+    onOpenChange(open);
     if (!open) {
       setStep("search");
       setQuery("");
@@ -266,11 +285,6 @@ export function AddSeriesModal({ publishers = [], booksFirst = true }: AddSeries
 
   return (
     <>
-      <Button onClick={() => handleOpenChange(true)} className="gap-2">
-        <Plus className="w-5 h-5" />
-        Add to library
-      </Button>
-
       <Modal
         isOpen={isOpen}
         onClose={() => handleOpenChange(false)}

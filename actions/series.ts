@@ -7,6 +7,8 @@ import { cache } from "react";
 import { idSchema, openLibraryKeySchema, seriesSchema, seriesVolumesSchema } from "@/lib/validations";
 import { checkUserActionLimit } from "@/lib/rate-limit";
 import * as seriesService from "@/services/series";
+import { booksFirstInSearch } from "@/lib/format";
+import { getPublishers } from "@/actions/publishers";
 
 export type { CreateSeriesInput, UpdateSeriesInput, VolumeInput, SortOption, LibraryQuery } from "@/services/series";
 
@@ -102,6 +104,18 @@ export const getFormatCounts = cache(async function getFormatCounts() {
   const user = await requireUser();
   return seriesService.getFormatCounts(user.id);
 });
+
+/** What the add-a-book flow needs, fetched when it opens rather than on every page. */
+export async function getAddBookOptions(): Promise<{
+  publishers: { id: string; name: string }[];
+  booksFirst: boolean;
+}> {
+  const [publishers, formatCounts] = await Promise.all([getPublishers(), getFormatCounts()]);
+  return {
+    publishers: publishers.map(({ id, name }) => ({ id, name })),
+    booksFirst: booksFirstInSearch(formatCounts),
+  };
+}
 
 export const getSeriesStats = cache(async function getSeriesStats() {
   const user = await requireUser();

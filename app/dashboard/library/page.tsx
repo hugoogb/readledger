@@ -1,11 +1,10 @@
-import { getAllSeries, getFormatCounts, getLibraryFormats, type SortOption } from "@/actions/series";
-import { getPublishers } from "@/actions/publishers";
-import { AddSeriesModal } from "@/components/series/add-series-modal";
+import { getAllSeries, getLibraryFormats, type SortOption } from "@/actions/series";
+import { AddBookButton } from "@/components/series/add-book-provider";
 import { SeriesCard } from "@/components/series/series-card";
 import { SeriesFilters } from "@/components/series/series-filters";
 import { Pagination } from "@/components/ui/pagination";
 import { SeriesGridSkeleton } from "@/components/ui/skeletons";
-import { booksFirstInSearch, parseFormat } from "@/lib/format";
+import { parseFormat } from "@/lib/format";
 import { type Format, SeriesStatus } from "@/lib/generated/prisma/enums";
 import { Library } from "lucide-react";
 import { Suspense } from "react";
@@ -94,11 +93,9 @@ async function FilteredSeriesList({
 }
 
 export default async function SeriesPage({ searchParams }: Props) {
-  const [{ status, format, q, sort, page }, publishers, formats, formatCounts] = await Promise.all([
+  const [{ status, format, q, sort, page }, formats] = await Promise.all([
     searchParams,
-    getPublishers(),
     getLibraryFormats(),
-    getFormatCounts(),
   ]);
   // URL params are user-editable: ignore values we don't recognise.
   const statusFilter = (Object.values(SeriesStatus) as string[]).includes(status ?? "")
@@ -123,7 +120,8 @@ export default async function SeriesPage({ searchParams }: Props) {
             Everything on your shelves
           </p>
         </div>
-        <AddSeriesModal publishers={publishers} booksFirst={booksFirstInSearch(formatCounts)} />
+        {/* Phones add from the tab bar. */}
+        <AddBookButton className="hidden lg:inline-flex" />
       </div>
 
       {/* Filters */}
