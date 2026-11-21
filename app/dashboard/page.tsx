@@ -1,35 +1,22 @@
 import { getReadingGoals, getReadingVolumes } from "@/actions/reading";
 import { getRecentSeries, getSeriesStats } from "@/actions/series";
-import { CoverList } from "@/components/reading/cover-list";
+import { CoverShelf } from "@/components/books/cover-shelf";
+import { Greeting } from "@/components/dashboard/greeting";
+import { AddBookButton } from "@/components/series/add-book-provider";
+import { Ledger, LedgerRow, LedgerTotal } from "@/components/ui/ledger";
 import { ProgressBar } from "@/components/ui/progress-bar";
-import {
-  DashboardStatsSkeleton,
-  ProgressSectionSkeleton,
-  RecentSeriesListSkeleton,
-} from "@/components/ui/skeletons";
-import { StatsCard } from "@/components/ui/stats-card";
-import { isStandalone, volumeLabel } from "@/lib/format";
-import { goalProgress, readCount, recentlyRead } from "@/lib/reading-stats";
+import { SectionHeading } from "@/components/ui/section-heading";
+import { LedgerSkeleton, Skeleton } from "@/components/ui/skeletons";
+import { ShelvesSkeleton } from "@/components/dashboard/dashboard-skeleton";
+import { getCurrentUser } from "@/lib/auth";
 import { getFormatCurrency } from "@/lib/currency";
+import { isStandalone } from "@/lib/format";
+import { goalProgress, readCount, recentlyRead, type GoalProgress } from "@/lib/reading-stats";
 import { formatRelativeDate } from "@/utils/date";
-import {
-  BookMarked,
-  BookOpen,
-  CheckCircle,
-  Clock,
-  Library,
-  PauseCircle,
-  PiggyBank,
-  Target,
-  TrendingUp,
-  Wallet,
-  XCircle,
-} from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
 
-async function DashboardStats() {
+async function DashboardLedger() {
   const [stats, readingVolumes, goals, formatCurrency] = await Promise.all([
     getSeriesStats(),
     getReadingVolumes(),
@@ -39,337 +26,222 @@ async function DashboardStats() {
   const now = new Date();
   const year = now.getUTCFullYear();
   const readThisYear = readCount(readingVolumes, year);
-  const goal = goalProgress(
-    goals.find((g) => g.year === year) ?? null,
-    readThisYear,
-    year,
-    now,
-  );
+  const goal = goalProgress(goals.find((g) => g.year === year) ?? null, readThisYear, year, now);
+  const missing = Math.max(0, stats.totalExpectedVolumes - stats.totalVolumesOwned);
+  const unread = Math.max(0, stats.totalVolumesOwned - stats.totalVolumesRead);
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-      <div>
-        <StatsCard
-          title="Titles"
-          value={stats.totalSeries}
-          subtitle={`${stats.byStatus.reading} currently reading`}
-          icon={Library}
-          variant="accent"
-        />
-      </div>
-      <div>
-        <StatsCard
-          title="Books Owned"
+    <>
+      <Ledger>
+        <LedgerRow label="Titles" value={stats.totalSeries} />
+        <LedgerRow
+          label="Books owned"
+          note={missing > 0 ? `· ${missing} missing` : undefined}
           value={stats.totalVolumesOwned}
-          subtitle={`${stats.totalExpectedVolumes - stats.totalVolumesOwned} missing`}
-          icon={BookOpen}
-          variant="success"
         />
-      </div>
-      <div>
-        <StatsCard
-          title="Books Read"
+        <LedgerRow
+          label="Read"
+          note={unread > 0 ? `· ${unread} unread` : undefined}
           value={stats.totalVolumesRead}
-          subtitle={`${stats.totalVolumesOwned - stats.totalVolumesRead} unread`}
-          icon={BookMarked}
-          variant="default"
         />
-      </div>
-      <Link
-        href="/dashboard/statistics?tab=reading"
-        className="rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-      >
-        <StatsCard
-          title={`Reading ${year}`}
-          value={readThisYear}
-          subtitle={goal ? `${goal.read} / ${goal.target} goal` : "No goal set"}
-          icon={Target}
-          variant="success"
-          className="h-full hover:bg-background-tertiary/40 transition-colors"
-        />
-      </Link>
-      <div>
-        <StatsCard
-          title="Total Spent"
-          value={formatCurrency(stats.totalSpent)}
-          subtitle={`${formatCurrency(stats.averagePrice)} avg per book`}
-          icon={Wallet}
-          variant="warning"
-        />
-      </div>
-      <div>
-        <StatsCard
-          title="Total Savings"
-          value={formatCurrency(stats.totalSavings)}
-          subtitle={
-            stats.savingsPercentage > 0
-              ? `${stats.savingsPercentage.toFixed(0)}% saved`
-              : undefined
-          }
-          icon={PiggyBank}
-          variant="success"
-        />
-      </div>
-    </div>
-  );
-}
-
-async function ProgressSection() {
-  const stats = await getSeriesStats();
-
-  return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-      <div className="glass rounded-2xl p-6">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center">
-            <TrendingUp className="w-5 h-5 text-accent" />
-          </div>
-          <div>
-            <h2 className="text-lg font-semibold">Collection Progress</h2>
-            <p className="text-sm text-foreground-muted">
-              How complete is your collection
-            </p>
-          </div>
-        </div>
-        <ProgressBar
-          value={stats.collectionProgress}
-          variant="accent"
-          size="lg"
-          showPercentage
-          className="mb-4"
-        />
-        <div className="grid grid-cols-2 gap-4 text-sm">
-          <div>
-            <p className="text-foreground-muted">Owned</p>
-            <p className="text-xl font-semibold">{stats.totalVolumesOwned}</p>
-          </div>
-          <div>
-            <p className="text-foreground-muted">Total Expected</p>
-            <p className="text-xl font-semibold">
-              {stats.totalExpectedVolumes}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <div className="glass rounded-2xl p-6">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 rounded-xl bg-success/10 border border-success/20 flex items-center justify-center">
-            <BookMarked className="w-5 h-5 text-success" />
-          </div>
-          <div>
-            <h2 className="text-lg font-semibold">Reading Progress</h2>
-            <p className="text-sm text-foreground-muted">
-              Books read vs owned
-            </p>
-          </div>
-        </div>
-        <ProgressBar
-          value={stats.readingProgress}
-          variant="success"
-          size="lg"
-          showPercentage
-          className="mb-4"
-        />
-        <div className="grid grid-cols-2 gap-4 text-sm">
-          <div>
-            <p className="text-foreground-muted">Read</p>
-            <p className="text-xl font-semibold">{stats.totalVolumesRead}</p>
-          </div>
-          <div>
-            <p className="text-foreground-muted">Owned</p>
-            <p className="text-xl font-semibold">{stats.totalVolumesOwned}</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-async function StatusAndRecentSection() {
-  const [stats, topSeries] = await Promise.all([getSeriesStats(), getRecentSeries()]);
-
-  return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      {/* Status Breakdown */}
-      <div className="glass rounded-2xl p-6">
-        <h2 className="text-lg font-semibold mb-4">By Status</h2>
-        <div className="space-y-3">
-          <div className="flex items-center justify-between py-2 border-b border-border">
-            <div className="flex items-center gap-2">
-              <Clock className="w-4 h-4 text-accent" />
-              <span className="text-sm">Reading</span>
-            </div>
-            <span className="font-semibold">{stats.byStatus.reading}</span>
-          </div>
-          <div className="flex items-center justify-between py-2 border-b border-border">
-            <div className="flex items-center gap-2">
-              <CheckCircle className="w-4 h-4 text-success" />
-              <span className="text-sm">Completed</span>
-            </div>
-            <span className="font-semibold">{stats.byStatus.completed}</span>
-          </div>
-          <div className="flex items-center justify-between py-2 border-b border-border">
-            <div className="flex items-center gap-2">
-              <PauseCircle className="w-4 h-4 text-warning" />
-              <span className="text-sm">On Hold</span>
-            </div>
-            <span className="font-semibold">{stats.byStatus.onHold}</span>
-          </div>
-          <div className="flex items-center justify-between py-2 border-b border-border">
-            <div className="flex items-center gap-2">
-              <XCircle className="w-4 h-4 text-error" />
-              <span className="text-sm">Dropped</span>
-            </div>
-            <span className="font-semibold">{stats.byStatus.dropped}</span>
-          </div>
-          <div className="flex items-center justify-between py-2">
-            <div className="flex items-center gap-2">
-              <BookOpen className="w-4 h-4 text-foreground-muted" />
-              <span className="text-sm">Plan to Read</span>
-            </div>
-            <span className="font-semibold">{stats.byStatus.planToRead}</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Recent Series */}
-      <div className="lg:col-span-2 glass rounded-2xl p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold">Recently Updated</h2>
-          <Link
-            href="/dashboard/library"
-            className="text-sm text-accent hover:text-accent-hover transition-colors"
-          >
-            View all
-          </Link>
-        </div>
-        {topSeries.length === 0 ? (
-          <div className="text-center py-8">
-            <Library className="w-12 h-12 text-foreground-muted mx-auto mb-3" />
-            <p className="text-foreground-muted mb-4">Your library is empty</p>
-            <Link
-              href="/dashboard/library"
-              className="inline-flex items-center gap-2 text-accent hover:text-accent-hover transition-colors"
-            >
-              Add your first book or series
-            </Link>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {topSeries.map((series) => {
-              const owned = series.volumes.filter((v) => v.owned).length;
-              const total = series.totalVolumes || series.volumes.length;
-              const progress = total > 0 ? (owned / total) * 100 : 0;
-              const standalone = isStandalone(series.totalVolumes, series.volumes.length);
-
-              return (
-                <Link
-                  key={series.id}
-                  href={`/dashboard/library/${series.id}`}
-                  className="flex items-center gap-4 p-3 rounded-xl hover:bg-background-tertiary transition-colors"
-                >
-                  {series.coverImage ? (
-                    <Image
-                      width={48}
-                      height={64}
-                      src={series.coverImage}
-                      alt={series.title}
-                      className="rounded-lg object-cover"
-                    />
-                  ) : (
-                    <div className="w-12 h-16 rounded-lg bg-background-tertiary flex items-center justify-center">
-                      <BookOpen className="w-5 h-5 text-foreground-muted" />
-                    </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-medium truncate">{series.title}</h3>
-                    <p className="text-sm text-foreground-muted">
-                      {standalone
-                        ? owned > 0
-                          ? "Owned"
-                          : "Not owned"
-                        : `${owned} / ${total} volumes`}
-                    </p>
-                    <ProgressBar
-                      value={progress}
-                      variant="accent"
-                      size="sm"
-                      className="mt-2"
-                    />
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
+        {stats.totalSavings > 0 && (
+          <LedgerRow label="Saved buying used" value={formatCurrency(stats.totalSavings)} />
         )}
-      </div>
-    </div>
+        <LedgerTotal
+          label={`Spent · ${formatCurrency(stats.averagePrice)} avg`}
+          value={formatCurrency(stats.totalSpent)}
+        />
+      </Ledger>
+      <GoalPanel year={year} read={readThisYear} goal={goal} />
+    </>
   );
 }
 
-async function RecentlyReadSection() {
-  const volumes = await getReadingVolumes();
+function paceNote(goal: GoalProgress) {
+  if (goal.completed) return "Goal reached";
+  if (goal.paceDelta === undefined) return `${goal.target - goal.read} to go`;
+  if (goal.paceDelta > 0) return `${goal.paceDelta} ahead of pace`;
+  if (goal.paceDelta < 0) return `${-goal.paceDelta} behind pace`;
+  return "Right on pace";
+}
+
+function GoalPanel({ year, read, goal }: { year: number; read: number; goal: GoalProgress | null }) {
+  return (
+    <Link
+      href="/dashboard/statistics?tab=reading"
+      className="mt-5 block rounded-lg border border-border bg-background-secondary p-4 transition-colors hover:border-border-hover"
+    >
+      <div className="flex items-baseline justify-between gap-3">
+        <span className="text-sm font-medium">Reading in {year}</span>
+        <span>
+          <span className="figure text-xl">{read}</span>
+          {goal && <span className="text-sm text-foreground-muted"> / {goal.target}</span>}
+        </span>
+      </div>
+      {goal ? (
+        <>
+          <ProgressBar value={goal.read} max={goal.target} size="md" className="mt-2" ariaLabel="Reading goal" />
+          <p className="mt-1.5 text-xs text-foreground-muted">{paceNote(goal)}</p>
+        </>
+      ) : (
+        <p className="mt-1 text-xs text-foreground-muted">No reading goal yet. Set one in Statistics.</p>
+      )}
+    </Link>
+  );
+}
+
+async function StatusLine() {
+  const { byStatus } = await getSeriesStats();
+  const parts = [
+    [byStatus.reading, "reading"],
+    [byStatus.completed, "completed"],
+    [byStatus.onHold, "on hold"],
+    [byStatus.dropped, "dropped"],
+    [byStatus.planToRead, "planned"],
+  ] as const;
+
+  return (
+    <section>
+      <SectionHeading title="By status" />
+      <p className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-foreground-muted">
+        {parts.map(([count, label]) => (
+          <span key={label}>
+            <span className="figure mr-1 text-base text-foreground">{count}</span>
+            {label}
+          </span>
+        ))}
+      </p>
+    </section>
+  );
+}
+
+async function Shelves() {
+  const [recent, volumes, stats] = await Promise.all([
+    getRecentSeries(),
+    getReadingVolumes(),
+    getSeriesStats(),
+  ]);
   const now = new Date();
 
+  if (stats.totalSeries === 0) {
+    return (
+      <section className="border-t-2 border-foreground pt-5">
+        <p className="font-serif text-2xl font-medium">Your shelves are empty.</p>
+        <p className="mt-1 text-foreground-muted">
+          Search by title or ISBN, or scan a barcode, and your first book is in.
+        </p>
+        <AddBookButton className="mt-5" label="Add your first book" />
+      </section>
+    );
+  }
+
   return (
-    <div className="glass rounded-2xl p-4 sm:p-6 mb-8">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold">Recently Read</h2>
-        <Link
-          href="/dashboard/statistics?tab=reading"
-          className="text-sm text-accent hover:text-accent-hover transition-colors"
-        >
-          Reading stats
-        </Link>
+    <>
+      <section>
+        <SectionHeading title="Recently updated" action={{ href: "/dashboard/library", label: "View all" }} />
+        <CoverShelf
+          emptyText="Nothing here yet."
+          items={recent.map((series) => {
+            const owned = series.volumes.filter((v) => v.owned).length;
+            const standalone = isStandalone(series.totalVolumes, series.volumes.length);
+            const total = series.totalVolumes || series.volumes.length;
+            return {
+              key: series.id,
+              href: `/dashboard/library/${series.id}`,
+              title: series.title,
+              caption: standalone ? (owned > 0 ? "Owned" : "Not owned") : `${owned} / ${total}`,
+              coverImage: series.coverImage,
+            };
+          })}
+        />
+      </section>
+
+      <section>
+        <SectionHeading
+          title="Recently read"
+          action={{ href: "/dashboard/statistics?tab=reading", label: "Reading stats" }}
+        />
+        <CoverShelf
+          emptyText="Books you mark as read will show up here."
+          items={recentlyRead(volumes, 6).map((v) => ({
+            key: v.id,
+            href: `/dashboard/library/${v.seriesId}`,
+            title: v.series.title,
+            caption: v.series.standalone
+              ? formatRelativeDate(v.readDate, now)
+              : `Vol. ${v.volumeNumber}`,
+            coverImage: v.coverImage ?? v.series.coverImage,
+          }))}
+        />
+      </section>
+
+      <section className="space-y-5">
+        <ProgressLine
+          title="Collection progress"
+          note={`${stats.totalVolumesOwned} of ${stats.totalExpectedVolumes} volumes`}
+          value={stats.collectionProgress}
+        />
+        <ProgressLine
+          title="Reading progress"
+          note={`${stats.totalVolumesRead} of ${stats.totalVolumesOwned} owned`}
+          value={stats.readingProgress}
+          variant="gilt"
+        />
+      </section>
+    </>
+  );
+}
+
+function ProgressLine({
+  title,
+  note,
+  value,
+  variant = "accent",
+}: {
+  title: string;
+  note: string;
+  value: number;
+  variant?: "accent" | "gilt";
+}) {
+  return (
+    <div>
+      <div className="mb-2 flex items-baseline justify-between gap-3">
+        <h2 className="font-serif text-[1.2rem] font-medium leading-tight lg:text-xl">{title}</h2>
+        <span className="text-xs text-foreground-muted">{note}</span>
       </div>
-      <CoverList
-        emptyText="Books you mark as read will show up here."
-        items={recentlyRead(volumes).map((v) => ({
-          key: v.id,
-          href: `/dashboard/library/${v.seriesId}`,
-          title: volumeLabel(v.series.title, v.volumeNumber, v.series.standalone),
-          subtitle: formatRelativeDate(v.readDate, now),
-          coverImage: v.coverImage ?? v.series.coverImage,
-        }))}
-      />
+      <ProgressBar value={value} size="lg" variant={variant} ariaLabel={title} />
     </div>
   );
 }
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const user = await getCurrentUser();
+
   return (
     <div className="p-4 lg:p-8">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold">Dashboard</h1>
-        <p className="text-foreground-muted mt-1">
-          Overview of your collection
-        </p>
-      </div>
+      <div className="mx-auto max-w-[1200px]">
+        <Greeting name={user?.name ?? null} />
 
-      <Suspense fallback={<DashboardStatsSkeleton />}>
-        <DashboardStats />
-      </Suspense>
-
-      <Suspense
-        fallback={
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            <ProgressSectionSkeleton />
-            <ProgressSectionSkeleton />
+        {/* Phones read top to bottom: ledger, shelves, status. lg: two columns,
+            ledger and status on the left, shelves on the right. */}
+        <div className="mt-6 grid gap-10 lg:grid-cols-[minmax(0,380px)_1fr] lg:grid-rows-[auto_1fr] lg:gap-x-12 lg:gap-y-10">
+          <div className="lg:col-start-1 lg:row-start-1">
+            <Suspense fallback={<LedgerSkeleton rows={5} />}>
+              <DashboardLedger />
+            </Suspense>
           </div>
-        }
-      >
-        <ProgressSection />
-      </Suspense>
-
-      <Suspense fallback={<RecentSeriesListSkeleton />}>
-        <RecentlyReadSection />
-      </Suspense>
-
-      <Suspense fallback={<RecentSeriesListSkeleton />}>
-        <StatusAndRecentSection />
-      </Suspense>
+          <div className="space-y-10 lg:col-start-2 lg:row-span-2 lg:row-start-1">
+            <Suspense fallback={<ShelvesSkeleton />}>
+              <Shelves />
+            </Suspense>
+          </div>
+          <div className="lg:col-start-1 lg:row-start-2">
+            <Suspense fallback={<Skeleton className="h-16 w-full" />}>
+              <StatusLine />
+            </Suspense>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

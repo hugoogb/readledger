@@ -2,6 +2,8 @@ type ProgressBarProps = {
   value: number;
   max?: number;
   label?: string;
+  /** Accessible name when no visible label is shown. */
+  ariaLabel?: string;
   showPercentage?: boolean;
   variant?: "accent" | "gilt" | "success" | "warning";
   size?: "sm" | "md" | "lg";
@@ -25,6 +27,7 @@ export function ProgressBar({
   value,
   max = 100,
   label,
+  ariaLabel,
   showPercentage = false,
   variant = "accent",
   size = "md",
@@ -54,7 +57,7 @@ export function ProgressBar({
         aria-valuenow={Math.round(percentage)}
         aria-valuemin={0}
         aria-valuemax={100}
-        aria-label={label || "Progress"}
+        aria-label={ariaLabel || label || "Progress"}
       >
         <div
           className={`progress-bar ${sizes[size]} rounded-full ${variants[variant]}`}

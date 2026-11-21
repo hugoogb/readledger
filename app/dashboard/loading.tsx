@@ -1,25 +1,14 @@
-import {
-  DashboardStatsSkeleton,
-  ProgressSectionSkeleton,
-  RecentSeriesListSkeleton,
-} from "@/components/ui/skeletons";
+import { DashboardSkeleton } from "@/components/dashboard/dashboard-skeleton";
+import { Skeleton } from "@/components/ui/skeletons";
 
 export default function DashboardLoading() {
   return (
     <div className="p-4 lg:p-8">
-      <div className="mb-8">
-        <div className="h-8 w-40 rounded-xl bg-background-tertiary/60 animate-pulse" />
-        <div className="h-4 w-64 rounded-lg bg-background-tertiary/60 animate-pulse mt-2" />
+      <div className="mx-auto max-w-[1200px]">
+        <Skeleton className="h-8 w-56" />
+        <Skeleton className="mt-2 h-4 w-40" />
+        <DashboardSkeleton />
       </div>
-
-      <DashboardStatsSkeleton />
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        <ProgressSectionSkeleton />
-        <ProgressSectionSkeleton />
-      </div>
-
-      <RecentSeriesListSkeleton />
     </div>
   );
 }

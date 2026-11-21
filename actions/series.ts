@@ -124,5 +124,6 @@ export const getSeriesStats = cache(async function getSeriesStats() {
 
 export async function getRecentSeries() {
   const user = await requireUser();
-  return seriesService.getRecentSeries(user.id);
+  // Six fills one row of the desktop cover shelf.
+  return seriesService.getRecentSeries(user.id, 6);
 }
