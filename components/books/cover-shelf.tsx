@@ -27,7 +27,7 @@ export function CoverShelf({ items, emptyText }: CoverShelfProps) {
     <ul className="no-scrollbar -mx-4 flex snap-x gap-3 overflow-x-auto px-4 pb-1 lg:mx-0 lg:grid lg:grid-cols-6 lg:gap-4 lg:overflow-visible lg:px-0">
       {items.map((item) => (
         <li key={item.key} className="w-[72px] shrink-0 snap-start lg:w-auto">
-          <Link href={item.href} className="group block">
+          <Link href={item.href} className="group relative block">
             <CoverImage
               src={item.coverImage}
               title={item.title}

@@ -18,7 +18,7 @@ export function ShelvesSkeleton() {
 /** Matches the dashboard home layout below the greeting. */
 export function DashboardSkeleton() {
   return (
-    <div className="mt-6 grid gap-10 lg:grid-cols-[minmax(0,380px)_1fr] lg:gap-12">
+    <div className="mt-6 grid grid-cols-[minmax(0,1fr)] gap-10 lg:grid-cols-[minmax(0,380px)_1fr] lg:gap-12">
       <div>
         <LedgerSkeleton rows={5} />
         <Skeleton className="mt-5 h-24 w-full rounded-lg" />
