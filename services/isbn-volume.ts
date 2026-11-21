@@ -2,7 +2,15 @@ import { prisma } from "@/lib/prisma";
 import { NotFoundError } from "@/lib/errors";
 import { isStandalone } from "@/lib/format";
 import { isbnVariants } from "@/lib/isbn";
-import { normalizeTitle } from "@/lib/volume-title";
+import { lookupIsbnAnySource } from "@/lib/isbn-lookup";
+import { logger } from "@/lib/logger";
+import {
+  formatMangaForSeries,
+  searchMangaPaginated,
+  type FormattedMangaData,
+  type MangaSearchResult,
+} from "@/lib/manga-api";
+import { normalizeTitle, parseVolumeTitle } from "@/lib/volume-title";
 import { startOfUtcDay } from "@/utils/date";
 
 export type KnownVolume = { seriesId: string; seriesTitle: string; volumeNumber: number; owned: boolean };
@@ -93,4 +101,107 @@ export async function markVolumeOwnedByIsbn(
       await tx.series.update({ where: { id: seriesId }, data: { totalVolumes: volumeNumber } });
     }
   });
+}
+
+// --- Resolving a scanned ISBN ---
+
+export type VolumeMatch =
+  | {
+      kind: "existing";
+      seriesId: string;
+      seriesTitle: string;
+      volumeNumber: number;
+      owned: boolean;
+      isbn: string;
+    }
+  | {
+      kind: "new";
+      manga: FormattedMangaData;
+      volumeNumber: number;
+      totalVolumes: number | null;
+      /** False when the edition's printed total differs from MangaDex's: its covers would show other books. */
+      useMangadexCovers: boolean;
+      isbn: string;
+    };
+
+async function isVolumeOwned(seriesId: string, volumeNumber: number): Promise<boolean> {
+  const volume = await prisma.volume.findFirst({
+    where: { seriesId, volumeNumber },
+    select: { owned: true },
+  });
+  return volume?.owned ?? false;
+}
+
+/** MangaDex's top result for the title, if its title or an alt title is that title. */
+async function findMangaByTitle(seriesTitle: string): Promise<MangaSearchResult | null> {
+  const wanted = normalizeTitle(seriesTitle);
+  const [top] = (await searchMangaPaginated(seriesTitle, 1)).data;
+  if (!top) return null;
+  const names = [top.title, ...top.altTitles];
+  return names.some((n) => normalizeTitle(n) === wanted) ? top : null;
+}
+
+/**
+ * What a scanned ISBN most likely is in the user's library: a volume they
+ * already have, a volume of a series they have, or a volume of a MangaDex
+ * series they don't. Null when it looks like a plain book. Only a suggestion:
+ * nothing is written until the user confirms (markVolumeOwnedByIsbn).
+ */
+export async function resolveIsbnVolume(userId: string, isbn13: string): Promise<VolumeMatch | null> {
+  try {
+    const known = await findVolumeByIsbn(userId, isbn13);
+    if (known) return { kind: "existing", ...known, isbn: isbn13 };
+
+    const book = await lookupIsbnAnySource(isbn13);
+    const parsed = book && parseVolumeTitle(book.title);
+    if (!parsed) return null;
+    const { volumeNumber } = parsed;
+
+    const inLibrary = await findSeriesByTitle(userId, normalizeTitle(parsed.seriesTitle));
+    if (inLibrary) {
+      return {
+        kind: "existing",
+        seriesId: inLibrary.id,
+        seriesTitle: inLibrary.title,
+        volumeNumber,
+        owned: await isVolumeOwned(inLibrary.id, volumeNumber),
+        isbn: isbn13,
+      };
+    }
+
+    const manga = await findMangaByTitle(parsed.seriesTitle);
+    if (!manga) return null;
+
+    const [existing] = await prisma.series.findMany({
+      where: { userId, mangadexId: manga.id },
+      select: { id: true, title: true, totalVolumes: true, _count: { select: { volumes: true } } },
+    });
+    if (existing) {
+      if (isStandalone(existing.totalVolumes, existing._count.volumes)) return null;
+      return {
+        kind: "existing",
+        seriesId: existing.id,
+        seriesTitle: existing.title,
+        volumeNumber,
+        owned: await isVolumeOwned(existing.id, volumeNumber),
+        isbn: isbn13,
+      };
+    }
+
+    // The edition's printed total wins over MangaDex's (kanzenban, 3-in-1...).
+    const totalVolumes = parsed.totalVolumes ?? manga.lastVolume;
+    return {
+      kind: "new",
+      manga: formatMangaForSeries(manga),
+      volumeNumber,
+      totalVolumes,
+      useMangadexCovers: parsed.totalVolumes === null || parsed.totalVolumes === manga.lastVolume,
+      isbn: isbn13,
+    };
+  } catch (error) {
+    logger.error("Error resolving an ISBN to a volume", {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return null;
+  }
 }

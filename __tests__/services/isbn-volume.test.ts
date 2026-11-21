@@ -115,3 +115,141 @@ describe("markVolumeOwnedByIsbn", () => {
     expect(prismaMock.volume.update).not.toHaveBeenCalled();
   });
 });
+
+// --- resolveIsbnVolume ---
+
+vi.mock("@/lib/isbn-lookup", () => ({ lookupIsbnAnySource: vi.fn() }));
+vi.mock("@/lib/manga-api", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/manga-api")>()),
+  searchMangaPaginated: vi.fn(),
+}));
+
+import { lookupIsbnAnySource } from "@/lib/isbn-lookup";
+import { searchMangaPaginated, type MangaSearchResult } from "@/lib/manga-api";
+import type { BookSearchResult } from "@/lib/openlibrary-api";
+import { resolveIsbnVolume } from "@/services/isbn-volume";
+
+const bookTitled = (title: string) => ({ key: "k", title, source: "openlibrary" }) as BookSearchResult;
+
+const manga = (overrides: Partial<MangaSearchResult> = {}): MangaSearchResult => ({
+  id: "md-1",
+  title: "Dr. Slump",
+  titleJapanese: null,
+  coverImage: "https://uploads.mangadex.org/covers/md-1/c.jpg",
+  coverImageSmall: "https://uploads.mangadex.org/covers/md-1/c.jpg.256.jpg",
+  lastVolume: 18,
+  status: "completed",
+  year: 1980,
+  description: null,
+  authors: ["Akira Toriyama"],
+  genres: [],
+  score: null,
+  demographic: null,
+  altTitles: [],
+  ...overrides,
+});
+
+const mangaPage = (...data: MangaSearchResult[]) => ({
+  data,
+  pagination: { lastVisiblePage: 1, hasNextPage: false, currentPage: 1 },
+});
+
+describe("resolveIsbnVolume", () => {
+  beforeEach(() => {
+    prismaMock.volume.findFirst.mockResolvedValue(null);
+    prismaMock.series.findMany.mockResolvedValue([]);
+  });
+
+  it("returns the known volume before any network lookup", async () => {
+    prismaMock.volume.findFirst.mockResolvedValue({
+      seriesId: "s1",
+      volumeNumber: 3,
+      owned: true,
+      series: { title: "One Piece" },
+    });
+
+    expect(await resolveIsbnVolume("user-1", ISBN)).toEqual({
+      kind: "existing",
+      seriesId: "s1",
+      seriesTitle: "One Piece",
+      volumeNumber: 3,
+      owned: true,
+      isbn: ISBN,
+    });
+    expect(lookupIsbnAnySource).not.toHaveBeenCalled();
+  });
+
+  it("matches a library series by title", async () => {
+    vi.mocked(lookupIsbnAnySource).mockResolvedValue(bookTitled("ONE PIECE 3"));
+    prismaMock.series.findMany.mockResolvedValue([
+      { id: "s1", title: "One Piece", totalVolumes: 110, _count: { volumes: 110 } },
+    ]);
+
+    expect(await resolveIsbnVolume("user-1", ISBN)).toEqual({
+      kind: "existing",
+      seriesId: "s1",
+      seriesTitle: "One Piece",
+      volumeNumber: 3,
+      owned: false,
+      isbn: ISBN,
+    });
+    expect(searchMangaPaginated).not.toHaveBeenCalled();
+  });
+
+  it("matches via MangaDex alt titles", async () => {
+    vi.mocked(lookupIsbnAnySource).mockResolvedValue(bookTitled("Guardianes de la noche 23"));
+    vi.mocked(searchMangaPaginated).mockResolvedValue(
+      mangaPage(manga({ id: "ds-1", title: "Demon Slayer: Kimetsu no Yaiba", altTitles: ["Guardianes de la noche"] })),
+    );
+    prismaMock.series.findMany.mockImplementation(async (args: { where: { mangadexId?: unknown } }) =>
+      args.where.mangadexId
+        ? [{ id: "s9", mangadexId: "ds-1", title: "Demon Slayer", totalVolumes: 23, _count: { volumes: 23 } }]
+        : [],
+    );
+    prismaMock.volume.findFirst.mockImplementation(async (args: { where: { seriesId?: string } }) =>
+      args.where.seriesId ? { owned: false } : null,
+    );
+
+    expect(await resolveIsbnVolume("user-1", ISBN)).toMatchObject({
+      kind: "existing",
+      seriesId: "s9",
+      seriesTitle: "Demon Slayer",
+      volumeNumber: 23,
+      owned: false,
+    });
+  });
+
+  it("suggests a new series from MangaDex", async () => {
+    vi.mocked(lookupIsbnAnySource).mockResolvedValue(bookTitled("Dr. Slump nº 11"));
+    vi.mocked(searchMangaPaginated).mockResolvedValue(mangaPage(manga()));
+
+    const match = await resolveIsbnVolume("user-1", ISBN);
+
+    expect(match).toMatchObject({ kind: "new", volumeNumber: 11, totalVolumes: 18, useMangadexCovers: true });
+    expect(match?.kind === "new" && match.manga.mangadexId).toBe("md-1");
+  });
+
+  it("uses the printed total and drops MangaDex covers when totals differ", async () => {
+    vi.mocked(lookupIsbnAnySource).mockResolvedValue(bookTitled("Dr. Slump nº 11/15"));
+    vi.mocked(searchMangaPaginated).mockResolvedValue(mangaPage(manga()));
+
+    expect(await resolveIsbnVolume("user-1", ISBN)).toMatchObject({
+      kind: "new",
+      volumeNumber: 11,
+      totalVolumes: 15,
+      useMangadexCovers: false,
+    });
+  });
+
+  it("bare trailing number without a series match returns null", async () => {
+    vi.mocked(lookupIsbnAnySource).mockResolvedValue(bookTitled("Fahrenheit 451"));
+    vi.mocked(searchMangaPaginated).mockResolvedValue(mangaPage(manga({ title: "Fahrenheit 0" })));
+
+    expect(await resolveIsbnVolume("user-1", ISBN)).toBeNull();
+  });
+
+  it("returns null when the lookup throws", async () => {
+    vi.mocked(lookupIsbnAnySource).mockRejectedValue(new Error("down"));
+    expect(await resolveIsbnVolume("user-1", ISBN)).toBeNull();
+  });
+});

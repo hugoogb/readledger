@@ -1,7 +1,11 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
+
+vi.mock("@/lib/rate-limit", () => ({ throttleMangadex: vi.fn(async () => {}) }));
+
 import {
   formatMangaForSeries,
   generateVolumeEntries,
+  searchMangaPaginated,
   type MangaSearchResult,
 } from "@/lib/manga-api";
 
@@ -24,6 +28,7 @@ describe("formatMangaForSeries", () => {
     ],
     score: 9.1,
     demographic: "shounen",
+    altTitles: [],
   };
 
   it("maps manga to series format", () => {
@@ -96,5 +101,42 @@ describe("generateVolumeEntries", () => {
 
   it("returns empty array for negative number", () => {
     expect(generateVolumeEntries(-1)).toEqual([]);
+  });
+});
+
+describe("searchMangaPaginated", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("keeps every alt title, in any language", async () => {
+    const manga = {
+      id: "ds-1",
+      type: "manga",
+      attributes: {
+        title: { en: "Demon Slayer: Kimetsu no Yaiba" },
+        altTitles: [{ es: "Guardianes de la noche" }, { ja: "鬼滅の刃" }],
+        description: {},
+        links: null,
+        originalLanguage: "ja",
+        lastVolume: "23",
+        lastChapter: null,
+        publicationDemographic: null,
+        status: "completed",
+        year: 2016,
+        contentRating: "safe",
+        tags: [],
+      },
+      relationships: [],
+    };
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => ({
+        ok: !url.includes("/statistics/"),
+        json: async () => ({ data: [manga], total: 1, limit: 10, offset: 0 }),
+      })),
+    );
+
+    const page = await searchMangaPaginated("guardianes alt titles", 1);
+
+    expect(page.data[0].altTitles).toEqual(["Guardianes de la noche", "鬼滅の刃"]);
   });
 });

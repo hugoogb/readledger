@@ -103,6 +103,8 @@ export type MangaSearchResult = {
   genres: Array<{ id: string; name: string }>;
   score: number | null;
   demographic: string | null;
+  /** Every alt title, any language (e.g. Spanish names used to match scans). */
+  altTitles: string[];
 };
 
 export type PaginatedSearchResult = {
@@ -214,6 +216,7 @@ function parseMangaDexManga(manga: MangaDexManga): MangaSearchResult {
     genres: extractGenres(manga),
     score: null, // filled in separately via statistics endpoint
     demographic: manga.attributes.publicationDemographic,
+    altTitles: manga.attributes.altTitles.flatMap((alt) => Object.values(alt)),
   };
 }
 
