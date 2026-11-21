@@ -159,7 +159,9 @@ export async function resolveIsbnVolume(userId: string, isbn13: string): Promise
     if (known) return { kind: "existing", ...known, isbn: isbn13, byIsbn: true };
 
     const book = await lookupIsbnAnySource(isbn13);
-    const parsed = book && parseVolumeTitle(book.title);
+    // The work title is the reliable one; the edition title is a fallback.
+    const parsed =
+      book && (parseVolumeTitle(book.title) ?? (book.editionTitle ? parseVolumeTitle(book.editionTitle) : null));
     if (!parsed) return null;
     const { volumeNumber } = parsed;
 

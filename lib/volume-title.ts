@@ -12,9 +12,9 @@ export type ParsedVolumeTitle = {
   marked: boolean;
 };
 
-// "nº 11", "n.º 03", "N° 5" (degree sign), "no. 4", "vol. 5", "volumen 12", "volume 3", "tomo 4", "#7",
+// "nº 11", "n.º 03", "N° 5" (degree sign), "no. 4", "no 04", "vol. 5", "volumen 12", "volume 3", "tomo 4", "#7",
 // optionally followed by "/15" and a closing parenthesis.
-const MARKED = /^(.*?)\s*(?:n\.?\s?[º°]|no\.|vol(?:umen|ume|\.)?|tomo|#)\s*(\d+)(?:\s*\/\s*(\d+))?\s*\)?\s*$/i;
+const MARKED = /^(.*?)\s*(?:n\.?\s?[º°]|no\.?(?=\s)|vol(?:umen|ume|\.)?|tomo|#)\s*(\d+)(?:\s*\/\s*(\d+))?\s*\)?\s*$/i;
 // "Dr. Slump 11/15": a printed total marks it as a volume too.
 const WITH_TOTAL = /^(.*?)\s+(\d+)\s*\/\s*(\d+)\s*$/;
 // "ONE PIECE 3": weak evidence, needs a series match to count (see resolver).

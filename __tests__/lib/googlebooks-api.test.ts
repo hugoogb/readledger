@@ -35,6 +35,7 @@ describe("mapGoogleVolume", () => {
       isbn: "9788408172177",
       formatGuess: "NOVEL",
       source: "googlebooks",
+      editionTitle: null,
     });
   });
 

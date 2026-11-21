@@ -31,7 +31,7 @@ const SEARCH_FIELDS = [
   "subject",
 ];
 // For an isbn: query, `editions` holds the edition that matched.
-// Its title often carries the volume number the work title lacks ("ONE PIECE 3").
+// Its title can carry a volume number the work title lacks (see editionTitle).
 const ISBN_FIELDS = [...SEARCH_FIELDS, "editions", "editions.key", "editions.cover_i", "editions.title"];
 
 // --- Normalized app types ---
@@ -54,6 +54,11 @@ export type BookSearchResult = {
   /** Set only when the result came from an ISBN lookup. */
   isbn: string | null;
   formatGuess: BookFormatGuess;
+  /**
+   * The matched edition's own title (ISBN lookups only). Not shown: it's often
+   * noisy ("… - 4. edición") or wrong, but it can carry a volume number.
+   */
+  editionTitle: string | null;
   /** Where the result came from; `key` is a Google volume id for "googlebooks". */
   source: "openlibrary" | "googlebooks";
 };
@@ -126,7 +131,7 @@ export function mapSearchDoc(doc: unknown, isbn?: string): BookSearchResult | nu
 
   return {
     key,
-    title: editionTitle || title,
+    title,
     authors: stringArray(doc.author_name),
     year: positiveInt(doc.first_publish_year),
     coverImage: buildOpenLibraryCoverUrl(coverId, "L"),
@@ -136,6 +141,7 @@ export function mapSearchDoc(doc: unknown, isbn?: string): BookSearchResult | nu
     isbn: isbn ?? null,
     formatGuess: guessFormat(subjects),
     source: "openlibrary",
+    editionTitle: editionTitle || null,
   };
 }
 

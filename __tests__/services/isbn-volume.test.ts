@@ -214,6 +214,27 @@ describe("resolveIsbnVolume", () => {
     expect(searchMangaPaginated).not.toHaveBeenCalled();
   });
 
+  it("falls back to the edition title when the work title has no volume number", async () => {
+    vi.mocked(lookupIsbnAnySource).mockResolvedValue({
+      ...bookTitled("ONE PIECE"),
+      editionTitle: "ONE PIECE 3",
+    });
+    prismaMock.series.findMany.mockResolvedValue([
+      { id: "s1", title: "One Piece", totalVolumes: 110, _count: { volumes: 110 } },
+    ]);
+
+    expect(await resolveIsbnVolume("user-1", ISBN)).toMatchObject({ kind: "existing", seriesId: "s1", volumeNumber: 3 });
+  });
+
+  it("trusts the work title over a wrong edition title", async () => {
+    vi.mocked(lookupIsbnAnySource).mockResolvedValue({ ...bookTitled("ONE PIECE 3"), editionTitle: "Evidencia" });
+    prismaMock.series.findMany.mockResolvedValue([
+      { id: "s1", title: "One Piece", totalVolumes: 110, _count: { volumes: 110 } },
+    ]);
+
+    expect(await resolveIsbnVolume("user-1", ISBN)).toMatchObject({ kind: "existing", volumeNumber: 3 });
+  });
+
   it("matches via MangaDex alt titles", async () => {
     vi.mocked(lookupIsbnAnySource).mockResolvedValue(bookTitled("Guardianes de la noche 23"));
     vi.mocked(searchMangaPaginated).mockResolvedValue(

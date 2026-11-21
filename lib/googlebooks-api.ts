@@ -56,6 +56,7 @@ export function mapGoogleVolume(item: unknown, isbn: string): BookSearchResult |
     isbn,
     formatGuess: guessFormat(categories),
     source: "googlebooks",
+    editionTitle: null,
   };
 }
 

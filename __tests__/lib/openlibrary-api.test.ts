@@ -94,6 +94,7 @@ describe("mapSearchDoc", () => {
       isbn: null,
       formatGuess: "NOVEL",
       source: "openlibrary",
+      editionTitle: null,
     });
   });
 
@@ -197,16 +198,23 @@ describe("network", () => {
     });
   });
 
-  it("prefers the edition title for an ISBN lookup", async () => {
+  it("keeps the work title and exposes the matched edition's title separately", async () => {
     fetchMock.mockResolvedValueOnce(
       json({
         numFound: 1,
-        docs: [{ key: "/works/OL9W", title: "ONE PIECE", editions: { docs: [{ title: "ONE PIECE 3" }] } }],
+        docs: [
+          {
+            key: "/works/OL9W",
+            title: "Cien años de soledad",
+            editions: { docs: [{ title: "Cien años de soledad. - 4. edición" }] },
+          },
+        ],
       }),
     );
-    const book = await lookupIsbn("9788468471549");
+    const book = await lookupIsbn("9788497592208");
     expect(new URL(fetchMock.mock.calls[0][0]).searchParams.get("fields")).toContain("editions.title");
-    expect(book?.title).toBe("ONE PIECE 3");
+    expect(book?.title).toBe("Cien años de soledad");
+    expect(book?.editionTitle).toBe("Cien años de soledad. - 4. edición");
   });
 
   it("lookupIsbn falls back to the work cover and returns null when nothing matches", async () => {
