@@ -32,6 +32,7 @@ export function CoverImage({ src, title, sizes, className, priority }: CoverImag
       ) : (
         <div
           data-testid="cover-placeholder"
+          aria-hidden="true"
           className="flex h-full w-full items-end p-[8%] shadow-[inset_3px_0_0_rgba(0,0,0,0.2)] [container-type:inline-size]"
           style={{ backgroundColor: clothColor(title) }}
         >

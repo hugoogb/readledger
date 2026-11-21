@@ -157,7 +157,7 @@ export function BookPanel({ volume, title, retailPrice, stores }: BookPanelProps
   ].filter((d): d is { label: string; value: string } => Boolean(d.value));
 
   return (
-    <div className="glass rounded-2xl p-4 sm:p-6">
+    <div className="rounded-lg border border-border bg-background-secondary p-4 sm:p-6">
       {editing && (!editing.waitFor || volume[editing.waitFor]) && (
         <VolumeDetailsModal
           volume={volume}
@@ -204,7 +204,7 @@ export function BookPanel({ volume, title, retailPrice, stores }: BookPanelProps
           onClick={handleWishlist}
           aria-pressed={flags.wishlist}
           aria-label={flags.wishlist ? "Remove from wishlist" : "Add to wishlist"}
-          className={`h-14 w-14 ${flags.wishlist ? "bg-error text-white hover:bg-error/90" : ""}`}
+          className={`h-14 w-14 ${flags.wishlist ? "bg-error text-accent-foreground hover:bg-error/90" : ""}`}
         >
           <Heart className={flags.wishlist ? "fill-current" : ""} />
         </Button>

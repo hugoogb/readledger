@@ -122,10 +122,10 @@ export function SeriesFilters({ formats }: SeriesFiltersProps) {
               return (
                 <Button
                   key={filter.value}
-                  variant={isActive ? "default" : "secondary"}
+                  variant={isActive ? "default" : "outline"}
                   onClick={() => updateParams("format", filter.value)}
                   aria-pressed={isActive}
-                  className="whitespace-nowrap h-10 transition-all"
+                  className="h-9 whitespace-nowrap"
                 >
                   {filter.label}
                 </Button>
@@ -142,10 +142,10 @@ export function SeriesFilters({ formats }: SeriesFiltersProps) {
           return (
             <Button
               key={filter.value}
-              variant={isActive ? "default" : "secondary"}
+              variant={isActive ? "default" : "outline"}
               onClick={() => updateParams("status", filter.value)}
               aria-pressed={isActive}
-              className="whitespace-nowrap h-10 transition-all"
+              className="h-9 whitespace-nowrap"
             >
               {filter.label}
             </Button>

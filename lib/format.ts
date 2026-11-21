@@ -75,3 +75,20 @@ export function booksFirstInSearch(counts: Partial<Record<Format, number>>): boo
   }
   return other >= manga;
 }
+
+/** One-line summary under a library card: "12 / 14 owned · 9 read" or "Owned · Unread". */
+export function seriesCaption({
+  standalone,
+  owned,
+  read,
+  total,
+}: {
+  standalone: boolean;
+  owned: number;
+  read: number;
+  total: number;
+}): string {
+  if (!standalone) return `${owned} / ${total} owned · ${read} read`;
+  if (owned === 0) return "Not owned";
+  return read > 0 ? "Owned · Read" : "Owned · Unread";
+}

@@ -28,16 +28,11 @@ export function StatsCardSkeleton() {
 
 export function SeriesCardSkeleton() {
   return (
-    <div className="rounded-2xl overflow-hidden shadow-lg">
-      <Skeleton className="aspect-3/4 rounded-none" />
-      <div className="p-4 space-y-3">
-        <Skeleton className="h-5 w-3/4" />
-        <Skeleton className="h-3 w-1/2" />
-        <div className="space-y-2 pt-2">
-          <Skeleton className="h-1.5 w-full" />
-          <Skeleton className="h-1.5 w-full" />
-        </div>
-      </div>
+    <div>
+      <Skeleton className="aspect-2/3 rounded-[3px]" />
+      <Skeleton className="mt-2.5 h-4 w-3/4" />
+      <Skeleton className="mt-1.5 h-3 w-1/2" />
+      <Skeleton className="mt-1.5 h-3 w-2/3" />
     </div>
   );
 }
@@ -124,7 +119,7 @@ export function RecentSeriesListSkeleton() {
 
 export function SeriesGridSkeleton({ count = 10 }: { count?: number }) {
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+    <div className="grid grid-cols-2 gap-x-4 gap-y-7 sm:grid-cols-3 lg:grid-cols-4 lg:gap-x-6 xl:grid-cols-5">
       {Array.from({ length: count }).map((_, i) => (
         <SeriesCardSkeleton key={i} />
       ))}

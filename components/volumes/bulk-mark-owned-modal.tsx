@@ -171,7 +171,7 @@ export function BulkMarkOwnedModal({
                 </div>
               </div>
             </div>
-            <div className="max-h-40 overflow-y-auto border border-border rounded-xl p-3 bg-background-tertiary/50">
+            <div className="max-h-40 overflow-y-auto border border-border rounded-md p-3 bg-background-tertiary/50">
               <div className="flex flex-wrap gap-2">
                 {unownedVolumes.length > 0 ? (
                   unownedVolumes.map((volume) => (

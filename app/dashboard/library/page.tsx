@@ -6,7 +6,6 @@ import { Pagination } from "@/components/ui/pagination";
 import { SeriesGridSkeleton } from "@/components/ui/skeletons";
 import { parseFormat } from "@/lib/format";
 import { type Format, SeriesStatus } from "@/lib/generated/prisma/enums";
-import { Library } from "lucide-react";
 import { Suspense } from "react";
 
 const PAGE_SIZE = 20;
@@ -57,12 +56,11 @@ async function FilteredSeriesList({
 
   if (series.length === 0) {
     return (
-      <div className="text-center py-16">
-        <Library className="w-16 h-16 text-foreground-muted mx-auto mb-4" />
-        <h3 className="text-xl font-semibold mb-2">
+      <div className="border-t-2 border-foreground py-8">
+        <h3 className="font-serif text-2xl font-medium">
           {statusFilter || formatFilter || searchQuery ? "Nothing found" : "Nothing here yet"}
         </h3>
-        <p className="text-foreground-muted">
+        <p className="mt-1 text-foreground-muted">
           {statusFilter || formatFilter || searchQuery
             ? "Try adjusting your filters"
             : "Add your first book or series"}
@@ -73,7 +71,7 @@ async function FilteredSeriesList({
 
   return (
     <div>
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+      <div className="grid grid-cols-2 gap-x-4 gap-y-7 sm:grid-cols-3 lg:grid-cols-4 lg:gap-x-6 xl:grid-cols-5">
         {paginatedSeries.map((s) => (
           <SeriesCard key={s.id} series={s} showFormat={showFormat} />
         ))}
@@ -111,11 +109,11 @@ export default async function SeriesPage({ searchParams }: Props) {
   const currentPage = Number.isFinite(parsedPage) ? parsedPage : 1;
 
   return (
-    <div className="p-4 lg:p-8">
+    <div className="mx-auto max-w-[1200px] p-4 lg:p-8">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-bold">Library</h1>
+          <h1 className="font-serif text-3xl font-medium">Library</h1>
           <p className="text-foreground-muted mt-1">
             Everything on your shelves
           </p>

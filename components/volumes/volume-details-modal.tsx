@@ -231,7 +231,7 @@ export function VolumeDetailsModal({
               ${
                 coverImage
                   ? ""
-                  : "bg-linear-to-br from-accent/20 to-accent/5 border border-accent/20"
+                  : "bg-accent-muted border border-accent/20"
               }
             `}
           >
@@ -279,7 +279,7 @@ export function VolumeDetailsModal({
                   onClick={handleToggleWishlist}
                   loading={isActionPending}
                   variant="secondary"
-                  className={`rounded-md ${isWishlisted ? "bg-error text-white hover:bg-error/90" : ""}`}
+                  className={`rounded-md ${isWishlisted ? "bg-error text-accent-foreground hover:bg-error/90" : ""}`}
                   aria-label={`${isWishlisted ? "Remove" : "Add"} ${name} ${isWishlisted ? "from" : "to"} wishlist`}
                 >
                   <Heart

@@ -327,7 +327,7 @@ export function AddSeriesModal({ open: isOpen, onOpenChange }: AddSeriesModalPro
                     height={128}
                     src={coverImage}
                     alt="Cover preview"
-                    className="rounded-xl object-cover shadow-lg"
+                    className="rounded-md object-cover shadow-lg"
                   />
                 </div>
               )}
@@ -340,7 +340,7 @@ export function AddSeriesModal({ open: isOpen, onOpenChange }: AddSeriesModalPro
                     <div
                       role="group"
                       aria-label="Single book or series"
-                      className="grid grid-cols-2 gap-1 rounded-xl bg-background-tertiary p-1"
+                      className="grid grid-cols-2 gap-1 rounded-md bg-background-tertiary p-1"
                     >
                       {(["single", "series"] as const).map((k) => (
                         <button
@@ -364,7 +364,7 @@ export function AddSeriesModal({ open: isOpen, onOpenChange }: AddSeriesModalPro
 
               {/* Volume cover preview */}
               {isSingle ? null : volumeData.length > 0 ? (
-                <div className="p-4 bg-accent/5 border border-accent/20 rounded-xl space-y-3">
+                <div className="p-4 bg-accent/5 border border-accent/20 rounded-md space-y-3">
                   <div className="flex items-center gap-3">
                     <BookOpen className="w-5 h-5 text-accent shrink-0" />
                     <div>
@@ -417,7 +417,7 @@ export function AddSeriesModal({ open: isOpen, onOpenChange }: AddSeriesModalPro
                 </div>
               ) : (
                 totalVolumesNum > 0 && (
-                  <div className="p-4 bg-accent/5 border border-accent/20 rounded-xl">
+                  <div className="p-4 bg-accent/5 border border-accent/20 rounded-md">
                     <div className="flex items-center gap-3">
                       <BookOpen className="w-5 h-5 text-accent shrink-0" />
                       <div>
