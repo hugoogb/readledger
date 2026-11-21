@@ -5,7 +5,9 @@ import { Breadcrumbs, JsonLd, SignUpCta } from "@/components/marketing/content-p
 import { FormatStrip } from "@/components/marketing/format-strip";
 import { guidesFor } from "@/content/guides";
 import { contentMetadata } from "@/lib/content/metadata";
+import { buttonVariants } from "@/components/ui/button";
 import { SITE_URL } from "@/lib/site";
+import { cn } from "@/lib/utils";
 
 const PATH = "/books";
 const TITLE = "Book Collection Tracker: Catalog the Books You Own";
@@ -23,9 +25,9 @@ const tracked = [
 ];
 
 const sectionClass = "mt-10";
-const headingClass = "text-2xl font-bold";
+const headingClass = "font-serif text-2xl font-medium";
 const bodyClass = "mt-3 text-foreground-muted leading-relaxed";
-const linkClass = "text-accent underline";
+const linkClass = "underline underline-offset-4 decoration-border-hover hover:decoration-foreground";
 
 export default function BooksPage() {
   return (
@@ -47,7 +49,7 @@ export default function BooksPage() {
         ]}
       />
 
-      <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">
+      <h1 className="font-serif text-[2.25rem] font-medium leading-[1.08] tracking-[-0.015em] sm:text-5xl">
         A book collection tracker for everything on your shelves
       </h1>
       <p className="mt-4 text-lg text-foreground-muted leading-relaxed">
@@ -58,18 +60,18 @@ export default function BooksPage() {
       <FormatStrip className="mt-6" />
       <Link
         href="/login"
-        className="mt-8 inline-flex w-full sm:w-auto items-center justify-center gap-2 bg-accent hover:bg-accent-hover text-white font-medium py-3 px-6 rounded-xl transition-colors"
+        className={cn(buttonVariants({ size: "lg" }), "mt-8 w-full sm:w-auto")}
       >
         Start your library, free
-        <ArrowRight className="w-5 h-5" />
+        <ArrowRight />
       </Link>
 
       <section className={sectionClass}>
         <h2 className={headingClass}>What it tracks</h2>
-        <dl className="mt-4 grid sm:grid-cols-2 gap-3">
+        <dl className="mt-4 grid sm:grid-cols-2 sm:gap-x-8">
           {tracked.map(([label, detail]) => (
-            <div key={label} className="rounded-xl border border-border bg-background-secondary p-4">
-              <dt className="font-semibold">{label}</dt>
+            <div key={label} className="border-t border-border py-4">
+              <dt className="font-medium">{label}</dt>
               <dd className="mt-1 text-sm text-foreground-muted">{detail}</dd>
             </div>
           ))}
@@ -121,12 +123,12 @@ export default function BooksPage() {
 
       <section className={sectionClass}>
         <h2 className={headingClass}>Guides</h2>
-        <ul className="mt-4 space-y-2">
+        <ul className="mt-4 border-t border-border">
           {guidesFor("books").map((guide) => (
             <li key={guide.slug}>
               <Link
                 href={`/guides/${guide.slug}`}
-                className="flex min-h-12 items-center rounded-xl border border-border bg-background-secondary px-4 py-3 font-medium transition-colors hover:border-border-hover"
+                className="flex min-h-12 items-center border-b border-border py-3 transition-colors hover:text-accent"
               >
                 {guide.heading}
               </Link>

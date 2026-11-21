@@ -19,31 +19,16 @@ export default function GlobalError({
           padding: "2rem",
           fontFamily:
             "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-          backgroundColor: "#0a0a0a",
-          color: "#e5e5e5",
+          backgroundColor: "#f6f2e9",
+          color: "#1d1b18",
         }}
       >
-        <div style={{ maxWidth: "28rem", width: "100%", textAlign: "center" }}>
-          <div
-            style={{
-              width: "4rem",
-              height: "4rem",
-              borderRadius: "1rem",
-              backgroundColor: "rgba(239, 68, 68, 0.1)",
-              border: "1px solid rgba(239, 68, 68, 0.2)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              margin: "0 auto 1.5rem",
-              fontSize: "1.5rem",
-            }}
-          >
-            ⚠
-          </div>
+        <div style={{ maxWidth: "28rem", width: "100%" }}>
           <h1
             style={{
-              fontSize: "1.5rem",
-              fontWeight: 700,
+              fontFamily: "Georgia, serif",
+              fontSize: "1.875rem",
+              fontWeight: 500,
               marginBottom: "0.5rem",
             }}
           >
@@ -51,7 +36,7 @@ export default function GlobalError({
           </h1>
           <p
             style={{
-              color: "#a3a3a3",
+              color: "#6f675b",
               marginBottom: "1.5rem",
               lineHeight: 1.5,
             }}
@@ -62,7 +47,7 @@ export default function GlobalError({
             <p
               style={{
                 fontSize: "0.75rem",
-                color: "#737373",
+                color: "#6f675b",
                 marginBottom: "1.5rem",
               }}
             >
@@ -73,7 +58,6 @@ export default function GlobalError({
             style={{
               display: "flex",
               alignItems: "center",
-              justifyContent: "center",
               gap: "0.75rem",
             }}
           >
@@ -85,9 +69,9 @@ export default function GlobalError({
                 alignItems: "center",
                 gap: "0.5rem",
                 padding: "0.75rem 1.5rem",
-                backgroundColor: "#6366f1",
-                color: "#fff",
-                borderRadius: "0.75rem",
+                backgroundColor: "#1f4a3a",
+                color: "#fbf8f1",
+                borderRadius: "6px",
                 fontWeight: 500,
                 border: "none",
                 cursor: "pointer",
@@ -106,10 +90,10 @@ export default function GlobalError({
                 alignItems: "center",
                 gap: "0.5rem",
                 padding: "0.75rem 1.5rem",
-                border: "1px solid #333",
-                borderRadius: "0.75rem",
+                border: "1px solid #cfc4b0",
+                borderRadius: "6px",
                 fontWeight: 500,
-                color: "#e5e5e5",
+                color: "#1d1b18",
                 textDecoration: "none",
                 fontSize: "0.875rem",
               }}

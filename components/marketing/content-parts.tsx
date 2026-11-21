@@ -1,6 +1,8 @@
 import { ArrowRight, ChevronRight } from "lucide-react";
 import Link from "next/link";
+import { buttonVariants } from "@/components/ui/button";
 import { SITE_URL } from "@/lib/site";
+import { cn } from "@/lib/utils";
 
 export function JsonLd({ data }: { data: object }) {
   return (
@@ -55,7 +57,7 @@ export function Breadcrumbs({ items }: { items: Crumb[] }) {
 /** Long-form text styling, since the project doesn't use the typography plugin. */
 export function Prose({ children }: { children: React.ReactNode }) {
   return (
-    <div className="text-foreground-muted leading-relaxed [&>p]:mt-4 [&_h2]:mt-10 [&_h2]:text-2xl [&_h2]:font-bold [&_h2]:text-foreground [&_h3]:mt-6 [&_h3]:text-lg [&_h3]:font-semibold [&_h3]:text-foreground [&_a]:text-accent [&_a]:underline [&_ul]:mt-4 [&_ul]:list-disc [&_ul]:space-y-2 [&_ul]:pl-5 [&_ol]:mt-4 [&_ol]:list-decimal [&_ol]:space-y-2 [&_ol]:pl-5 [&_strong]:text-foreground">
+    <div className="max-w-[40rem] text-[1.0625rem] text-foreground/85 leading-relaxed [&>p]:mt-4 [&_h2]:mt-12 [&_h2]:font-serif [&_h2]:text-[1.75rem] [&_h2]:font-medium [&_h2]:leading-tight [&_h2]:text-foreground [&_h3]:mt-8 [&_h3]:font-serif [&_h3]:text-xl [&_h3]:font-medium [&_h3]:text-foreground [&_a]:text-foreground [&_a]:underline [&_a]:underline-offset-4 [&_a]:decoration-border-hover hover:[&_a]:decoration-foreground [&_ul]:mt-4 [&_ul]:list-disc [&_ul]:space-y-2 [&_ul]:pl-5 [&_ol]:mt-4 [&_ol]:list-decimal [&_ol]:space-y-2 [&_ol]:pl-5 [&_strong]:text-foreground">
       {children}
     </div>
   );
@@ -64,12 +66,12 @@ export function Prose({ children }: { children: React.ReactNode }) {
 /** Scrolls inside its own box so a wide table never widens the phone viewport. */
 export function DataTable({ head, rows }: { head: string[]; rows: React.ReactNode[][] }) {
   return (
-    <div className="mt-6 overflow-x-auto rounded-xl border border-border">
+    <div className="mt-6 overflow-x-auto border-y border-border">
       <table className="w-full min-w-[32rem] border-collapse text-left text-sm">
-        <thead className="bg-background-tertiary/40 text-foreground">
+        <thead className="text-foreground">
           <tr>
             {head.map((cell) => (
-              <th key={cell} scope="col" className="px-3 py-2 font-semibold">
+              <th key={cell} scope="col" className="eyebrow px-3 py-2.5 font-medium">
                 {cell}
               </th>
             ))}
@@ -93,15 +95,12 @@ export function DataTable({ head, rows }: { head: string[]; rows: React.ReactNod
 
 export function SignUpCta({ title, body }: { title: string; body: string }) {
   return (
-    <aside className="glass mt-12 rounded-2xl p-6 text-center">
-      <h2 className="text-xl font-bold text-foreground">{title}</h2>
-      <p className="mt-2 text-foreground-muted">{body}</p>
-      <Link
-        href="/login"
-        className="mt-5 inline-flex items-center justify-center gap-2 bg-accent hover:bg-accent-hover text-white font-medium py-3 px-6 rounded-xl transition-colors"
-      >
+    <aside className="mt-14 border-t-2 border-foreground pt-6">
+      <h2 className="font-serif text-2xl font-medium text-foreground">{title}</h2>
+      <p className="mt-2 max-w-[40rem] text-foreground-muted">{body}</p>
+      <Link href="/login" className={cn(buttonVariants({ size: "lg" }), "mt-5")}>
         Create your free account
-        <ArrowRight className="w-5 h-5" />
+        <ArrowRight />
       </Link>
     </aside>
   );

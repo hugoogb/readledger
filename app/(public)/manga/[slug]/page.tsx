@@ -102,7 +102,7 @@ export default async function MangaSeriesPage({ params }: Props) {
         ]}
       />
 
-      <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">
+      <h1 className="font-serif text-[2.25rem] font-medium leading-[1.08] tracking-[-0.015em] sm:text-5xl">
         {series.title} volume checklist
       </h1>
       <p className="mt-2 text-foreground-muted">By {byline(series)}</p>
@@ -110,9 +110,9 @@ export default async function MangaSeriesPage({ params }: Props) {
 
       <dl className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-3">
         {facts.map(([label, value]) => (
-          <div key={label} className="rounded-xl border border-border bg-background-secondary p-3">
-            <dt className="text-xs text-foreground-muted">{label}</dt>
-            <dd className="mt-1 font-semibold capitalize">{value}</dd>
+          <div key={label} className="border-t-2 border-foreground pt-2">
+            <dt className="eyebrow">{label}</dt>
+            <dd className="figure mt-1 text-lg capitalize">{value}</dd>
           </div>
         ))}
       </dl>
@@ -120,15 +120,15 @@ export default async function MangaSeriesPage({ params }: Props) {
       <VolumeChecklist slug={series.slug} title={series.title} volumes={series.volumes} />
 
       <section className="mt-10">
-        <h2 className="text-2xl font-bold">Collecting {series.title}</h2>
+        <h2 className="font-serif text-2xl font-medium">Collecting {series.title}</h2>
         <p className="mt-3 text-foreground-muted leading-relaxed">{series.note}</p>
         <p className="mt-3 text-foreground-muted leading-relaxed">
           Planning the rest of your set? See{" "}
-          <Link href="/guides/how-much-does-a-manga-collection-cost" className="text-accent underline">
+          <Link href="/guides/how-much-does-a-manga-collection-cost" className="underline underline-offset-4 decoration-border-hover hover:decoration-foreground">
             how to budget for a manga collection
           </Link>{" "}
           and{" "}
-          <Link href="/guides/buying-used-manga-condition-guide" className="text-accent underline">
+          <Link href="/guides/buying-used-manga-condition-guide" className="underline underline-offset-4 decoration-border-hover hover:decoration-foreground">
             what to check when buying used
           </Link>
           .
@@ -136,11 +136,11 @@ export default async function MangaSeriesPage({ params }: Props) {
       </section>
 
       <section className="mt-10">
-        <h2 className="text-2xl font-bold">{series.title} FAQ</h2>
+        <h2 className="font-serif text-2xl font-medium">{series.title} FAQ</h2>
         <div className="mt-4 space-y-5">
           {faqs.map(({ question, answer }) => (
             <div key={question}>
-              <h3 className="font-semibold">{question}</h3>
+              <h3 className="font-medium">{question}</h3>
               <p className="mt-1 text-foreground-muted leading-relaxed">{answer}</p>
             </div>
           ))}
@@ -153,13 +153,13 @@ export default async function MangaSeriesPage({ params }: Props) {
       />
 
       <section className="mt-10">
-        <h2 className="text-xl font-bold">More volume checklists</h2>
-        <ul className="mt-3 grid sm:grid-cols-2 gap-2">
+        <h2 className="font-serif text-xl font-medium">More volume checklists</h2>
+        <ul className="mt-3 grid border-t border-border sm:grid-cols-2 sm:gap-x-8">
           {relatedSeries(series).map((other) => (
             <li key={other.slug}>
               <Link
                 href={`/manga/${other.slug}`}
-                className="flex min-h-12 items-center rounded-xl border border-border bg-background-secondary px-4 py-3 font-medium transition-colors hover:border-border-hover"
+                className="flex min-h-12 items-center border-b border-border py-3 transition-colors hover:text-accent"
               >
                 {other.title} checklist
               </Link>
@@ -167,7 +167,7 @@ export default async function MangaSeriesPage({ params }: Props) {
           ))}
         </ul>
         <p className="mt-4 text-sm">
-          <Link href="/manga" className="text-accent underline">
+          <Link href="/manga" className="underline underline-offset-4 decoration-border-hover hover:decoration-foreground">
             See all {mangaSeries.length} checklists
           </Link>
         </p>

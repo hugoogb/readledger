@@ -22,7 +22,7 @@ export default function GuidesPage() {
           { name: "Guides", href: PATH },
         ]}
       />
-      <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">
+      <h1 className="font-serif text-[2.25rem] font-medium leading-[1.08] tracking-[-0.015em] sm:text-5xl">
         Book and manga collecting guides
       </h1>
       <p className="mt-4 text-lg text-foreground-muted leading-relaxed">
@@ -37,16 +37,16 @@ export default function GuidesPage() {
 function GuideGroup({ heading, guides }: { heading: string; guides: Guide[] }) {
   return (
     <section className="mt-10">
-      <h2 className="text-2xl font-bold">{heading}</h2>
-      <ul className="mt-4 space-y-3">
+      <h2 className="font-serif text-2xl font-medium">{heading}</h2>
+      <ul className="mt-4 border-t border-border">
         {guides.map((guide) => (
           <li key={guide.slug}>
             <Link
               href={`/guides/${guide.slug}`}
-              className="glass block rounded-2xl p-5 transition-colors hover:border-border-hover"
+              className="group block border-b border-border py-5"
             >
-              <span className="text-xs font-medium text-accent">{guide.kind}</span>
-              <h3 className="mt-1 text-lg font-semibold">{guide.heading}</h3>
+              <span className="eyebrow">{guide.kind}</span>
+              <h3 className="mt-1 font-serif text-xl font-medium transition-colors group-hover:text-accent">{guide.heading}</h3>
               <p className="mt-1 text-sm text-foreground-muted">{guide.description}</p>
             </Link>
           </li>
