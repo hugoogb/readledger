@@ -1,7 +1,7 @@
 "use client";
 
 import { useTheme } from "@/hooks/use-theme";
-import { useSyncExternalStore } from "react";
+import { useSyncExternalStore, type CSSProperties } from "react";
 import { Toaster as Sonner } from "sonner";
 
 const PHONE_QUERY = "(max-width: 639px)";
@@ -26,6 +26,21 @@ export function Toaster() {
       position={isPhone ? "top-center" : "bottom-right"}
       theme={resolvedTheme === "dark" ? "dark" : "light"}
       richColors
+      // Palette-matched toasts: paper surface, coloured text, hairline border.
+      style={
+        {
+          "--normal-bg": "var(--background-secondary)",
+          "--normal-text": "var(--foreground)",
+          "--normal-border": "var(--border)",
+          "--success-bg": "var(--background-secondary)",
+          "--success-text": "var(--success)",
+          "--success-border": "var(--border)",
+          "--error-bg": "var(--background-secondary)",
+          "--error-text": "var(--error)",
+          "--error-border": "var(--border)",
+          "--border-radius": "8px",
+        } as CSSProperties
+      }
     />
   );
 }

@@ -51,14 +51,14 @@ export function Checkbox({
           className="sr-only"
         />
         <div
-          className={`w-5 h-5 rounded-md border-2 transition-all duration-200 flex items-center justify-center ${
+          className={`w-5 h-5 rounded-[4px] border-[1.5px] transition-all duration-200 flex items-center justify-center ${
             checked
               ? styles.checked
-              : `bg-background-tertiary ${styles.unchecked}`
+              : `bg-background-secondary ${styles.unchecked}`
           } ${!disabled && !checked ? "group-hover:bg-background-secondary" : ""}`}
         >
           <Check
-            className={`w-3.5 h-3.5 text-white transition-all duration-200 ${
+            className={`w-3.5 h-3.5 text-accent-foreground transition-all duration-200 ${
               checked ? "opacity-100 scale-100" : "opacity-0 scale-75"
             }`}
             strokeWidth={3}

@@ -4,7 +4,7 @@ export function Skeleton({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        "animate-pulse rounded-xl bg-background-tertiary/60",
+        "animate-pulse rounded-md bg-background-tertiary",
         className,
       )}
     />
@@ -13,14 +13,14 @@ export function Skeleton({ className }: { className?: string }) {
 
 export function StatsCardSkeleton() {
   return (
-    <div className="glass rounded-2xl p-6">
+    <div className="rounded-lg border border-border bg-background-secondary p-6">
       <div className="flex items-start justify-between">
         <div className="space-y-2">
           <Skeleton className="h-4 w-24" />
           <Skeleton className="h-8 w-20" />
           <Skeleton className="h-3 w-32" />
         </div>
-        <Skeleton className="w-12 h-12 rounded-xl" />
+        <Skeleton className="w-12 h-12 rounded-md" />
       </div>
     </div>
   );
@@ -54,9 +54,9 @@ export function VolumeGridSkeleton() {
 
 export function ProgressSectionSkeleton() {
   return (
-    <div className="glass rounded-2xl p-6 space-y-4">
+    <div className="rounded-lg border border-border bg-background-secondary p-6 space-y-4">
       <div className="flex items-center gap-3">
-        <Skeleton className="w-10 h-10 rounded-xl" />
+        <Skeleton className="w-10 h-10 rounded-md" />
         <div className="space-y-1.5">
           <Skeleton className="h-5 w-40" />
           <Skeleton className="h-3 w-52" />
@@ -90,7 +90,7 @@ export function DashboardStatsSkeleton() {
 export function RecentSeriesListSkeleton() {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <div className="glass rounded-2xl p-6 space-y-3">
+      <div className="rounded-lg border border-border bg-background-secondary p-6 space-y-3">
         <Skeleton className="h-5 w-24" />
         {Array.from({ length: 4 }).map((_, i) => (
           <div key={i} className="flex items-center justify-between py-2">
@@ -102,7 +102,7 @@ export function RecentSeriesListSkeleton() {
           </div>
         ))}
       </div>
-      <div className="lg:col-span-2 glass rounded-2xl p-6 space-y-3">
+      <div className="lg:col-span-2 rounded-lg border border-border bg-background-secondary p-6 space-y-3">
         <div className="flex items-center justify-between">
           <Skeleton className="h-5 w-28" />
           <Skeleton className="h-4 w-16" />
@@ -167,15 +167,15 @@ export function SeriesDetailSkeleton() {
       </div>
 
       {/* Volume Grid */}
-      <div className="glass rounded-2xl p-6 space-y-6">
+      <div className="rounded-lg border border-border bg-background-secondary p-6 space-y-6">
         <div className="flex items-center justify-between">
           <div className="space-y-1">
             <Skeleton className="h-6 w-24" />
             <Skeleton className="h-4 w-52" />
           </div>
           <div className="flex gap-3">
-            <Skeleton className="h-10 w-32 rounded-xl" />
-            <Skeleton className="h-10 w-36 rounded-xl" />
+            <Skeleton className="h-10 w-32 rounded-md" />
+            <Skeleton className="h-10 w-36 rounded-md" />
           </div>
         </div>
         <VolumeGridSkeleton />
@@ -188,9 +188,37 @@ export function ChartGridSkeleton({ count = 4 }: { count?: number }) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {Array.from({ length: count }).map((_, i) => (
-        <div key={i} className="glass rounded-2xl p-4 sm:p-6">
+        <div key={i} className="rounded-lg border border-border bg-background-secondary p-4 sm:p-6">
           <Skeleton className="h-5 w-40 mb-4" />
           <Skeleton className="h-[300px] w-full" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** Placeholder for a Ledger: label/value rows over hairlines. */
+export function LedgerSkeleton({ rows = 4 }: { rows?: number }) {
+  return (
+    <div className="border-t border-border">
+      {Array.from({ length: rows }).map((_, i) => (
+        <div key={i} className="flex items-center justify-between py-3 border-b border-border">
+          <Skeleton className="h-4 w-28" />
+          <Skeleton className="h-5 w-14" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** Placeholder for a CoverShelf: a row of 2:3 covers. */
+export function CoverShelfSkeleton({ count = 5 }: { count?: number }) {
+  return (
+    <div className="flex gap-3 overflow-hidden lg:grid lg:grid-cols-6 lg:gap-4">
+      {Array.from({ length: count }).map((_, i) => (
+        <div key={i} className="w-[72px] shrink-0 lg:w-auto">
+          <Skeleton className="aspect-2/3 w-full rounded-[3px]" />
+          <Skeleton className="mt-2 h-3 w-12" />
         </div>
       ))}
     </div>
