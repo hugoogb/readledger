@@ -154,6 +154,19 @@ describe("seriesSchema", () => {
     expect(seriesSchema.safeParse({ ...validSeries, coverImage }).success).toBe(false);
   });
 
+  it("accepts a Google Books thumbnail URL", () => {
+    const coverImage = "https://books.google.com/books/content?id=abc_-1&printsec=frontcover&img=1&zoom=1&source=gbs_api";
+    expect(seriesSchema.safeParse({ ...validSeries, coverImage }).success).toBe(true);
+  });
+
+  it.each([
+    "http://books.google.com/books/content?id=abc&img=1",
+    "https://books.google.com.evil.com/books/content?id=abc",
+    "https://books.google.com/books?id=abc",
+  ])("rejects other Google Books URLs: %s", (coverImage) => {
+    expect(seriesSchema.safeParse({ ...validSeries, coverImage }).success).toBe(false);
+  });
+
   it("rejects a non-uuid publisherId", () => {
     const result = seriesSchema.safeParse({ ...validSeries, publisherId: "pub-1" });
     expect(result.success).toBe(false);

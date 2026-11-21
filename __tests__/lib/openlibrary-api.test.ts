@@ -93,6 +93,7 @@ describe("mapSearchDoc", () => {
       subjects: doc.subject.slice(0, 10),
       isbn: null,
       formatGuess: "NOVEL",
+      source: "openlibrary",
     });
   });
 
@@ -194,6 +195,18 @@ describe("network", () => {
       isbn: "9780441013593",
       coverImage: "https://covers.openlibrary.org/b/id/14856017-L.jpg",
     });
+  });
+
+  it("prefers the edition title for an ISBN lookup", async () => {
+    fetchMock.mockResolvedValueOnce(
+      json({
+        numFound: 1,
+        docs: [{ key: "/works/OL9W", title: "ONE PIECE", editions: { docs: [{ title: "ONE PIECE 3" }] } }],
+      }),
+    );
+    const book = await lookupIsbn("9788468471549");
+    expect(new URL(fetchMock.mock.calls[0][0]).searchParams.get("fields")).toContain("editions.title");
+    expect(book?.title).toBe("ONE PIECE 3");
   });
 
   it("lookupIsbn falls back to the work cover and returns null when nothing matches", async () => {

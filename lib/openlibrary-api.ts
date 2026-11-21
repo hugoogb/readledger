@@ -31,7 +31,8 @@ const SEARCH_FIELDS = [
   "subject",
 ];
 // For an isbn: query, `editions` holds the edition that matched.
-const ISBN_FIELDS = [...SEARCH_FIELDS, "editions", "editions.key", "editions.cover_i"];
+// Its title often carries the volume number the work title lacks ("ONE PIECE 3").
+const ISBN_FIELDS = [...SEARCH_FIELDS, "editions", "editions.key", "editions.cover_i", "editions.title"];
 
 // --- Normalized app types ---
 
@@ -53,6 +54,8 @@ export type BookSearchResult = {
   /** Set only when the result came from an ISBN lookup. */
   isbn: string | null;
   formatGuess: BookFormatGuess;
+  /** Where the result came from; `key` is a Google volume id for "googlebooks". */
+  source: "openlibrary" | "googlebooks";
 };
 
 export type BookSearchPage = {
@@ -114,14 +117,16 @@ export function mapSearchDoc(doc: unknown, isbn?: string): BookSearchResult | nu
 
   // An ISBN lookup prefers the matched edition's cover over the work's.
   const editions = isRecord(doc.editions) && Array.isArray(doc.editions.docs) ? doc.editions.docs : [];
-  const editionCover = isRecord(editions[0]) ? positiveInt(editions[0].cover_i) : null;
+  const edition = isRecord(editions[0]) ? editions[0] : null;
+  const editionCover = edition ? positiveInt(edition.cover_i) : null;
+  const editionTitle = edition && typeof edition.title === "string" ? edition.title.trim() : "";
   const coverId = editionCover ?? doc.cover_i;
   // `subject` is the full list for a work (often hundreds); keep a few.
   const subjects = stringArray(doc.subject);
 
   return {
     key,
-    title,
+    title: editionTitle || title,
     authors: stringArray(doc.author_name),
     year: positiveInt(doc.first_publish_year),
     coverImage: buildOpenLibraryCoverUrl(coverId, "L"),
@@ -130,6 +135,7 @@ export function mapSearchDoc(doc: unknown, isbn?: string): BookSearchResult | nu
     subjects: subjects.slice(0, MAX_SUBJECTS),
     isbn: isbn ?? null,
     formatGuess: guessFormat(subjects),
+    source: "openlibrary",
   };
 }
 

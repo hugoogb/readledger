@@ -117,3 +117,10 @@ export const throttleOpenLibrary = createThrottle(
   5000,
   "Book search is busy. Please try again in a moment.",
 );
+
+/** Google Books is only an ISBN fallback (see lib/isbn-lookup.ts); 1/s is plenty. */
+export const throttleGoogleBooks = createThrottle(
+  1000,
+  5000,
+  "Book search is busy. Please try again in a moment.",
+);
