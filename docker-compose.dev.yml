@@ -17,7 +17,8 @@ services:
       POSTGRES_PASSWORD: password
       POSTGRES_DB: readledger
     ports:
-      - "5432:5432"
+      # Loopback only: the dev password is weak by design.
+      - "127.0.0.1:5432:5432"
     volumes:
       - readledger-dev-data:/var/lib/postgresql/data
     healthcheck:
