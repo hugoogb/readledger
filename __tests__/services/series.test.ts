@@ -159,6 +159,21 @@ describe("createSeries for a standalone book", () => {
 // ---- createSeriesWithVolumes ----------------------------------------------
 
 describe("createSeriesWithVolumes", () => {
+  it("writes owned volumes with a purchase date", async () => {
+    prismaMock.series.create.mockResolvedValue(makeSeries());
+    const input = { title: "Dr. Slump", status: "READING" as const, format: "MANGA" as const, publishing: false, totalVolumes: 15 };
+
+    await createSeriesWithVolumes(USER_ID, input, [
+      { volumeNumber: 10 },
+      { volumeNumber: 11, owned: true, isbn: "9788468476117" },
+    ]);
+
+    const created = prismaMock.series.create.mock.calls[0][0].data.volumes.create;
+    expect(created[0]).toMatchObject({ volumeNumber: 10, owned: false, purchaseDate: null });
+    expect(created[1]).toMatchObject({ volumeNumber: 11, owned: true, isbn: "9788468476117" });
+    expect(created[1].purchaseDate).toBeInstanceOf(Date);
+  });
+
   it("creates a series with nested volumes", async () => {
     const input = {
       title: "Spy x Family",

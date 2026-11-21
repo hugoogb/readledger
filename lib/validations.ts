@@ -85,6 +85,7 @@ export const seriesVolumesSchema = z
         .max(32)
         .nullish()
         .transform((v) => (v ? toStoredIsbn(v) : v)),
+      owned: z.boolean().optional(),
     }),
   )
   .max(MAX_VOLUMES);

@@ -39,7 +39,8 @@ export function SiteFooter() {
             </Link>
           </div>
         </div>
-        {/* MangaDex's API policy requires this credit; Open Library asks for a courtesy link. */}
+        {/* MangaDex's API policy requires this credit; Open Library asks for a courtesy link;
+            Google Books results must be attributed. */}
         <p className="text-center sm:text-left text-xs text-foreground-muted">
           Manga data from{" "}
           <a href="https://mangadex.org" rel="noopener" className="underline hover:text-foreground">
@@ -48,8 +49,12 @@ export function SiteFooter() {
           and book data from{" "}
           <a href="https://openlibrary.org" rel="noopener" className="underline hover:text-foreground">
             Open Library
+          </a>{" "}
+          and{" "}
+          <a href="https://books.google.com" rel="noopener" className="underline hover:text-foreground">
+            Google Books
           </a>
-          . ReadLedger is not affiliated with MangaDex, Open Library or any publisher.
+          . ReadLedger is not affiliated with MangaDex, Open Library, Google or any publisher.
         </p>
         <p className="text-center sm:text-left text-xs text-foreground-muted">
           Built by{" "}

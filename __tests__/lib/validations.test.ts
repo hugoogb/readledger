@@ -385,6 +385,10 @@ describe("seriesSchema openLibraryKey", () => {
 });
 
 describe("seriesVolumesSchema isbn", () => {
+  it("keeps an owned flag", () => {
+    expect(seriesVolumesSchema.parse([{ volumeNumber: 1, owned: true }])[0].owned).toBe(true);
+  });
+
   it("stores ISBNs as bare ISBN-13", () => {
     const parsed = seriesVolumesSchema.parse([{ volumeNumber: 1, isbn: "84-9759-220-4" }]);
     expect(parsed[0].isbn).toBe("9788497592208");
