@@ -2,6 +2,7 @@ import { parseCsv } from "@/lib/csv";
 import { isAllowedCoverUrl } from "@/lib/covers";
 import { Condition, Format, SeriesStatus } from "@/lib/generated/prisma/enums";
 import { parseFormat } from "@/lib/format";
+import { toStoredIsbn } from "@/lib/isbn";
 import { MAX_VOLUMES, openLibraryKeySchema } from "@/lib/validations";
 
 export type ImportFormat = "csv" | "json";
@@ -72,6 +73,8 @@ function text(value: unknown, field: keyof typeof LIMITS): string | null {
   }
   return s;
 }
+
+const storedIsbn = (s: string | null): string | null => (s ? toStoredIsbn(s) : s);
 
 function volumeNumber(value: unknown): number {
   const n = Number(value);
@@ -215,7 +218,7 @@ export function parseImport(data: string, format: ImportFormat): ImportPreview {
             purchaseDate: date(v.purchaseDate, "purchaseDate"),
             readDate: date(v.readDate, "readDate"),
             notes: text(v.notes, "notes"),
-            isbn: text(v.isbn, "isbn"),
+            isbn: storedIsbn(text(v.isbn, "isbn")),
             coverImage: cover(v.coverImage),
           });
         } catch (err) {
@@ -257,7 +260,7 @@ export function parseImport(data: string, format: ImportFormat): ImportPreview {
           purchaseDate: date(getCol(row, "purchase_date"), "purchase_date"),
           readDate: date(getCol(row, "read_date"), "read_date"),
           notes: text(getCol(row, "notes"), "notes"),
-          isbn: text(getCol(row, "isbn"), "isbn"),
+          isbn: storedIsbn(text(getCol(row, "isbn"), "isbn")),
           coverImage: null,
         });
         noteFormat(title, rowFormat);

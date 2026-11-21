@@ -372,6 +372,11 @@ describe("seriesSchema openLibraryKey", () => {
 });
 
 describe("seriesVolumesSchema isbn", () => {
+  it("stores ISBNs as bare ISBN-13", () => {
+    const parsed = seriesVolumesSchema.parse([{ volumeNumber: 1, isbn: "84-9759-220-4" }]);
+    expect(parsed[0].isbn).toBe("9788497592208");
+  });
+
   it("accepts an ISBN and caps its length", () => {
     expect(seriesVolumesSchema.safeParse([{ volumeNumber: 1, isbn: "9780441013593" }]).success).toBe(true);
     expect(seriesVolumesSchema.safeParse([{ volumeNumber: 1, isbn: "9".repeat(33) }]).success).toBe(false);
