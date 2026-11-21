@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -13,6 +12,7 @@ import {
   User,
 } from "lucide-react";
 import { signOut } from "@/actions/auth";
+import { Logo } from "@/components/ui/logo";
 import { ThemeToggle } from "./theme-toggle";
 
 const navItems = [
@@ -30,14 +30,7 @@ export function SidebarNav() {
       {/* Logo */}
       <div className="p-6 border-b border-border">
         <Link href="/dashboard" className="flex items-center gap-2">
-          <Image
-            src="/readledger-logo.webp"
-            alt="ReadLedger logo"
-            width={40}
-            height={40}
-            className="rounded-xl"
-          />
-          <span className="text-xl font-bold">ReadLedger</span>
+          <Logo size={28} />
         </Link>
       </div>
 

@@ -48,9 +48,10 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       // Google's search-result favicon needs a square PNG, a multiple of 48px.
+      { url: "/icon.svg", type: "image/svg+xml" },
       { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
-      { url: "/readledger-logo.webp", type: "image/webp" },
     ],
+    apple: [{ url: "/apple-icon.png", sizes: "180x180", type: "image/png" }],
   },
   appleWebApp: {
     title: SITE_NAME,

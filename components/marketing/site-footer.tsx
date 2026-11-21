@@ -1,6 +1,6 @@
-import Image from "next/image";
 import Link from "next/link";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { Logo } from "@/components/ui/logo";
 import { REPOSITORY_URL } from "@/lib/site";
 
 const linkClass = "hover:text-foreground transition-colors py-1";
@@ -11,14 +11,7 @@ export function SiteFooter() {
       <div className="max-w-6xl mx-auto flex flex-col gap-6">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <Image
-              src="/readledger-logo.webp"
-              alt="ReadLedger logo"
-              width={32}
-              height={32}
-              className="rounded-lg"
-            />
-            <span className="font-semibold">ReadLedger</span>
+            <Logo size={24} />
           </div>
           <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 sm:gap-x-6 text-sm text-foreground-muted">
             <ThemeToggle />

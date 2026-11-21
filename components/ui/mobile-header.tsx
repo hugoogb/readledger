@@ -2,10 +2,10 @@
 
 import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { Menu, X } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { Logo } from "@/components/ui/logo";
 import { SidebarFooter, SidebarNav } from "./sidebar";
 
 export function MobileHeader() {
@@ -38,14 +38,7 @@ export function MobileHeader() {
       {/* Top bar */}
       <header className="fixed top-0 left-0 right-0 h-14 bg-background-secondary border-b border-border flex items-center justify-between px-4 z-50 lg:hidden">
         <Link href="/dashboard" className="flex items-center gap-2">
-          <Image
-            src="/readledger-logo.webp"
-            alt="ReadLedger logo"
-            width={32}
-            height={32}
-            className="rounded-lg"
-          />
-          <span className="text-lg font-bold">ReadLedger</span>
+          <Logo size={26} />
         </Link>
         <button
           onClick={() => setOpenOn(isOpen ? null : pathname)}

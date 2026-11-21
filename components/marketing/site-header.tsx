@@ -1,5 +1,5 @@
-import Image from "next/image";
 import Link from "next/link";
+import { Logo } from "@/components/ui/logo";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 // whitespace-nowrap: at 375px phones and at tablet widths (all nav links showing)
@@ -12,14 +12,7 @@ export function SiteHeader() {
     <header className="relative z-10 px-5 sm:px-6 py-4">
       <nav className="max-w-6xl mx-auto flex items-center justify-between gap-2 sm:gap-4">
         <Link href="/" className="flex shrink-0 items-center gap-2">
-          <Image
-            src="/readledger-logo.webp"
-            alt="ReadLedger logo"
-            width={40}
-            height={40}
-            className="rounded-xl"
-          />
-          <span className="text-lg sm:text-xl font-bold">ReadLedger</span>
+          <Logo size={28} />
         </Link>
         <div className="flex items-center gap-1 sm:gap-4">
           {/* On phones these live in the footer, to keep the header on one line. */}
