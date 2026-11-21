@@ -103,8 +103,13 @@ const wishlist = [
   { title: "Gödel, Escher, Bach", author: "Douglas Hofstadter", format: "NONFICTION" },
 ];
 
-// Spread purchase/read dates over this year and last, deterministically.
-const day = (i, y) => `${y}-${String((i % 12) + 1).padStart(2, "0")}-${String((i * 7) % 27 + 1).padStart(2, "0")}`;
+// Spread purchase/read dates over this year and last, deterministically, and
+// never past the current month so nothing is dated in the future.
+const thisMonth = new Date().getUTCMonth(); // 0-based
+const day = (i, y) => {
+  const months = y < year ? 12 : Math.max(1, thisMonth);
+  return `${y}-${String((i % months) + 1).padStart(2, "0")}-${String(((i * 7) % 27) + 1).padStart(2, "0")}`;
+};
 
 let sql = `
 DO $$
