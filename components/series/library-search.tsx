@@ -141,14 +141,16 @@ export function LibrarySearch({
 
       {searching ? (
         isbn ? (
+          // The card goes below the (single) book row: when it appears or
+          // collapses, the row a thumb is aiming at doesn't move.
           <>
+            {books}
             <VolumeMatchCard
               key={isbn}
               isbn={isbn}
               onStartNewSeries={onStartNewSeries}
               onDone={onClose}
             />
-            {books}
           </>
         ) : booksFirst ? (
           <>
