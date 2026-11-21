@@ -13,24 +13,27 @@ for the history and the post-cutover checklist.
 
 Pushing to `master` deploys (`.github/workflows/deploy.yml`):
 
-1. **Unit tests** run (`pnpm test:run`).
-2. **The image is built** from `Dockerfile` (Next.js standalone output, non-root,
+1. **The image is built** from `Dockerfile` (Next.js standalone output, non-root,
    `TZ=UTC`) and pushed to `ghcr.io/hugoogb/readledger` tagged with the commit SHA
    and `latest`.
-3. **CI joins the tailnet** as `tag:ci` and connects to the VPS over Tailscale
+2. **CI joins the tailnet** as `tag:ci` and connects to the VPS over Tailscale
    SSH (no SSH key).
-4. On the server, in `/srv/apps/readledger`:
+3. On the server, in `/srv/apps/readledger`:
    - `docker compose pull`
    - **migrations** run first via the image's `/migrate` CLI
      (`prisma migrate deploy` against `DIRECT_URL`; PgBouncer's transaction
      pooling can't run them)
    - `docker compose up -d --wait` starts the new container and waits for
      `GET /health` (which checks Postgres)
-5. CI checks `https://readledger.app/health` through Cloudflare.
+4. CI checks `https://readledger.app/health` through Cloudflare.
 
 Deploys never run in parallel and are never cancelled mid-way.
 
-Branch from `master` and open a pull request against it; merging to `master` ships.
+Tests don't run here. They run on the pull request (`.github/workflows/ci.yml`:
+lint, typecheck, unit tests, production build), and `master`'s branch protection
+requires that `check` job to pass on a branch that is up to date with `master`.
+So branch from `master`, open a pull request against it, and click "Update
+branch" if `master` moved. Merging to `master` ships.
 
 ### Rolling back
 

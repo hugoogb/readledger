@@ -4,6 +4,11 @@
 # Pushing to master deploys. `workflow_dispatch` with a tag rolls back to an image
 # that already exists, without building.
 #
+# No tests here: ci.yml runs them on every PR, and master's branch protection
+# requires that check to pass on a branch that is up to date with master, so
+# what lands on master is exactly what CI tested. A broken build still stops
+# the deploy, since the image build below runs `pnpm build`.
+#
 # Secrets required:
 #   TS_OAUTH_CLIENT_ID / TS_OAUTH_SECRET   in the `vps` environment (master only)
 #   VPS_HOST                               repository secret, the server's 100.x.y.z
@@ -63,24 +68,6 @@ jobs:
           [[ "$TAG" =~ ^[0-9a-f]{7,40}$ ]] || { echo "::error::tag must be a commit SHA"; exit 1; }
 
       - uses: actions/checkout@v4
-
-      # Cheap gate before anything ships. Skipped for rollbacks, which redeploy
-      # bytes that already passed.
-      - if: ${{ !inputs.tag }}
-        uses: pnpm/action-setup@v4
-        with:
-          version: 11
-      - if: ${{ !inputs.tag }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-      - name: Unit tests
-        if: ${{ !inputs.tag }}
-        run: |
-          pnpm install --frozen-lockfile
-          DIRECT_URL=postgresql://ci@localhost/ci pnpm db:generate
-          pnpm test:run
 
       - if: ${{ !inputs.tag }}
         uses: docker/setup-buildx-action@v3

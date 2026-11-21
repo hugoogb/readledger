@@ -1,0 +1,60 @@
+# Checks: lint, typecheck, unit tests and a production build.
+#
+# Runs on every pull request into master. Branch protection requires this job
+# (`check`) to pass on a branch that is up to date with master, which is why
+# deploy.yml doesn't run the checks again.
+#
+# One job on purpose: each job pays for its own checkout and `pnpm install`,
+# and CI minutes are limited.
+name: ci
+
+on:
+  pull_request:
+    branches: [master]
+
+# A new push to a PR supersedes the run in progress.
+concurrency:
+  group: ci-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      # prisma.config.ts requires DIRECT_URL even for `prisma generate`, which
+      # never connects.
+      DIRECT_URL: postgresql://ci@localhost:5432/ci
+      NEXT_TELEMETRY_DISABLED: 1
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      # Same major as the Dockerfile's node:22-alpine.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm db:generate
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Unit tests
+        run: pnpm test:run
+
+      - name: Build
+        run: pnpm build
