@@ -334,6 +334,11 @@ export function AddSeriesModal({ open: isOpen, onOpenChange }: AddSeriesModalPro
 
               <SeriesFormFields
                 publishers={publishers}
+                onPublisherCreated={(pub) =>
+                  setPublishers((list) =>
+                    [...list, pub].sort((a, b) => a.name.localeCompare(b.name)),
+                  )
+                }
                 kind={isSingle ? "single" : "series"}
                 afterFormat={
                   canChooseKind && (

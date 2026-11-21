@@ -27,9 +27,19 @@ type SeriesFormFieldsProps = {
   kind?: "single" | "series";
   /** Rendered between Format and Title, e.g. the single/series switch. */
   afterFormat?: React.ReactNode;
+  /**
+   * Called with a publisher created from the dropdown. Callers that hold the
+   * list in state (the add modal) must add it, or the new option won't show.
+   */
+  onPublisherCreated?: (publisher: Publisher) => void;
 };
 
-export function SeriesFormFields({ publishers = [], kind = "series", afterFormat }: SeriesFormFieldsProps) {
+export function SeriesFormFields({
+  publishers = [],
+  kind = "series",
+  afterFormat,
+  onPublisherCreated,
+}: SeriesFormFieldsProps) {
   const isSingle = kind === "single";
   const router = useRouter();
   const {
@@ -103,6 +113,7 @@ export function SeriesFormFields({ publishers = [], kind = "series", afterFormat
               try {
                 const pub = unwrap(await createPublisher(name));
                 toast.success(`Publisher "${pub.name}" created`);
+                onPublisherCreated?.({ id: pub.id, name: pub.name });
                 router.refresh();
                 return pub;
               } catch (err) {

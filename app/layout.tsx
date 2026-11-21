@@ -60,6 +60,9 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
+  // Lets the page extend under the iPhone home indicator, so the tab bar's
+  // env(safe-area-inset-bottom) padding takes effect.
+  viewportFit: "cover",
   // Matches --background in globals.css, so the browser chrome blends in.
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#f6f2e9" },

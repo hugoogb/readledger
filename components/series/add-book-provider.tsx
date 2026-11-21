@@ -1,6 +1,7 @@
 "use client";
 
 import { Plus } from "lucide-react";
+import { usePathname } from "next/navigation";
 import { createContext, useContext, useState, type ReactNode } from "react";
 import { Button, type ButtonProps } from "@/components/ui/button";
 import { AddSeriesModal } from "./add-series-modal";
@@ -12,12 +13,21 @@ const AddBookContext = createContext<{ open: () => void } | null>(null);
  * and the sidebar's button can open it from any page.
  */
 export function AddBookProvider({ children }: { children: ReactNode }) {
-  const [isOpen, setIsOpen] = useState(false);
+  const pathname = usePathname();
+  // Open only on the page it was opened from, so a back swipe or any
+  // navigation closes the sheet instead of leaving it over the next page.
+  const [openOn, setOpenOn] = useState<string | null>(null);
+  const isOpen = openOn === pathname;
 
   return (
-    <AddBookContext.Provider value={{ open: () => setIsOpen(true) }}>
+    <AddBookContext.Provider value={{ open: () => setOpenOn(pathname) }}>
       {children}
-      <AddSeriesModal open={isOpen} onOpenChange={setIsOpen} />
+      {/* Keyed so each opening starts fresh, even after a navigation closed it mid-form. */}
+      <AddSeriesModal
+        key={openOn ?? "closed"}
+        open={isOpen}
+        onOpenChange={(open) => setOpenOn(open ? pathname : null)}
+      />
     </AddBookContext.Provider>
   );
 }
