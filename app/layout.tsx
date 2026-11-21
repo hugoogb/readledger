@@ -2,17 +2,26 @@ import { ThemeProvider } from "@/components/providers/theme-provider";
 import { Toaster } from "@/components/ui/toaster";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_TITLE, SITE_URL } from "@/lib/site";
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Newsreader } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const newsreader = Newsreader({
+  variable: "--font-newsreader",
   subsets: ["latin"],
+  axes: ["opsz"],
+  style: ["normal", "italic"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+// Self-hosted (latin subset from Fontsource, OFL): Turbopack's next/font/google
+// can't resolve IBM Plex Sans's font file URLs.
+const plexSans = localFont({
+  variable: "--font-plex-sans",
+  src: [
+    { path: "./fonts/plex-sans-400.woff2", weight: "400", style: "normal" },
+    { path: "./fonts/plex-sans-500.woff2", weight: "500", style: "normal" },
+    { path: "./fonts/plex-sans-600.woff2", weight: "600", style: "normal" },
+  ],
 });
 
 export const metadata: Metadata = {
@@ -52,8 +61,8 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   // Matches --background in globals.css, so the browser chrome blends in.
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f8f8fc" },
-    { media: "(prefers-color-scheme: dark)", color: "#0a0a0c" },
+    { media: "(prefers-color-scheme: light)", color: "#f6f2e9" },
+    { media: "(prefers-color-scheme: dark)", color: "#17140f" },
   ],
 };
 
@@ -65,7 +74,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${newsreader.variable} ${plexSans.variable} antialiased`}
       >
         <ThemeProvider>
           {children}
