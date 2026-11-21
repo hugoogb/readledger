@@ -58,13 +58,13 @@ async function SeriesLedger({ seriesId }: { seriesId: string }) {
 
   return (
     <Ledger className="mb-10 max-w-[40rem]">
-      <LedgerRow label="Owned" note={`· of ${stats.total}`} value={stats.owned} />
+      <LedgerRow label="Owned" note={`of ${stats.total}`} value={stats.owned} />
       <LedgerRow label="Read" value={stats.read} />
       <LedgerRow label="Missing" value={stats.missing} />
       {stats.savings > 0 && (
         <LedgerRow
           label="Saved buying used"
-          note={stats.savingsPercentage > 0 ? `· ${stats.savingsPercentage.toFixed(0)}%` : undefined}
+          note={stats.savingsPercentage > 0 ? `${stats.savingsPercentage.toFixed(0)}%` : undefined}
           value={formatCurrency(stats.savings)}
         />
       )}

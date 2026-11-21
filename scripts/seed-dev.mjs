@@ -11,28 +11,32 @@
 //
 // Idempotent: if the dev account already has series, nothing is changed.
 // Writes through `docker exec ... psql`, so it needs no extra dependencies,
-// and it refuses to run against anything but a local database.
+// and it only ever writes to the local dev container.
 
 import { execFileSync } from "node:child_process";
-import { readFileSync } from "node:fs";
 
 const CONTAINER = "readledger-dev-db";
 
-function databaseUrl() {
-  if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
+// Writes go through `docker exec` into this container and nowhere else, so
+// the safety check is that the local dev container exists and is running.
+function containerRunning() {
   try {
-    const env = readFileSync(new URL("../.env", import.meta.url), "utf8");
-    const line = env.split("\n").find((l) => l.startsWith("DATABASE_URL="));
-    return line?.slice("DATABASE_URL=".length).replace(/^"|"$/g, "");
+    return (
+      execFileSync("docker", ["inspect", "-f", "{{.State.Running}}", CONTAINER], {
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "ignore"],
+      }).trim() === "true"
+    );
   } catch {
-    return undefined;
+    return false;
   }
 }
 
-const url = databaseUrl();
-const host = url ? new URL(url).hostname : "";
-if (!["localhost", "127.0.0.1"].includes(host)) {
-  console.error(`Refusing to seed: DATABASE_URL host is "${host || "unset"}", not localhost.`);
+if (!containerRunning()) {
+  console.error(
+    `Refusing to seed: the ${CONTAINER} container isn't running. Start it with\n` +
+      "  docker compose -f docker-compose.dev.yml up -d",
+  );
   process.exit(1);
 }
 
@@ -103,12 +107,19 @@ const wishlist = [
   { title: "Gödel, Escher, Bach", author: "Douglas Hofstadter", format: "NONFICTION" },
 ];
 
-// Spread purchase/read dates over this year and last, deterministically, and
-// never past the current month so nothing is dated in the future.
-const thisMonth = new Date().getUTCMonth(); // 0-based
+// Spread purchase dates over this year and last, deterministically, never in
+// the future. A read lands 3 to 40 days after its purchase, capped at today.
+const today = new Date();
+const thisMonth = today.getUTCMonth(); // 0-based
 const day = (i, y) => {
   const months = y < year ? 12 : Math.max(1, thisMonth);
-  return `${y}-${String((i % months) + 1).padStart(2, "0")}-${String(((i * 7) % 27) + 1).padStart(2, "0")}`;
+  const date = `${y}-${String((i % months) + 1).padStart(2, "0")}-${String(((i * 7) % 27) + 1).padStart(2, "0")}`;
+  return new Date(`${date}T00:00:00Z`) > today ? today.toISOString().slice(0, 10) : date;
+};
+const readAfter = (purchase, i) => {
+  const read = new Date(`${purchase}T00:00:00Z`);
+  read.setUTCDate(read.getUTCDate() + 3 + (i % 38));
+  return (read > today ? today : read).toISOString().slice(0, 10);
 };
 
 let sql = `
@@ -141,7 +152,7 @@ RETURNING id INTO s;
     const y = i % 3 === 0 ? year - 1 : year;
     const used = i % 4 === 0;
     sql += `INSERT INTO volumes (id, "seriesId", "volumeNumber", owned, read, "pricePaid", condition, "purchaseDate", "readDate", "storeId", "updatedAt")
-VALUES (gen_random_uuid(), s, ${v}, true, ${read}, ${used ? 5.5 : 9.99}, '${used ? conditions[(i % 3) + 1] : "NEW"}', '${day(i, y)}', ${read ? `'${day(i + 1, y)}'` : "NULL"}, ${used ? "st1" : "st0"}, now());
+VALUES (gen_random_uuid(), s, ${v}, true, ${read}, ${used ? 5.5 : 9.99}, '${used ? conditions[(i % 3) + 1] : "NEW"}', '${day(i, y)}', ${read ? `'${readAfter(day(i, y), i)}'` : "NULL"}, ${used ? "st1" : "st0"}, now());
 `;
   }
   n++;
@@ -155,7 +166,7 @@ VALUES (gen_random_uuid(), u, ${q(b.title)}, ${q(b.author)}, '${b.read ? "COMPLE
   ${b.cover ? q(ol(b.cover)) : "NULL"}, p1, ${b.retail ?? "NULL"}, now() - interval '${n} hours')
 RETURNING id INTO s;
 INSERT INTO volumes (id, "seriesId", "volumeNumber", owned, read, "pricePaid", condition, "purchaseDate", "readDate", "storeId", "updatedAt")
-VALUES (gen_random_uuid(), s, 1, true, ${b.read}, ${b.price ?? "NULL"}, '${b.store ? "GOOD" : "NEW"}', '${day(i, year)}', ${b.read ? `'${day(i + 2, year)}'` : "NULL"}, ${b.store ? "st1" : "st0"}, now());
+VALUES (gen_random_uuid(), s, 1, true, ${b.read}, ${b.price ?? "NULL"}, '${b.store ? "GOOD" : "NEW"}', '${day(i, year)}', ${b.read ? `'${readAfter(day(i, year), i)}'` : "NULL"}, ${b.store ? "st1" : "st0"}, now());
 `;
   n++;
 }

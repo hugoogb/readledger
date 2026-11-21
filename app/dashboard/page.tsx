@@ -36,12 +36,12 @@ async function DashboardLedger() {
         <LedgerRow label="Titles" value={stats.totalSeries} />
         <LedgerRow
           label="Books owned"
-          note={missing > 0 ? `· ${missing} missing` : undefined}
+          note={missing > 0 ? `${missing} missing` : undefined}
           value={stats.totalVolumesOwned}
         />
         <LedgerRow
           label="Read"
-          note={unread > 0 ? `· ${unread} unread` : undefined}
+          note={unread > 0 ? `${unread} unread` : undefined}
           value={stats.totalVolumesRead}
         />
         {stats.totalSavings > 0 && (

@@ -24,6 +24,13 @@ describe("LedgerRow", () => {
   });
 });
 
+describe("LedgerRow note", () => {
+  it("keeps the note readable instead of cutting it off with the label", () => {
+    render(<LedgerRow label="Read in 2026" note="+40 vs this point in 2025" value={80} />);
+    expect(screen.getByText("+40 vs this point in 2025").closest(".truncate")).toBeNull();
+  });
+});
+
 describe("LedgerTotal", () => {
   it("closes the total with the double rule", () => {
     const { container } = render(<LedgerTotal label="Spent" value="€12.00" />);

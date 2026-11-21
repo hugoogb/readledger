@@ -3,6 +3,10 @@ import { describe, expect, it, vi } from "vitest";
 
 vi.mock("next/navigation", () => ({ usePathname: () => "/dashboard/wishlist" }));
 
+vi.mock("@/actions/series", () => ({
+  getAddBookOptions: async () => ({ publishers: [], booksFirst: true }),
+}));
+
 const modalProps = vi.fn();
 vi.mock("@/components/series/add-series-modal", () => ({
   AddSeriesModal: (props: { open: boolean }) => {

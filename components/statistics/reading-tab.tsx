@@ -99,16 +99,16 @@ export async function ReadingTab({ yearParam }: { yearParam?: string }) {
       <Ledger className="max-w-[40rem]">
         <LedgerRow
           label={isAll ? "Total read" : `Read in ${period}`}
-          note={comparisonText ? `· ${comparisonText}` : undefined}
+          note={comparisonText}
           value={total}
         />
         <LedgerRow
           label={isAll ? "Best year" : "Best month"}
-          note={best ? `· ${plural(best.count, "book")}` : undefined}
+          note={best ? plural(best.count, "book") : undefined}
           value={best ? (isAll ? best.label : monthName(best.label)) : "—"}
         />
-        <LedgerRow label="Buy to read" note="· average wait" value={avgLag === null ? "—" : plural(avgLag, "day")} />
-        <LedgerRow label="Streak" note="· weeks in a row" value={plural(streak, "week")} />
+        <LedgerRow label="Buy to read" note="average wait" value={avgLag === null ? "—" : plural(avgLag, "day")} />
+        <LedgerRow label="Weekly streak" value={plural(streak, "week")} />
       </Ledger>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -173,7 +173,7 @@ function GoalHistory({
               </span>
               <span className={`figure ${reached ? "text-success" : ""}`}>
                 {read} / {g.target}
-                {reached && <Check className="ml-1 inline size-4 align-[-2px]" aria-label="Goal reached" />}
+                {reached && <Check className="ml-1 inline size-4 align-[-2px]" role="img" aria-label="Goal reached" />}
               </span>
             </li>
           );

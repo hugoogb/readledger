@@ -65,6 +65,10 @@ async function FilteredSeriesList({
             ? "Try adjusting your filters"
             : "Add your first book or series"}
         </p>
+        {/* Shown at every width: on phones the header button is hidden. */}
+        {!(statusFilter || formatFilter || searchQuery) && (
+          <AddBookButton className="mt-5" label="Add your first book" />
+        )}
       </div>
     );
   }

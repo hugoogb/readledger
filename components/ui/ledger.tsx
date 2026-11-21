@@ -20,9 +20,17 @@ type LedgerRowProps = {
 export function LedgerRow({ label, note, value, href }: LedgerRowProps) {
   const content = (
     <>
-      <span className="min-w-0 truncate">
-        {label}
-        {note && <span className="ml-1.5 text-xs text-foreground-muted">{note}</span>}
+      <span className="min-w-0">
+        <span className="block truncate sm:inline">{label}</span>
+        {/* Under the label on phones, inline from sm; never truncated. */}
+        {note && (
+          <span className="block text-xs text-foreground-muted sm:ml-1.5 sm:inline">
+            <span aria-hidden="true" className="hidden sm:inline">
+              ·{" "}
+            </span>
+            {note}
+          </span>
+        )}
       </span>
       <span
         aria-hidden="true"
