@@ -109,6 +109,22 @@ describe("markVolumeOwnedByIsbn", () => {
     expect(prismaMock.series.update).toHaveBeenCalledWith({ where: { id: "s1" }, data: { totalVolumes: 11 } });
   });
 
+  it("fills the gap rows when the scan is past the end, like editing the total does", async () => {
+    prismaMock.series.findFirst.mockResolvedValue({ id: "s1", totalVolumes: 10 });
+    prismaMock.volume.findFirst.mockResolvedValue(null);
+
+    await markVolumeOwnedByIsbn("user-1", "s1", 13, ISBN);
+
+    expect(prismaMock.volume.createMany).toHaveBeenCalledWith({
+      data: [
+        { seriesId: "s1", volumeNumber: 11 },
+        { seriesId: "s1", volumeNumber: 12 },
+      ],
+      skipDuplicates: true,
+    });
+    expect(prismaMock.series.update).toHaveBeenCalledWith({ where: { id: "s1" }, data: { totalVolumes: 13 } });
+  });
+
   it("rejects another user's series", async () => {
     prismaMock.series.findFirst.mockResolvedValue(null);
     await expect(markVolumeOwnedByIsbn("user-2", "s1", 3, ISBN)).rejects.toBeInstanceOf(NotFoundError);

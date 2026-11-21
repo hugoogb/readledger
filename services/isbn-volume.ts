@@ -98,6 +98,10 @@ export async function markVolumeOwnedByIsbn(
     }
 
     if (series.totalVolumes !== null && series.totalVolumes < volumeNumber) {
+      // Keep rows 1..total contiguous, as raising the total in the edit form does.
+      const gap = [];
+      for (let n = series.totalVolumes + 1; n < volumeNumber; n++) gap.push({ seriesId, volumeNumber: n });
+      if (gap.length > 0) await tx.volume.createMany({ data: gap, skipDuplicates: true });
       await tx.series.update({ where: { id: seriesId }, data: { totalVolumes: volumeNumber } });
     }
   });
