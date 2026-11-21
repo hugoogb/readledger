@@ -26,7 +26,6 @@ import {
   Check,
   Banknote,
   Package,
-  Sparkles,
   StickyNote,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -221,7 +220,6 @@ export function BulkMarkOwnedModal({
             />
             {selectedCount > 0 && !isNaN(totalPrice) && (
               <div className="mt-2 flex items-center gap-2 text-sm">
-                <Sparkles className="w-4 h-4 text-accent" />
                 <span className="text-foreground-muted">
                   ={" "}
                   <span className="font-semibold text-accent">

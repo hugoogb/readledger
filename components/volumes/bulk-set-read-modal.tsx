@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Modal } from "@/components/ui/modal";
 import { useToggleSet } from "@/hooks/use-toggle-set";
 import type { Volume } from "@/lib/generated/prisma/browser";
-import { BookMarked, Calendar, Check, Sparkles } from "lucide-react";
+import { BookMarked, Calendar, Check } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -167,8 +167,7 @@ export function BulkSetReadModal({ volumes }: BulkSetReadModalProps) {
           {/* Quick Select */}
           {quickSelectNumbers.length > 0 && (
             <div>
-              <div className="flex items-center gap-2 mb-3">
-                <Sparkles className="w-4 h-4 text-success" />
+              <div className="mb-3">
                 <Label className="mb-0">
                   Quick Select: Read up to volume...
                 </Label>

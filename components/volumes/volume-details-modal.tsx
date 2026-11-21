@@ -23,13 +23,13 @@ import type { SeriesDefaults } from "@/types";
 import { formatDateForInput, todayInputValue } from "@/utils/date";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
+  Banknote,
   BookMarked,
   Calendar,
-  Banknote,
+  Check,
   Heart,
   ImageIcon,
   Package,
-  Sparkles,
   StickyNote,
   Trash2,
 } from "lucide-react";
@@ -467,12 +467,7 @@ export function VolumeDetailsModal({
             disabled={isActionPending}
             className="flex-1 gap-2"
           >
-            {!isSubmitting &&
-              (volume.owned ? (
-                <Sparkles className="w-4 h-4" />
-              ) : (
-                <Package className="w-4 h-4" />
-              ))}
+            {!isSubmitting && (volume.owned ? <Check className="w-4 h-4" /> : <Package className="w-4 h-4" />)}
             {volume.owned ? "Save Changes" : "Add to Collection"}
           </Button>
         </div>
