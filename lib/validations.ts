@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { Condition, Format, SeriesStatus } from "./generated/prisma/enums";
 import { isAllowedCoverUrl } from "./covers";
+import { toStoredIsbn } from "./isbn";
 
 /** Upper bound for volumes in one series — keeps volume generation bounded. */
 export const MAX_VOLUMES = 1000;
@@ -78,7 +79,13 @@ export const seriesVolumesSchema = z
       volumeNumber: z.number().int().min(1).max(MAX_VOLUMES),
       title: z.string().max(255).optional(),
       coverImage: z.string().refine(isAllowedCoverUrl).nullish(),
-      isbn: z.string().trim().max(32).nullish(),
+      isbn: z
+        .string()
+        .trim()
+        .max(32)
+        .nullish()
+        .transform((v) => (v ? toStoredIsbn(v) : v)),
+      owned: z.boolean().optional(),
     }),
   )
   .max(MAX_VOLUMES);

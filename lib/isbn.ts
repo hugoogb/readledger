@@ -44,3 +44,36 @@ export function isbnFromBarcode(text: string): string | null {
   const digits = text.trim();
   return /^97[89]\d{10}$/.test(digits) && isValidIsbn13(digits) ? digits : null;
 }
+
+const isbn13CheckDigit = (first12: string): string => {
+  let sum = 0;
+  for (let i = 0; i < 12; i++) sum += Number(first12[i]) * (i % 2 === 0 ? 1 : 3);
+  return String((10 - (sum % 10)) % 10);
+};
+
+/** A valid normalised ISBN-10 as its ISBN-13 (978 prefix, new check digit). */
+export function isbn10To13(isbn10: string): string {
+  const first12 = `978${isbn10.slice(0, 9)}`;
+  return first12 + isbn13CheckDigit(first12);
+}
+
+/**
+ * The form ISBNs are stored in: a valid ISBN-10/13 becomes a bare ISBN-13, so
+ * scans (always ISBN-13) find it. Anything else is kept as typed.
+ */
+export function toStoredIsbn(input: string): string {
+  const isbn = normalizeIsbn(input);
+  if (isValidIsbn13(isbn)) return isbn;
+  if (isValidIsbn10(isbn)) return isbn10To13(isbn);
+  return input.trim();
+}
+
+/** An ISBN-13 plus its ISBN-10 form (978 only), for matching older stored values. */
+export function isbnVariants(isbn13: string): string[] {
+  if (!isbn13.startsWith("978")) return [isbn13];
+  const first9 = isbn13.slice(3, 12);
+  let sum = 0;
+  for (let i = 0; i < 9; i++) sum += Number(first9[i]) * (10 - i);
+  const check = (11 - (sum % 11)) % 11;
+  return [isbn13, first9 + (check === 10 ? "X" : String(check))];
+}

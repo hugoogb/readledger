@@ -30,7 +30,8 @@ export function SiteFooter() {
             <ThemeToggle />
           </div>
         </div>
-        {/* MangaDex's API policy requires this credit; Open Library asks for a courtesy link. */}
+        {/* MangaDex's API policy requires this credit; Open Library asks for a courtesy link;
+            Google Books results must be attributed. */}
         <p className="text-xs leading-relaxed text-foreground-muted">
           Manga data from{" "}
           <a href="https://mangadex.org" rel="noopener" className="underline underline-offset-2 hover:text-foreground">
@@ -39,8 +40,12 @@ export function SiteFooter() {
           and book data from{" "}
           <a href="https://openlibrary.org" rel="noopener" className="underline underline-offset-2 hover:text-foreground">
             Open Library
+          </a>{" "}
+          and{" "}
+          <a href="https://books.google.com" rel="noopener" className="underline underline-offset-2 hover:text-foreground">
+            Google Books
           </a>
-          . ReadLedger is not affiliated with MangaDex, Open Library or any publisher. Built by{" "}
+          . ReadLedger is not affiliated with MangaDex, Open Library, Google or any publisher. Built by{" "}
           <a href="https://hugoogb.dev/" rel="author" className="underline underline-offset-2 hover:text-foreground">
             Hugo García Benjumea
           </a>

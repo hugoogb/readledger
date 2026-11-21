@@ -2,10 +2,10 @@
 
 import { withResult } from "@/lib/action-result";
 import { requireUser } from "@/lib/auth";
-import { parseIsbnQuery } from "@/lib/isbn";
+import { parseIsbnQuery, toStoredIsbn } from "@/lib/isbn";
+import { lookupIsbnAnySource } from "@/lib/isbn-lookup";
 import {
   getBookDetails as fetchBookDetails,
-  lookupIsbn,
   searchBooks as searchOpenLibrary,
   type BookSearchPage,
 } from "@/lib/openlibrary-api";
@@ -26,7 +26,10 @@ function limit(userId: string) {
   checkRateLimit(`openlibrary:${userId}`, 30, 60_000);
 }
 
-/** Title/author search, or an exact edition lookup when the query is an ISBN. */
+/**
+ * Title/author search on Open Library, or an exact edition lookup when the
+ * query is an ISBN (Open Library, then Google Books).
+ */
 export const searchBooks = withResult(
   async (query: string, page: number = 1): Promise<BookSearchPage> => {
     const user = await requireUser();
@@ -36,7 +39,8 @@ export const searchBooks = withResult(
     const isbn = parseIsbnQuery(input.query);
     if (!isbn) return searchOpenLibrary(input.query, input.page);
 
-    const book = await lookupIsbn(isbn);
+    // ISBN-13, the same key the volume resolver uses, so they share a lookup.
+    const book = await lookupIsbnAnySource(toStoredIsbn(isbn));
     return {
       data: book ? [book] : [],
       pagination: { currentPage: 1, hasNextPage: false },

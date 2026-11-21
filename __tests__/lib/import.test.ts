@@ -22,6 +22,14 @@ describe("parseImport (csv)", () => {
     });
   });
 
+  it("stores the isbn as bare ISBN-13", () => {
+    const csv = `${HEADER}\nBerserk,1,yes,no,no,,,,,,,978-84-9759-220-8`;
+    const { rows, errors } = parseImport(csv, "csv");
+
+    expect(errors).toEqual([]);
+    expect(rows[0].isbn).toBe("9788497592208");
+  });
+
   it("accepts comma decimals and DD/MM/YYYY dates from spreadsheets", () => {
     const csv = `${HEADER}\nBerserk,2,yes,no,no,"7,95",,,31/01/2024,,,`;
     const { rows, errors } = parseImport(csv, "csv");
