@@ -7,6 +7,7 @@
 // credited to Google Books where they are shown.
 
 import { TTLCache } from "./cache";
+import { toStoredIsbn } from "./isbn";
 import { logger } from "./logger";
 import { guessFormat, type BookSearchResult } from "./openlibrary-api";
 import { throttleGoogleBooks } from "./rate-limit";
@@ -30,13 +31,23 @@ function coverUrl(volumeInfo: Record<string, unknown>): string {
   return thumb.replace(/^http:/, "https:").replace(/&edge=curl/, "");
 }
 
-/** Map one `items[]` entry; null when it lacks an id or title. */
+/**
+ * Whether the volume lists `isbn` (either form). A volume without identifiers
+ * can't be checked and is given the benefit of the doubt.
+ */
+function listsIsbn(info: Record<string, unknown>, isbn: string): boolean {
+  if (!Array.isArray(info.industryIdentifiers)) return true;
+  const wanted = toStoredIsbn(isbn);
+  return info.industryIdentifiers.some((id) => isRecord(id) && toStoredIsbn(str(id.identifier)) === wanted);
+}
+
+/** Map one `items[]` entry; null when it lacks an id or title, or is another book. */
 export function mapGoogleVolume(item: unknown, isbn: string): BookSearchResult | null {
   if (!isRecord(item) || !isRecord(item.volumeInfo)) return null;
   const info = item.volumeInfo;
   const id = str(item.id);
   const baseTitle = str(info.title);
-  if (!id || !baseTitle) return null;
+  if (!id || !baseTitle || !listsIsbn(info, isbn)) return null;
 
   const subtitle = str(info.subtitle);
   const year = /^(\d{4})/.exec(str(info.publishedDate));

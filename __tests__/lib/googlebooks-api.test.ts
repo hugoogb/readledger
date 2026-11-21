@@ -44,6 +44,16 @@ describe("mapGoogleVolume", () => {
     expect(book).toMatchObject({ title: "Dune: Edición", authors: [], year: null, coverImage: "", pages: null });
   });
 
+  it("rejects a result whose identifiers don't include the scanned ISBN", () => {
+    const other = { ...item, volumeInfo: { ...item.volumeInfo, industryIdentifiers: [{ type: "ISBN_13", identifier: "9780000000002" }] } };
+    expect(mapGoogleVolume(other, "9788497592208")).toBeNull();
+  });
+
+  it("accepts a match on the ISBN-10 form", () => {
+    const ten = { ...item, volumeInfo: { ...item.volumeInfo, industryIdentifiers: [{ type: "ISBN_10", identifier: "8497592204" }] } };
+    expect(mapGoogleVolume(ten, "9788497592208")?.key).toBe("abc");
+  });
+
   it("returns null without an id or title", () => {
     expect(mapGoogleVolume({ volumeInfo: { title: "X" } }, "1")).toBeNull();
     expect(mapGoogleVolume({ id: "x", volumeInfo: {} }, "1")).toBeNull();
