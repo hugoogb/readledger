@@ -46,7 +46,7 @@ prisma/         Database schema and migrations
 
 1. Create a branch from `master`
 2. Make your changes
-3. Run `pnpm test:run` and `NODE_ENV=production pnpm build` to verify
+3. Run `pnpm lint`, `pnpm typecheck`, `pnpm test:run` and `NODE_ENV=production pnpm build` to verify (CI runs the same on your PR)
 4. Commit using **conventional commits**:
    - `feat:` new feature
    - `fix:` bug fix
