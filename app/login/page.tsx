@@ -1,7 +1,9 @@
 "use client";
 
 import { sendOtp, verifyOtp } from "@/actions/auth";
-import { ArrowLeft, ArrowRight, BookOpen, KeyRound, Mail } from "lucide-react";
+import { ArrowLeft, ArrowRight, KeyRound, Mail } from "lucide-react";
+import Link from "next/link";
+import { Logo } from "@/components/ui/logo";
 import { useActionState, useEffect, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -29,28 +31,16 @@ export default function LoginPage() {
   }, [cooldown]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4 relative overflow-hidden">
-      {/* Background decoration */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-accent/5 rounded-full blur-[100px] animate-pulse" />
-        <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] bg-accent/5 rounded-full blur-[100px] animate-pulse delay-700" />
-      </div>
-
-      <div className="w-full max-w-md relative z-10">
-        {/* Logo */}
-        <div className="text-center mb-8 animate-fade-in">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-accent/10 border border-accent/20 mb-6 shadow-xl shadow-accent/5">
-            <BookOpen className="w-10 h-10 text-accent" />
-          </div>
-          <h1 className="text-4xl font-bold tracking-tight bg-clip-text text-transparent bg-linear-to-b from-foreground to-foreground/70">
-            ReadLedger
-          </h1>
-          <p className="text-foreground-muted mt-2 text-lg">
-            Track your book collection
-          </p>
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <div className="w-full max-w-md">
+        <div className="mb-8">
+          <Link href="/" aria-label="ReadLedger home" className="inline-block">
+            <Logo size={32} className="[&>span:last-child]:text-2xl" />
+          </Link>
+          <p className="mt-3 text-foreground-muted">A ledger for every book on your shelf.</p>
         </div>
 
-        <Card className="animate-fade-in stagger-1 shadow-2xl shadow-accent/5">
+        <Card>
           {email === null ? (
             <EmailStep
               onSent={(sentTo) => {
@@ -77,7 +67,7 @@ function ErrorBox({ message }: { message?: string }) {
   return (
     <div
       role="alert"
-      className="p-4 bg-error/10 border border-error/20 rounded-xl text-error text-sm animate-in fade-in slide-in-from-top-2 duration-300"
+      className="p-4 bg-error/10 border border-error/20 rounded-md text-error text-sm"
     >
       {message}
     </div>
@@ -130,7 +120,7 @@ function EmailStep({ onSent }: { onSent: (email: string) => void }) {
           <Button
             type="submit"
             loading={isPending}
-            className="w-full h-12 text-lg shadow-lg shadow-accent/20"
+            className="w-full h-12 text-base"
           >
             Send code
             {!isPending && <ArrowRight className="w-5 h-5" />}
@@ -237,7 +227,7 @@ function CodeStep({
             type="submit"
             loading={isPending}
             disabled={code.length !== 6}
-            className="w-full h-12 text-lg shadow-lg shadow-accent/20"
+            className="w-full h-12 text-base"
           >
             Sign in
             {!isPending && <ArrowRight className="w-5 h-5" />}

@@ -1,0 +1,31 @@
+# Local development database. Persistent and shared by every checkout and
+# worktree on this machine (same container, same port), so don't reset it
+# without checking nothing else is using it.
+#
+#   docker compose -f docker-compose.dev.yml up -d
+#
+# Production uses docker-compose.prod.yml on the VPS; this file never ships.
+name: readledger-dev
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: readledger-dev-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: readledger
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: readledger
+    ports:
+      # Loopback only: the dev password is weak by design.
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - readledger-dev-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "readledger"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  readledger-dev-data:

@@ -67,15 +67,15 @@ export const VolumeCell = memo(function VolumeCell({
           }
         }}
         className={`
-          group relative aspect-3/4 rounded-xl overflow-hidden cursor-pointer
+          group relative aspect-2/3 rounded-[3px] overflow-hidden cursor-pointer
           transition-all duration-200 w-full text-left bg-transparent p-0
           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background
           ${
             isOwned
               ? isRead
-                ? "ring-2 ring-success/60 shadow-md shadow-success/20"
-                : "ring-2 ring-accent/60 shadow-md shadow-accent/20"
-              : "ring-1 ring-border hover:ring-border-hover"
+                ? "ring-2 ring-success/70"
+                : "ring-2 ring-accent/70"
+              : "border border-dashed border-border-hover hover:border-foreground-muted"
           }
         `}
         aria-label={`Volume ${volume.volumeNumber}${isOwned ? (isRead ? ", owned and read" : ", owned") : ", not owned"}`}
@@ -87,9 +87,9 @@ export const VolumeCell = memo(function VolumeCell({
             ${
               isOwned
                 ? isRead
-                  ? "bg-linear-to-br from-success/15 to-background-tertiary"
-                  : "bg-linear-to-br from-accent/15 to-background-tertiary"
-                : "bg-background-tertiary"
+                  ? "bg-success/10"
+                  : "bg-accent-muted"
+                : "bg-transparent"
             }
           `}
         />
@@ -115,7 +115,7 @@ export const VolumeCell = memo(function VolumeCell({
         >
           <span
             className={`
-              text-2xl font-bold
+              figure text-2xl
               ${
                 hasCover
                   ? "text-white drop-shadow-md"
@@ -203,7 +203,7 @@ export const VolumeCell = memo(function VolumeCell({
                 size="icon-sm"
                 onClick={handleToggleWishlist}
                 variant="secondary"
-                className={`${HIT_AREA} rounded-md ${isWishlisted ? "bg-error text-white hover:bg-error/90" : ""}`}
+                className={`${HIT_AREA} rounded-md ${isWishlisted ? "bg-error text-accent-foreground hover:bg-error/90" : ""}`}
                 aria-label={`${isWishlisted ? "Remove" : "Add"} volume ${volume.volumeNumber} ${isWishlisted ? "from" : "to"} wishlist`}
               >
                 <Heart

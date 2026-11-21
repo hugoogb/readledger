@@ -105,9 +105,9 @@ export function VolumeChecklist({
   }
 
   return (
-    <section aria-labelledby="checklist-heading" className="glass mt-8 rounded-2xl p-4 sm:p-6">
+    <section aria-labelledby="checklist-heading" className="mt-8 rounded-lg border border-border bg-background-secondary p-4 sm:p-6">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 id="checklist-heading" className="text-xl font-bold text-foreground">
+        <h2 id="checklist-heading" className="font-serif text-xl font-medium text-foreground">
           {title} volume list
         </h2>
         <p aria-live="polite" className="text-sm text-foreground-muted">
@@ -120,7 +120,7 @@ export function VolumeChecklist({
         aria-valuemin={0}
         aria-valuemax={volumes}
         aria-valuenow={owned.size}
-        className="mt-3 h-2 overflow-hidden rounded-full bg-background-tertiary"
+        className="mt-3 h-1.5 overflow-hidden rounded-full bg-border"
       >
         <div
           className="h-full rounded-full bg-accent transition-all"
@@ -131,7 +131,7 @@ export function VolumeChecklist({
       <ul className="mt-4 grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2">
         {numbers.map((volume) => (
           <li key={volume}>
-            <label className="flex h-12 cursor-pointer select-none items-center justify-center rounded-lg border border-border bg-background-secondary text-sm font-medium text-foreground transition-colors has-checked:border-accent has-checked:bg-accent has-checked:text-white has-focus-visible:ring-2 has-focus-visible:ring-accent">
+            <label className="figure flex h-12 cursor-pointer select-none items-center justify-center rounded-[3px] border border-dashed border-border-hover text-base text-foreground-muted transition-colors has-checked:border-solid has-checked:border-accent has-checked:bg-accent has-checked:text-accent-foreground has-focus-visible:ring-2 has-focus-visible:ring-accent">
               <input
                 type="checkbox"
                 className="sr-only"
@@ -159,11 +159,11 @@ export function VolumeChecklist({
             value={price}
             onChange={(e) => update({ price: e.target.value })}
             // 16px stops iOS Safari zooming the page when the field is focused.
-            className="mt-1 h-11 w-32 rounded-lg border border-border bg-background-secondary px-3 text-base text-foreground"
+            className="mt-1.5 h-11 w-32 rounded-md border border-border bg-background px-3 text-base text-foreground"
           />
           {showEstimate && (
             <p className="mt-2 text-sm text-foreground-muted">
-              About <strong className="text-foreground">{(remaining * pricePerVolume).toFixed(2)}</strong>{" "}
+              About <strong className="figure text-foreground">{(remaining * pricePerVolume).toFixed(2)}</strong>{" "}
               to finish your set.
             </p>
           )}
@@ -172,7 +172,7 @@ export function VolumeChecklist({
           type="button"
           onClick={() => update({ owned: [] })}
           disabled={owned.size === 0}
-          className="h-11 rounded-lg px-3 text-sm font-medium text-foreground-muted transition-colors hover:text-foreground disabled:opacity-50"
+          className="h-11 rounded-md px-3 text-sm font-medium text-foreground-muted transition-colors hover:text-foreground disabled:opacity-50"
         >
           Clear ticks
         </button>

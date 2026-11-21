@@ -14,11 +14,9 @@ type ChartEmptyProps = {
 export function ChartEmpty({ label, icon: Icon = BarChart3 }: ChartEmptyProps) {
   return (
     <div className="flex flex-col items-center justify-center text-center h-[300px] gap-3">
-      <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-accent/10">
-        <Icon className="w-7 h-7 text-accent" aria-hidden="true" />
-      </div>
+      <Icon className="size-6 text-foreground-muted" aria-hidden="true" />
       <div>
-        <p className="text-sm font-medium text-foreground">No {label} yet</p>
+        <p className="font-serif text-lg font-medium text-foreground">No {label} yet</p>
         <p className="text-sm text-foreground-muted mt-0.5">
           Add books to your collection to see this chart come to life.
         </p>

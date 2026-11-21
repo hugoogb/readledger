@@ -68,7 +68,7 @@ export default async function GuidePage({ params }: Props) {
         ]}
       />
       <article>
-        <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">{guide.heading}</h1>
+        <h1 className="font-serif text-[2.25rem] font-medium leading-[1.08] tracking-[-0.015em] sm:text-5xl">{guide.heading}</h1>
         <p className="mt-3 text-sm text-foreground-muted">
           Updated <time dateTime={guide.updated}>{formatDate(guide.updated)}</time>
         </p>
@@ -85,13 +85,13 @@ export default async function GuidePage({ params }: Props) {
       />
 
       <section className="mt-10">
-        <h2 className="text-xl font-bold">Keep reading</h2>
-        <ul className="mt-3 space-y-2">
+        <h2 className="font-serif text-xl font-medium">Keep reading</h2>
+        <ul className="mt-3 border-t border-border">
           {others.map((other) => (
             <li key={other.slug}>
               <Link
                 href={`/guides/${other.slug}`}
-                className="flex min-h-12 items-center rounded-xl border border-border bg-background-secondary px-4 py-3 font-medium transition-colors hover:border-border-hover"
+                className="flex min-h-12 items-center border-b border-border py-3 transition-colors hover:text-accent"
               >
                 {other.heading}
               </Link>

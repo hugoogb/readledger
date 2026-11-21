@@ -31,10 +31,10 @@ export function ChipNav({ items, active, label }: ChipNavProps) {
         return (
           <Button
             key={item.value}
-            variant={isActive ? "default" : "secondary"}
+            variant={isActive ? "default" : "outline"}
             aria-current={isActive ? "page" : undefined}
             onClick={() => startTransition(() => router.push(item.href))}
-            className="whitespace-nowrap h-10"
+            className="h-9 whitespace-nowrap"
           >
             {item.label}
           </Button>

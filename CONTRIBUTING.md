@@ -14,13 +14,19 @@ Thanks for your interest in contributing! This guide covers everything you need 
 git clone https://github.com/hugoogb/readledger.git
 cd readledger
 pnpm install
-cp .env.example .env   # Fill in your Supabase credentials
-pnpm db:migrate        # Run database migrations
+docker compose -f docker-compose.dev.yml up -d   # Local Postgres on :5432
+cp .env.example .env   # Defaults match the Docker database; set AUTH_SECRET
+pnpm db:migrate:deploy # Apply migrations
 pnpm db:generate       # Generate Prisma client
+pnpm db:seed:dev       # Optional: sample collection for dev@readledger.local
 pnpm dev               # Start dev server at http://localhost:3000
 ```
 
-See `.env.example` for the required environment variables (Supabase URL, anon key, database URLs).
+The Docker database persists in a named volume and is shared by every
+checkout on the machine, so don't reset it casually. Without `BREVO_API_KEY`,
+sign-in codes are printed to the dev server log instead of emailed. The seed
+also creates `empty@readledger.local`, an account with no books, for checking
+empty states.
 
 ## Project Structure
 

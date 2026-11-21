@@ -8,6 +8,8 @@ import { idSchema, openLibraryKeySchema, seriesSchema, seriesVolumesSchema } fro
 import { checkUserActionLimit } from "@/lib/rate-limit";
 import { parseIsbnQuery, toStoredIsbn } from "@/lib/isbn";
 import * as seriesService from "@/services/series";
+import { booksFirstInSearch } from "@/lib/format";
+import { getPublishers } from "@/actions/publishers";
 import { findVolumeByIsbn } from "@/services/isbn-volume";
 
 export type { CreateSeriesInput, UpdateSeriesInput, VolumeInput, SortOption, LibraryQuery } from "@/services/series";
@@ -113,6 +115,18 @@ export const getFormatCounts = cache(async function getFormatCounts() {
   return seriesService.getFormatCounts(user.id);
 });
 
+/** What the add-a-book flow needs, fetched when it opens rather than on every page. */
+export async function getAddBookOptions(): Promise<{
+  publishers: { id: string; name: string }[];
+  booksFirst: boolean;
+}> {
+  const [publishers, formatCounts] = await Promise.all([getPublishers(), getFormatCounts()]);
+  return {
+    publishers: publishers.map(({ id, name }) => ({ id, name })),
+    booksFirst: booksFirstInSearch(formatCounts),
+  };
+}
+
 export const getSeriesStats = cache(async function getSeriesStats() {
   const user = await requireUser();
   return seriesService.getSeriesStats(user.id);
@@ -120,5 +134,6 @@ export const getSeriesStats = cache(async function getSeriesStats() {
 
 export async function getRecentSeries() {
   const user = await requireUser();
-  return seriesService.getRecentSeries(user.id);
+  // Six fills one row of the desktop cover shelf.
+  return seriesService.getRecentSeries(user.id, 6);
 }

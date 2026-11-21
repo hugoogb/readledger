@@ -29,7 +29,7 @@ export function CoverList({ items, emptyText }: CoverListProps) {
         <li key={item.key}>
           <Link
             href={item.href}
-            className="flex items-center gap-3 p-2 -mx-2 rounded-xl hover:bg-background-tertiary transition-colors"
+            className="flex items-center gap-3 p-2 -mx-2 rounded-md hover:bg-background-tertiary transition-colors"
           >
             {item.coverImage ? (
               <Image

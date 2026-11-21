@@ -7,8 +7,9 @@ import { EditSeriesModal } from "@/components/series/edit-series-modal";
 import { SeriesTimeline } from "@/components/series/series-timeline";
 import { Badge } from "@/components/ui/badge";
 import { ProgressBar } from "@/components/ui/progress-bar";
-import { StatsCardSkeleton } from "@/components/ui/skeletons";
-import { StatsCard } from "@/components/ui/stats-card";
+import { LedgerSkeleton } from "@/components/ui/skeletons";
+import { Ledger, LedgerRow, LedgerTotal } from "@/components/ui/ledger";
+import { CoverImage } from "@/components/books/cover-image";
 import { BulkMarkOwnedModal } from "@/components/volumes/bulk-mark-owned-modal";
 import { BulkSetReadModal } from "@/components/volumes/bulk-set-read-modal";
 import { VolumeGrid } from "@/components/volumes/volume-grid";
@@ -16,20 +17,8 @@ import { statusConfig } from "@/lib/constants";
 import { FORMAT_LABELS, isStandalone } from "@/lib/format";
 import { Format } from "@/lib/generated/prisma/enums";
 import { getFormatCurrency } from "@/lib/currency";
-import {
-  ArrowLeft,
-  BookMarked,
-  BookOpen,
-  Building2,
-  Heart,
-  Package,
-  PiggyBank,
-  User,
-  Wallet,
-  WalletCards,
-} from "lucide-react";
+import { ArrowLeft, BookMarked, Heart, Package } from "lucide-react";
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
@@ -61,61 +50,29 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-async function SeriesStatsSection({ seriesId }: { seriesId: string }) {
+async function SeriesLedger({ seriesId }: { seriesId: string }) {
   const [stats, formatCurrency] = await Promise.all([
     getVolumeStats(seriesId),
     getFormatCurrency(),
   ]);
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-      <div>
-        <StatsCard
-          title="Owned"
-          value={stats.owned}
-          icon={Package}
-          variant="accent"
-        />
-      </div>
-      <div>
-        <StatsCard
-          title="Read"
-          value={stats.read}
-          icon={BookMarked}
-          variant="success"
-        />
-      </div>
-      <div>
-        <StatsCard
-          title="Missing"
-          value={stats.missing}
-          icon={BookOpen}
-          variant="default"
-        />
-      </div>
-      <div>
-        <StatsCard
-          title="Total Spent"
-          value={formatCurrency(stats.totalSpent)}
-          subtitle={`${formatCurrency(stats.averagePrice)} avg`}
-          icon={Wallet}
-          variant="warning"
-        />
-      </div>
-      <div>
-        <StatsCard
-          title="Savings"
+    <Ledger className="mb-10 max-w-[40rem]">
+      <LedgerRow label="Owned" note={`of ${stats.total}`} value={stats.owned} />
+      <LedgerRow label="Read" value={stats.read} />
+      <LedgerRow label="Missing" value={stats.missing} />
+      {stats.savings > 0 && (
+        <LedgerRow
+          label="Saved buying used"
+          note={stats.savingsPercentage > 0 ? `${stats.savingsPercentage.toFixed(0)}%` : undefined}
           value={formatCurrency(stats.savings)}
-          subtitle={
-            stats.savingsPercentage > 0
-              ? `${stats.savingsPercentage.toFixed(0)}% saved`
-              : undefined
-          }
-          icon={PiggyBank}
-          variant="success"
         />
-      </div>
-    </div>
+      )}
+      <LedgerTotal
+        label={`Spent · ${formatCurrency(stats.averagePrice)} avg`}
+        value={formatCurrency(stats.totalSpent)}
+      />
+    </Ledger>
   );
 }
 
@@ -129,7 +86,7 @@ async function SeriesProgressSection({ seriesId }: { seriesId: string }) {
           value={stats.ownedProgress}
           variant="accent"
           size="md"
-          label="Collection Progress"
+          label="Collection progress"
           showPercentage
         />
         <p className="text-sm text-foreground-muted mt-2">
@@ -139,9 +96,9 @@ async function SeriesProgressSection({ seriesId }: { seriesId: string }) {
       <div>
         <ProgressBar
           value={stats.readProgress}
-          variant="success"
+          variant="gilt"
           size="md"
-          label="Reading Progress"
+          label="Reading progress"
           showPercentage
         />
         <p className="text-sm text-foreground-muted mt-2">
@@ -173,7 +130,7 @@ export default async function SeriesDetailPage({ params }: Props) {
     : undefined;
 
   return (
-    <div className="p-4 lg:p-8">
+    <div className="mx-auto max-w-[1200px] p-4 lg:p-8">
       {/* Header */}
       <div className="mb-8">
         <Link
@@ -186,55 +143,41 @@ export default async function SeriesDetailPage({ params }: Props) {
 
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Cover */}
-          <div className="w-48 shrink-0">
-            {series.coverImage ? (
-              <Image
-                width={192}
-                height={256}
-                src={series.coverImage}
-                alt={series.title}
-                className="aspect-3/4 rounded-2xl object-cover shadow-xl"
-              />
-            ) : (
-              <div className="w-full aspect-3/4 rounded-2xl bg-background-tertiary flex items-center justify-center">
-                <BookOpen className="w-16 h-16 text-foreground-muted/30" />
-              </div>
-            )}
+          <div className="w-36 shrink-0 sm:w-44">
+            <CoverImage src={series.coverImage} title={series.title} sizes="176px" priority />
           </div>
 
           {/* Info */}
           <div className="flex-1">
             <div className="flex items-start justify-between gap-4 mb-4 flex-wrap">
               <div>
-                <h1 className="text-3xl font-bold mb-2">{series.title}</h1>
-                <div className="flex flex-wrap items-center gap-4 text-foreground-muted">
-                  {series.author && (
-                    <span className="flex items-center gap-2">
-                      <User className="w-4 h-4" />
-                      {series.author}
-                    </span>
-                  )}
-                  {series.publisher && (
-                    <span className="flex items-center gap-2">
-                      <Building2 className="w-4 h-4" />
-                      {series.publisher.name}
-                    </span>
-                  )}
-                  {series.retailPrice && (
-                    <span className="flex items-center gap-2">
-                      <Wallet className="w-4 h-4" />
-                      {formatCurrency(series.retailPrice)}
-                      {book ? " (retail)" : "/vol (retail)"}
-                    </span>
-                  )}
-                  {!book && series.retailPrice && series.totalVolumes && (
-                    <span className="flex items-center gap-2">
-                      <WalletCards className="w-4 h-4" />
-                      Total retail:{" "}
-                      {formatCurrency(series.retailPrice * series.totalVolumes)}
-                    </span>
-                  )}
-                </div>
+                <h1 className="mb-1.5 font-serif text-3xl font-medium leading-tight lg:text-4xl">
+                  {series.title}
+                </h1>
+                <p className="flex flex-wrap gap-x-2 text-foreground-muted">
+                  {[
+                    series.author,
+                    series.publisher?.name,
+                    series.retailPrice &&
+                      `${formatCurrency(series.retailPrice)}${book ? " retail" : " retail per volume"}`,
+                    !book &&
+                      series.retailPrice &&
+                      series.totalVolumes &&
+                      `${formatCurrency(series.retailPrice * series.totalVolumes)} retail in total`,
+                  ]
+                    .filter(Boolean)
+                    .map((part, i, parts) => (
+                      <span key={i}>
+                        {part}
+                        {/* Trailing dots, so a wrapped line never starts with one. */}
+                        {i < parts.length - 1 && (
+                          <span aria-hidden="true" className="ml-2">
+                            ·
+                          </span>
+                        )}
+                      </span>
+                    ))}
+                </p>
               </div>
               <div className="flex items-center gap-3 flex-wrap">
                 <Badge variant="secondary" className="px-3 py-1">
@@ -291,26 +234,17 @@ export default async function SeriesDetailPage({ params }: Props) {
       {!book && (
       <>
 
-      {/* Stats Cards */}
-      <Suspense
-        fallback={
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <StatsCardSkeleton key={i} />
-            ))}
-          </div>
-        }
-      >
-        <SeriesStatsSection seriesId={id} />
+      <Suspense fallback={<LedgerSkeleton rows={5} />}>
+        <SeriesLedger seriesId={id} />
       </Suspense>
 
       {/* Volume Grid */}
-      <div className="glass rounded-2xl p-6">
-        <div className="flex items-center justify-between flex-wrap gap-6 mb-6">
+      <section>
+        <div className="flex items-end justify-between flex-wrap gap-4 mb-5 border-b border-border pb-4">
           <div>
-            <h2 className="text-xl font-semibold">Volumes</h2>
+            <h2 className="font-serif text-xl font-medium">Volumes</h2>
             <p className="text-sm text-foreground-muted mt-1">
-              Click the icons to toggle owned/read status
+              Tap a volume for details, or use the icons to mark it
             </p>
           </div>
           <div className="flex items-center flex-wrap gap-3">
@@ -320,22 +254,22 @@ export default async function SeriesDetailPage({ params }: Props) {
         </div>
 
         {/* Legend */}
-        <div className="mb-6 p-4 bg-background-tertiary/50 rounded-xl border border-border/50">
-          <div className="flex flex-wrap items-center gap-6 text-sm">
+        <div className="mb-6">
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs">
             <div className="flex items-center gap-2">
-              <div className="w-5 h-5 rounded-md bg-background-tertiary ring-1 ring-border" />
+              <div className="h-5 w-3.5 rounded-[2px] border border-dashed border-border-hover" />
               <span className="text-foreground-muted">Not owned</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-5 h-5 rounded-md bg-linear-to-br from-accent/20 to-accent/5 ring-2 ring-accent/50" />
+              <div className="h-5 w-3.5 rounded-[2px] bg-accent-muted ring-2 ring-accent/70" />
               <span className="text-foreground-muted">Owned</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-5 h-5 rounded-md bg-linear-to-br from-success/20 to-success/5 ring-2 ring-success/50" />
+              <div className="h-5 w-3.5 rounded-[2px] bg-success/10 ring-2 ring-success/70" />
               <span className="text-foreground-muted">Read</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-5 h-5 rounded-md bg-linear-to-br from-error/20 to-error/5 ring-2 ring-error/50" />
+              <div className="h-5 w-3.5 rounded-[2px] bg-error/10 ring-2 ring-error/60" />
               <span className="text-foreground-muted">Wishlisted</span>
             </div>
             <div className="flex items-center gap-2 ml-auto">
@@ -361,7 +295,7 @@ export default async function SeriesDetailPage({ params }: Props) {
           }}
           stores={stores}
         />
-      </div>
+      </section>
       </>
       )}
     </div>

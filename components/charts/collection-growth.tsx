@@ -27,7 +27,7 @@ export function CollectionGrowth({ data }: CollectionGrowthProps) {
   return (
     <ResponsiveContainer width="100%" height={300}>
       <ComposedChart data={data}>
-        <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+        <CartesianGrid strokeDasharray="2 4" stroke="var(--color-border)" />
         <XAxis
           dataKey="month"
           tick={{ fill: "var(--color-foreground-muted)", fontSize: 12 }}
@@ -63,8 +63,9 @@ export function CollectionGrowth({ data }: CollectionGrowthProps) {
           contentStyle={{
             backgroundColor: "var(--color-background-secondary)",
             border: "1px solid var(--color-border)",
-            borderRadius: "0.75rem",
+            borderRadius: "8px",
             color: "var(--color-foreground)",
+            boxShadow: "none",
           }}
           labelFormatter={(label) => formatChartMonth(String(label))}
           formatter={(value, name) => [
@@ -78,7 +79,7 @@ export function CollectionGrowth({ data }: CollectionGrowthProps) {
         <Bar
           yAxisId="left"
           dataKey="added"
-          fill="var(--color-accent)"
+          fill="var(--color-chart-1)"
           opacity={0.6}
           radius={[4, 4, 0, 0]}
           name="Added"
@@ -87,7 +88,7 @@ export function CollectionGrowth({ data }: CollectionGrowthProps) {
           yAxisId="right"
           type="monotone"
           dataKey="total"
-          stroke="var(--color-success)"
+          stroke="var(--color-chart-2)"
           strokeWidth={2}
           dot={false}
           name="Total"

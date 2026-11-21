@@ -23,13 +23,13 @@ import type { SeriesDefaults } from "@/types";
 import { formatDateForInput, todayInputValue } from "@/utils/date";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
+  Banknote,
   BookMarked,
   Calendar,
-  Banknote,
+  Check,
   Heart,
   ImageIcon,
   Package,
-  Sparkles,
   StickyNote,
   Trash2,
 } from "lucide-react";
@@ -231,7 +231,7 @@ export function VolumeDetailsModal({
               ${
                 coverImage
                   ? ""
-                  : "bg-linear-to-br from-accent/20 to-accent/5 border border-accent/20"
+                  : "bg-accent-muted border border-accent/20"
               }
             `}
           >
@@ -279,7 +279,7 @@ export function VolumeDetailsModal({
                   onClick={handleToggleWishlist}
                   loading={isActionPending}
                   variant="secondary"
-                  className={`rounded-md ${isWishlisted ? "bg-error text-white hover:bg-error/90" : ""}`}
+                  className={`rounded-md ${isWishlisted ? "bg-error text-accent-foreground hover:bg-error/90" : ""}`}
                   aria-label={`${isWishlisted ? "Remove" : "Add"} ${name} ${isWishlisted ? "from" : "to"} wishlist`}
                 >
                   <Heart
@@ -467,12 +467,7 @@ export function VolumeDetailsModal({
             disabled={isActionPending}
             className="flex-1 gap-2"
           >
-            {!isSubmitting &&
-              (volume.owned ? (
-                <Sparkles className="w-4 h-4" />
-              ) : (
-                <Package className="w-4 h-4" />
-              ))}
+            {!isSubmitting && (volume.owned ? <Check className="w-4 h-4" /> : <Package className="w-4 h-4" />)}
             {volume.owned ? "Save Changes" : "Add to Collection"}
           </Button>
         </div>

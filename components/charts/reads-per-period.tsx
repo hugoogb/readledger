@@ -29,7 +29,7 @@ export function ReadsPerPeriod({ data, granularity }: ReadsPerPeriodProps) {
   return (
     <ResponsiveContainer width="100%" height={300}>
       <BarChart data={data} margin={{ left: -20, right: 4 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
+        <CartesianGrid strokeDasharray="2 4" stroke="var(--color-border)" vertical={false} />
         <XAxis
           dataKey="label"
           tick={{ fill: "var(--color-foreground-muted)", fontSize: 12 }}
@@ -50,8 +50,9 @@ export function ReadsPerPeriod({ data, granularity }: ReadsPerPeriodProps) {
           contentStyle={{
             backgroundColor: "var(--color-background-secondary)",
             border: "1px solid var(--color-border)",
-            borderRadius: "0.75rem",
+            borderRadius: "8px",
             color: "var(--color-foreground)",
+            boxShadow: "none",
           }}
           labelFormatter={(label) => (isMonth ? formatChartMonth(String(label)) : String(label))}
           formatter={(value) => [
@@ -59,7 +60,7 @@ export function ReadsPerPeriod({ data, granularity }: ReadsPerPeriodProps) {
             "Read",
           ]}
         />
-        <Bar dataKey="count" fill="var(--color-success)" radius={[4, 4, 0, 0]} name="Read" />
+        <Bar dataKey="count" fill="var(--color-chart-1)" radius={[4, 4, 0, 0]} name="Read" />
       </BarChart>
     </ResponsiveContainer>
   );

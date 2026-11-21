@@ -22,6 +22,7 @@ import {
   Loader2,
   ScanBarcode,
   Search,
+  Star,
 } from "lucide-react";
 import dynamic from "next/dynamic";
 import Image from "next/image";
@@ -32,7 +33,7 @@ import { VolumeMatchCard, type NewSeriesMatch } from "./volume-match-card";
 const IsbnScanner = dynamic(() => import("./isbn-scanner").then((m) => m.IsbnScanner), {
   ssr: false,
   loading: () => (
-    <div className="flex aspect-4/3 items-center justify-center rounded-xl bg-background-tertiary">
+    <div className="flex aspect-4/3 items-center justify-center rounded-md bg-background-tertiary">
       <Loader2 className="w-8 h-8 animate-spin text-foreground-muted" aria-label="Loading scanner" />
     </div>
   ),
@@ -262,7 +263,7 @@ function SearchSection<T>({
       </div>
 
       {state.status === "error" ? (
-        <div className="flex items-center justify-between gap-3 rounded-xl border border-border px-3 py-2.5">
+        <div className="flex items-center justify-between gap-3 rounded-md border border-border px-3 py-2.5">
           <p className="text-sm text-foreground-muted">{state.message}</p>
           <Button variant="outline" size="sm" type="button" onClick={retry}>
             Retry
@@ -307,7 +308,7 @@ function SearchSection<T>({
           )}
         </>
       ) : (
-        <div className="h-16 rounded-xl bg-background-tertiary/60 animate-pulse" />
+        <div className="h-16 rounded-md bg-background-tertiary/60 animate-pulse" />
       )}
     </section>
   );
@@ -333,7 +334,7 @@ function ResultButton({
       type="button"
       onClick={onClick}
       disabled={inLibrary}
-      className={`group w-full flex items-start gap-3 p-2.5 rounded-xl transition-colors text-left border ${
+      className={`group w-full flex items-start gap-3 p-2.5 rounded-md transition-colors text-left border ${
         inLibrary
           ? "opacity-60 cursor-not-allowed border-border bg-background-secondary"
           : "cursor-pointer border-transparent hover:bg-background-tertiary hover:border-border"
@@ -353,7 +354,7 @@ function ResultButton({
         </div>
       )}
       <div className="flex-1 min-w-0">
-        <h4 className="font-semibold text-foreground group-hover:text-accent transition-colors line-clamp-2">
+        <h4 className="font-serif font-medium text-foreground group-hover:text-accent transition-colors line-clamp-2">
           {title}
         </h4>
         {subtitle && <p className="text-sm text-foreground-muted truncate">{subtitle}</p>}
@@ -515,8 +516,9 @@ function MangaResults({
               </Badge>
             )}
             {manga.score && (
-              <Badge variant="secondary" size="sm" className="bg-warning/10 text-warning border-none">
-                ★ {manga.score}
+              <Badge variant="secondary" size="sm" className="gap-1 border-none bg-warning/10 text-warning">
+                <Star className="size-3" aria-hidden="true" />
+                {manga.score}
               </Badge>
             )}
           </ResultButton>

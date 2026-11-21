@@ -1,107 +1,68 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  BarChart3,
-  Heart,
-  LayoutDashboard,
-  Library,
-  LogOut,
-  Settings,
-  User,
-} from "lucide-react";
-import { signOut } from "@/actions/auth";
+import { UserRound } from "lucide-react";
+import { AddBookButton } from "@/components/series/add-book-provider";
+import { Logo } from "@/components/ui/logo";
+import { isNavActive, NAV_ITEMS } from "./nav-items";
 import { ThemeToggle } from "./theme-toggle";
 
-const navItems = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/dashboard/library", label: "Library", icon: Library },
-  { href: "/dashboard/wishlist", label: "Wishlist", icon: Heart },
-  { href: "/dashboard/statistics", label: "Statistics", icon: BarChart3 },
-];
-
-export function SidebarNav() {
+/** Desktop navigation (lg and up). Phones use BottomTabBar instead. */
+export function Sidebar() {
   const pathname = usePathname();
+  const profileActive =
+    isNavActive(pathname, "/dashboard/profile") || isNavActive(pathname, "/dashboard/settings");
 
   return (
-    <>
-      {/* Logo */}
-      <div className="p-6 border-b border-border">
-        <Link href="/dashboard" className="flex items-center gap-2">
-          <Image
-            src="/readledger-logo.webp"
-            alt="ReadLedger logo"
-            width={40}
-            height={40}
-            className="rounded-xl"
-          />
-          <span className="text-xl font-bold">ReadLedger</span>
-        </Link>
-      </div>
+    <div className="flex h-full flex-col px-3 py-5">
+      <Link href="/dashboard" className="px-2.5" aria-label="ReadLedger home">
+        <Logo size={26} />
+      </Link>
 
-      {/* Navigation */}
-      <nav aria-label="Main navigation" className="flex-1 p-4">
-        <ul className="space-y-1">
-          {navItems.map((item) => {
-            const isActive =
-              item.href === "/dashboard"
-                ? pathname === "/dashboard"
-                : pathname.startsWith(item.href);
+      <AddBookButton className="mt-6 mb-5 w-full" />
 
+      <nav aria-label="Main navigation">
+        <ul className="space-y-0.5">
+          {NAV_ITEMS.map((item) => {
+            const active = isNavActive(pathname, item.href);
             return (
               <li key={item.href}>
                 <Link
                   href={item.href}
-                  aria-current={isActive ? "page" : undefined}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${
-                    isActive
-                      ? "bg-accent/10 text-accent"
-                      : "text-foreground-muted hover:text-foreground hover:bg-background-tertiary"
+                  aria-current={active ? "page" : undefined}
+                  className={`flex min-h-10 items-center gap-3 rounded-md px-2.5 text-sm transition-colors ${
+                    active
+                      ? "bg-background text-foreground shadow-[inset_2px_0_0_var(--accent)]"
+                      : "text-foreground-muted hover:bg-background hover:text-foreground"
                   }`}
                 >
-                  <item.icon className="w-5 h-5" />
-                  <span className="font-medium">{item.label}</span>
+                  <item.icon className="size-5" aria-hidden="true" />
+                  {item.label}
                 </Link>
               </li>
             );
           })}
         </ul>
       </nav>
-    </>
-  );
-}
 
-export function SidebarFooter() {
-  return (
-    <div className="p-4 border-t border-border space-y-1">
-      <div className="flex items-center justify-between px-4 py-2">
-        <ThemeToggle />
-      </div>
-      <Link
-        href="/dashboard/settings"
-        className="flex items-center gap-3 px-4 py-3 rounded-xl text-foreground-muted hover:text-foreground hover:bg-background-tertiary transition-colors"
-      >
-        <Settings className="w-5 h-5" />
-        <span className="font-medium">Settings</span>
-      </Link>
-      <Link
-        href="/dashboard/profile"
-        className="flex items-center gap-3 px-4 py-3 rounded-xl text-foreground-muted hover:text-foreground hover:bg-background-tertiary transition-colors"
-      >
-        <User className="w-5 h-5" />
-        <span className="font-medium">Profile</span>
-      </Link>
-      <form action={signOut}>
-        <button
-          type="submit"
-          className="cursor-pointer w-full flex items-center gap-3 px-4 py-3 rounded-xl text-foreground-muted hover:text-error hover:bg-error/10 transition-colors"
+      <div className="mt-auto space-y-3 border-t border-border pt-4">
+        <Link
+          href="/dashboard/profile"
+          aria-current={profileActive ? "page" : undefined}
+          className={`flex min-h-10 items-center gap-3 rounded-md px-2.5 text-sm transition-colors ${
+            profileActive
+              ? "bg-background text-foreground shadow-[inset_2px_0_0_var(--accent)]"
+              : "text-foreground-muted hover:bg-background hover:text-foreground"
+          }`}
         >
-          <LogOut className="w-5 h-5" />
-          <span className="font-medium">Sign out</span>
-        </button>
-      </form>
+          <UserRound className="size-5" aria-hidden="true" />
+          Profile &amp; settings
+        </Link>
+        <div className="px-1.5">
+          <ThemeToggle />
+        </div>
+      </div>
     </div>
   );
 }

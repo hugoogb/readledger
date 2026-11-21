@@ -1,7 +1,9 @@
 import { NamePrompt } from "@/components/account/name-prompt";
 import { CurrencyProvider } from "@/components/providers/currency-provider";
 import { MobileHeader } from "@/components/ui/mobile-header";
-import { SidebarFooter, SidebarNav } from "@/components/ui/sidebar";
+import { AddBookProvider } from "@/components/series/add-book-provider";
+import { BottomTabBar } from "@/components/ui/bottom-tab-bar";
+import { Sidebar } from "@/components/ui/sidebar";
 import { getCurrentUser } from "@/lib/auth";
 
 export default async function DashboardLayout({
@@ -13,32 +15,34 @@ export default async function DashboardLayout({
 
   return (
     <CurrencyProvider currency={user?.currency ?? "EUR"}>
-      <div className="min-h-screen bg-background">
-        <a
-          href="#main-content"
-          className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[10000] focus:bg-accent focus:text-white focus:px-4 focus:py-2 focus:rounded-xl focus:shadow-lg"
-        >
-          Skip to main content
-        </a>
+      <AddBookProvider>
+        <div className="min-h-screen bg-background">
+          <a
+            href="#main-content"
+            className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[10000] focus:rounded-md focus:bg-accent focus:px-4 focus:py-2 focus:text-accent-foreground"
+          >
+            Skip to main content
+          </a>
 
-        {/* Mobile header */}
-        <MobileHeader />
+          {/* Phones: top bar + bottom tab bar. lg and up: sidebar. */}
+          <MobileHeader />
+          <aside
+            aria-label="Main sidebar"
+            className="fixed top-0 left-0 hidden h-screen w-60 border-r border-border bg-background-secondary lg:block"
+          >
+            <Sidebar />
+          </aside>
 
-        {/* Desktop sidebar */}
-        <aside
-          aria-label="Main sidebar"
-          className="hidden lg:flex fixed left-0 top-0 h-screen w-64 bg-background-secondary border-r border-border flex-col"
-        >
-          <SidebarNav />
-          <SidebarFooter />
-        </aside>
-
-        {/* Main content */}
-        <main id="main-content" className="pt-14 lg:pt-0 lg:ml-64 min-h-screen">
-          {user?.name === null && <NamePrompt />}
-          {children}
-        </main>
-      </div>
+          <main
+            id="main-content"
+            className="min-h-screen pt-14 pb-[calc(4.5rem+env(safe-area-inset-bottom))] lg:ml-60 lg:pt-0 lg:pb-0"
+          >
+            {user?.name === null && <NamePrompt />}
+            {children}
+          </main>
+          <BottomTabBar />
+        </div>
+      </AddBookProvider>
     </CurrencyProvider>
   );
 }

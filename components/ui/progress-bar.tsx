@@ -2,28 +2,32 @@ type ProgressBarProps = {
   value: number;
   max?: number;
   label?: string;
+  /** Accessible name when no visible label is shown. */
+  ariaLabel?: string;
   showPercentage?: boolean;
-  variant?: "accent" | "success" | "warning";
+  variant?: "accent" | "gilt" | "success" | "warning";
   size?: "sm" | "md" | "lg";
   className?: string;
 };
 
 const variants = {
   accent: "bg-accent",
+  gilt: "bg-gilt",
   success: "bg-success",
   warning: "bg-warning",
 };
 
 const sizes = {
-  sm: "h-1.5",
-  md: "h-2.5",
-  lg: "h-4",
+  sm: "h-1",
+  md: "h-1.5",
+  lg: "h-2",
 };
 
 export function ProgressBar({
   value,
   max = 100,
   label,
+  ariaLabel,
   showPercentage = false,
   variant = "accent",
   size = "md",
@@ -41,19 +45,19 @@ export function ProgressBar({
             </span>
           )}
           {showPercentage && (
-            <span className="text-sm font-medium">
+            <span className="figure text-sm">
               {percentage.toFixed(0)}%
             </span>
           )}
         </div>
       )}
       <div
-        className={`w-full bg-background-tertiary rounded-full overflow-hidden ${sizes[size]}`}
+        className={`w-full bg-border rounded-full overflow-hidden ${sizes[size]}`}
         role="progressbar"
         aria-valuenow={Math.round(percentage)}
         aria-valuemin={0}
         aria-valuemax={100}
-        aria-label={label || "Progress"}
+        aria-label={ariaLabel || label || "Progress"}
       >
         <div
           className={`progress-bar ${sizes[size]} rounded-full ${variants[variant]}`}

@@ -113,7 +113,7 @@ export function ImportModal() {
             role="button"
             tabIndex={0}
             aria-label="Upload CSV or JSON file"
-            className="border-2 border-dashed border-border rounded-xl p-8 text-center cursor-pointer hover:border-accent/50 hover:bg-accent/5 transition-colors"
+            className="border-2 border-dashed border-border rounded-md p-8 text-center cursor-pointer hover:border-accent/50 hover:bg-accent/5 transition-colors"
             onClick={() => fileInputRef.current?.click()}
             onKeyDown={(e) => {
               if (e.key === "Enter" || e.key === " ") {
@@ -161,7 +161,7 @@ export function ImportModal() {
 
               {/* Errors */}
               {preview.errors.length > 0 && (
-                <div className="p-3 bg-error/10 border border-error/20 rounded-xl space-y-1">
+                <div className="p-3 bg-error/10 border border-error/20 rounded-md space-y-1">
                   <div className="flex items-center gap-2 text-error font-medium text-sm">
                     <AlertCircle className="w-4 h-4" />
                     {preview.errors.length} error{preview.errors.length !== 1 ? "s" : ""} found
@@ -181,7 +181,7 @@ export function ImportModal() {
 
               {/* Sample data */}
               {preview.rows.length > 0 && (
-                <div className="max-h-48 overflow-y-auto border border-border rounded-xl">
+                <div className="max-h-48 overflow-y-auto border border-border rounded-md">
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-border bg-background-tertiary/50">

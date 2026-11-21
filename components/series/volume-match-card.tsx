@@ -55,7 +55,7 @@ export function VolumeMatchCard({ isbn, onStartNewSeries, onDone }: VolumeMatchC
   }, [isbn]);
 
   if (match === undefined) {
-    return <div aria-hidden="true" className="h-28 rounded-xl bg-background-tertiary animate-pulse" />;
+    return <div aria-hidden="true" className="h-28 rounded-md bg-background-tertiary animate-pulse" />;
   }
   if (match === null) return null;
 
@@ -104,7 +104,7 @@ export function VolumeMatchCard({ isbn, onStartNewSeries, onDone }: VolumeMatchC
       >
         <Minus />
       </Button>
-      <span className="w-12 text-center text-lg font-semibold tabular-nums" aria-live="polite">
+      <span className="figure w-12 text-center text-xl" aria-live="polite">
         {volumeNumber}
       </span>
       <Button
@@ -124,7 +124,7 @@ export function VolumeMatchCard({ isbn, onStartNewSeries, onDone }: VolumeMatchC
   return (
     <section
       aria-label="Volume match"
-      className="space-y-3 rounded-xl border border-accent/20 bg-accent/5 p-4"
+      className="space-y-3 rounded-lg border border-accent/20 bg-accent-muted p-4"
     >
       <div className="flex items-start gap-3">
         <Library className="mt-0.5 h-5 w-5 shrink-0 text-accent" aria-hidden="true" />
@@ -152,7 +152,7 @@ export function VolumeMatchCard({ isbn, onStartNewSeries, onDone }: VolumeMatchC
       {match.kind === "existing" && picking && (
         <select
           aria-label="Series"
-          className="min-h-11 w-full rounded-xl border border-border bg-background px-3 text-sm"
+          className="min-h-11 w-full rounded-md border border-border bg-background px-3 text-sm"
           value={series?.id ?? ""}
           disabled={!options}
           onChange={(e) => {

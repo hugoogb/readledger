@@ -71,7 +71,7 @@ export function Modal({
     >
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/70 backdrop-blur-sm"
+        className="fixed inset-0 bg-[#1d1b18]/55"
         onClick={onClose}
         aria-hidden="true"
       />
@@ -82,7 +82,7 @@ export function Modal({
           on the panel itself (`overflow-y-auto` alone would force
           `overflow-x: auto`, producing a stray horizontal scrollbar). */}
       <div
-        className={`relative flex w-full ${maxWidthClasses[maxWidth]} flex-col bg-background-secondary border border-border max-h-[92dvh] sm:max-h-[90dvh] overflow-hidden rounded-t-2xl sm:rounded-2xl animate-slide-up sm:animate-scale-in`}
+        className={`relative flex w-full ${maxWidthClasses[maxWidth]} flex-col bg-background-secondary border border-border max-h-[92dvh] sm:max-h-[90dvh] overflow-hidden rounded-t-lg sm:rounded-lg shadow-2xl animate-slide-up sm:animate-scale-in`}
       >
         {/* Header (with mobile drag-handle affordance) */}
         <div className="shrink-0 bg-background-secondary border-b border-border/60">
@@ -95,13 +95,13 @@ export function Modal({
           <div className="flex items-center justify-between gap-4 px-6 pt-3 sm:pt-5 pb-4">
             <h2
               id={titleId}
-              className="text-lg sm:text-xl font-semibold truncate"
+              className="font-serif text-xl sm:text-[1.375rem] font-medium truncate"
             >
               {title}
             </h2>
             <button
               onClick={onClose}
-              className="shrink-0 cursor-pointer p-2 -mr-2 hover:bg-background-tertiary rounded-lg transition-colors"
+              className="shrink-0 cursor-pointer p-2.5 -mr-2.5 hover:bg-background-tertiary rounded-md transition-colors"
               aria-label="Close dialog"
             >
               <X className="w-5 h-5" />

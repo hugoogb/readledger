@@ -38,7 +38,7 @@ export default function MangaIndexPage() {
           { name: "Volume checklists", href: PATH },
         ]}
       />
-      <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">Manga volume checklists</h1>
+      <h1 className="font-serif text-[2.25rem] font-medium leading-[1.08] tracking-[-0.015em] sm:text-5xl">Manga volume checklists</h1>
       <p className="mt-4 text-lg text-foreground-muted leading-relaxed">
         Pick a series to see how many volumes it has, tick off the ones on your shelf, and work out
         what it would cost to finish the set. No account needed.
@@ -49,7 +49,7 @@ export default function MangaIndexPage() {
 
       <p className="mt-8 text-sm text-foreground-muted">
         New to tracking? Start with{" "}
-        <Link href="/guides/how-to-track-your-manga-collection" className="text-accent underline">
+        <Link href="/guides/how-to-track-your-manga-collection" className="underline underline-offset-4 decoration-border-hover hover:decoration-foreground">
           how to track your manga collection
         </Link>
         .
@@ -72,15 +72,15 @@ function SeriesGroup({
 }) {
   return (
     <section className="mt-10">
-      <h2 className="text-2xl font-bold">{heading}</h2>
-      <ul className="mt-4 grid sm:grid-cols-2 gap-2">
+      <h2 className="font-serif text-2xl font-medium">{heading}</h2>
+      <ul className="mt-4 grid border-t border-border sm:grid-cols-2 sm:gap-x-8">
         {series.map((item) => (
           <li key={item.slug}>
             <Link
               href={`/manga/${item.slug}`}
-              className="flex min-h-12 items-center justify-between gap-3 rounded-xl border border-border bg-background-secondary px-4 py-3 transition-colors hover:border-border-hover"
+              className="flex min-h-12 items-center justify-between gap-3 border-b border-border py-3 transition-colors hover:text-accent"
             >
-              <span className="font-medium">{item.title}</span>
+              <span>{item.title}</span>
               <span className="shrink-0 text-sm text-foreground-muted">
                 {formatVolumeCount(item)} vols
                 <span className="sr-only">, {statusLabel(item)}</span>

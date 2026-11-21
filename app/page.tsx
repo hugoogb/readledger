@@ -1,23 +1,13 @@
-import {
-  ArrowRight,
-  ArrowRightLeft,
-  BarChart3,
-  BookMarked,
-  BookOpen,
-  ChevronDown,
-  Library,
-  PiggyBank,
-  Search,
-  Sparkles,
-  TrendingUp,
-  Wallet,
-} from "lucide-react";
+import { ArrowRight, ChevronDown } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { JsonLd } from "@/components/marketing/content-parts";
 import { SiteFooter } from "@/components/marketing/site-footer";
 import { FormatStrip } from "@/components/marketing/format-strip";
+import { LandingShelf } from "@/components/marketing/landing-shelf";
 import { SiteHeader } from "@/components/marketing/site-header";
+import { buttonVariants } from "@/components/ui/button";
+import { Ledger, LedgerRow, LedgerTotal } from "@/components/ui/ledger";
 import { guidesFor } from "@/content/guides";
 import { getMangaSeries } from "@/lib/content/manga-series";
 import { REPOSITORY_URL, SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site";
@@ -65,44 +55,26 @@ const features = [
   {
     title: "One library for every format",
     body: "Novels, manga, comics, and non-fiction side by side. See what you own, which series volumes are missing, and keep a wishlist of what to buy next.",
-    icon: Library,
-    iconClass: "text-accent",
-    tileClass: "bg-accent/10 border-accent/20",
   },
   {
     title: "Add in a couple of taps",
     body: "Search by title, author, or ISBN. Book details and covers come from Open Library, and manga from MangaDex, so you rarely type anything yourself.",
-    icon: Search,
-    iconClass: "text-accent",
-    tileClass: "bg-accent/10 border-accent/20",
   },
   {
     title: "Reading progress",
     body: "Mark books as read, set a yearly reading goal, and keep an eye on the unread pile. Always know where you left off.",
-    icon: BarChart3,
-    iconClass: "text-success",
-    tileClass: "bg-success/10 border-success/20",
   },
   {
     title: "Spending insights",
     body: "Log what you pay as you go and see totals, averages, and trends, so your hobby never surprises your wallet.",
-    icon: Wallet,
-    iconClass: "text-warning",
-    tileClass: "bg-warning/10 border-warning/20",
   },
   {
     title: "Second-hand savings",
     body: "Compare what you paid against retail price and see how much buying used has saved you, with condition and store on every copy.",
-    icon: PiggyBank,
-    iconClass: "text-success",
-    tileClass: "bg-success/10 border-success/20",
   },
   {
     title: "CSV and JSON import",
     body: "Bring your collection over from a spreadsheet and export it whenever you like. Your data stays yours.",
-    icon: ArrowRightLeft,
-    iconClass: "text-warning",
-    tileClass: "bg-warning/10 border-warning/20",
   },
 ];
 
@@ -152,24 +124,6 @@ const faqs = [
   },
 ];
 
-// Faux dashboard stats shown in the product preview. These are illustrative,
-// not real data — they mirror the layout of the actual /dashboard so visitors
-// see what the app looks like before signing up.
-const previewStats = [
-  { label: "Books", value: "342", icon: Library },
-  { label: "Titles", value: "64", icon: BookMarked },
-  { label: "Read", value: "76%", icon: BookOpen },
-  { label: "Spent", value: "$1,284", icon: Wallet },
-];
-
-// A pattern of "owned" (true) vs "missing" (false) volume spines for the
-// preview collection shelf.
-const previewSpines = [
-  true, true, true, true, false, true, true, false, true, true,
-  true, false, true, true, true, true, true, true, false, true,
-  true, true, false, true, true, true, false, true, true, true,
-];
-
 const mangaGuides = guidesFor("manga").slice(0, 4);
 const bookGuides = guidesFor("books");
 
@@ -182,234 +136,151 @@ const popularChecklists = [
   "vinland-saga",
 ].flatMap((slug) => getMangaSeries(slug) ?? []);
 
+const steps = [
+  {
+    title: "Add your books",
+    body: "Search by title or ISBN and add books and series in seconds, covers and details included.",
+  },
+  {
+    title: "Track every copy",
+    body: "Mark books owned or read, log prices, and note condition as your shelves grow.",
+  },
+  {
+    title: "Get insights",
+    body: "Watch spending trends, reading progress, and collection stats come together at a glance.",
+  },
+];
+
+const ROMAN = ["i.", "ii.", "iii.", "iv.", "v.", "vi."];
+
+const sectionHeading = "font-serif text-[2rem] font-medium leading-tight tracking-[-0.01em] sm:text-[2.5rem]";
+const listLink =
+  "flex min-h-12 items-center justify-between gap-3 border-b border-border py-3 text-[0.95rem] transition-colors hover:text-accent";
+const moreLink = "mt-4 inline-block py-2 text-sm underline underline-offset-4 decoration-border-hover hover:decoration-foreground";
+
 export default function Home() {
   return (
     <div className="min-h-screen bg-background">
       <JsonLd data={structuredData} />
-
-      {/* Background decoration */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[60rem] h-[40rem] bg-accent/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 left-0 w-96 h-96 bg-accent/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 right-0 w-96 h-96 bg-success/5 rounded-full blur-3xl" />
-      </div>
-
       <SiteHeader />
 
-      {/* Hero */}
-      <main className="relative z-10 px-5 sm:px-6 pt-12 sm:pt-20 pb-24">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center max-w-3xl mx-auto animate-fade-in">
-            <span className="inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/10 px-3 py-1 text-sm font-medium text-accent">
-              <Sparkles className="w-3.5 h-3.5" />
-              For every book you own
-            </span>
-            <h1 className="mt-6 text-4xl sm:text-6xl font-bold tracking-tight leading-[1.1]">
-              Your book collection,
-              <span className="gradient-text"> beautifully tracked</span>
-            </h1>
-            <p className="mt-6 text-lg sm:text-xl text-foreground-muted leading-relaxed">
-              ReadLedger is a free book collection tracker. Know exactly which
-              books you own, which you&apos;ve read, and what you&apos;ve spent,
-              from novels to manga and comics, with stats that work on your
-              phone.
-            </p>
-            <FormatStrip className="mt-6 justify-center" />
-            <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-3">
-              <Link
-                href="/login"
-                className="w-full sm:w-auto bg-accent hover:bg-accent-hover text-white font-medium py-3 px-6 rounded-xl transition-colors flex items-center justify-center gap-2 shadow-lg shadow-accent/20"
-              >
-                Start tracking — it&apos;s free
-                <ArrowRight className="w-5 h-5" />
-              </Link>
-              <Link
-                href="/login"
-                className="w-full sm:w-auto border border-border hover:border-border-hover text-foreground font-medium py-3 px-6 rounded-xl transition-colors"
-              >
-                Sign in
-              </Link>
-            </div>
-            <p className="mt-5 text-sm text-foreground-muted">
-              Free to use · Works on your phone, no install · Your data stays yours
-            </p>
-          </div>
-
-          {/* Product preview */}
-          <div className="mt-16 sm:mt-20 max-w-4xl mx-auto animate-fade-in stagger-2">
-            <div className="glass rounded-2xl overflow-hidden shadow-2xl shadow-accent/10">
-              {/* App chrome */}
-              <div className="flex items-center gap-3 px-4 py-3 border-b border-border bg-background-tertiary/40">
-                <div className="flex gap-1.5">
-                  <span className="w-3 h-3 rounded-full bg-error/60" />
-                  <span className="w-3 h-3 rounded-full bg-warning/60" />
-                  <span className="w-3 h-3 rounded-full bg-success/60" />
-                </div>
-                <div className="flex-1 text-center text-xs text-foreground-muted truncate">
-                  readledger · dashboard
-                </div>
+      <main className="px-5 pb-24 sm:px-6">
+        <div className="mx-auto max-w-[1200px]">
+          {/* Hero: copy left, an illustrative shelf and ledger right. */}
+          <section className="grid items-center gap-12 pt-10 sm:pt-16 lg:grid-cols-[1.05fr_1fr] lg:gap-16 lg:pt-20">
+            <div>
+              <FormatStrip />
+              <h1 className="mt-4 font-serif text-[2.6rem] font-medium leading-[1.04] tracking-[-0.02em] sm:text-6xl lg:text-[4.25rem]">
+                A ledger for <em className="text-accent">every book</em> on your shelf.
+              </h1>
+              <p className="mt-6 max-w-[34rem] text-lg leading-relaxed text-foreground-muted">
+                ReadLedger is a free book collection tracker. Know exactly which books you own,
+                which you&apos;ve read, and what you&apos;ve spent, from novels to manga and
+                comics, with stats that work on your phone.
+              </p>
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-6">
+                <Link href="/login" className={buttonVariants({ size: "lg" })}>
+                  Start your ledger
+                  <ArrowRight />
+                </Link>
+                <Link
+                  href="/login"
+                  className="py-2 text-center text-sm underline underline-offset-4 decoration-border-hover hover:decoration-foreground"
+                >
+                  I already have an account
+                </Link>
               </div>
-
-              {/* Body */}
-              <div className="p-4 sm:p-6">
-                {/* Stat tiles */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  {previewStats.map(({ label, value, icon: Icon }) => (
-                    <div
-                      key={label}
-                      className="rounded-xl border border-border bg-background-secondary p-3 sm:p-4"
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-foreground-muted">
-                          {label}
-                        </span>
-                        <Icon className="w-4 h-4 text-accent" />
-                      </div>
-                      <div className="mt-2 text-xl sm:text-2xl font-bold">
-                        {value}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Collection shelf */}
-                <div className="mt-5">
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-sm font-semibold">
-                      Your library
-                    </span>
-                    <span className="text-xs text-foreground-muted">
-                      64 titles
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-10 gap-1.5 sm:gap-2">
-                    {previewSpines.map((owned, i) => (
-                      <div
-                        key={i}
-                        className={
-                          owned
-                            ? "h-12 sm:h-16 rounded-md bg-linear-to-b from-accent/80 to-accent-hover/80"
-                            : "h-12 sm:h-16 rounded-md border border-dashed border-border bg-background-tertiary/40"
-                        }
-                      />
-                    ))}
-                  </div>
-                </div>
-              </div>
+              <p className="mt-6 text-sm text-foreground-muted">
+                Free to use · Works on your phone, no install · Your data stays yours
+              </p>
             </div>
-          </div>
+
+            {/* Illustrative only, not real data: shows the kind of totals the app keeps. */}
+            <div className="mx-auto w-full max-w-[30rem] lg:max-w-none">
+              <LandingShelf />
+              <Ledger className="mt-6">
+                <LedgerRow label="Books owned" value="342" />
+                <LedgerRow label="Read this year" value="41" />
+                <LedgerRow label="Saved buying used" value="$218.40" />
+                <LedgerTotal label="Spent in total" value="$1,284.50" />
+              </Ledger>
+            </div>
+          </section>
 
           {/* Features */}
           <section className="mt-24 sm:mt-32">
-            <div className="text-center max-w-2xl mx-auto mb-12">
-              <h2 className="text-3xl font-bold">
-                A book tracker for your whole shelf
-              </h2>
-              <p className="mt-3 text-foreground-muted">
-                What you own, what you&apos;ve read, and what you&apos;ve spent, always in sync.
-              </p>
-            </div>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {features.map(({ title, body, icon: Icon, iconClass, tileClass }) => (
-                <div key={title} className="glass rounded-2xl p-6 animate-fade-in">
-                  <div
-                    className={`w-12 h-12 rounded-xl border flex items-center justify-center mb-4 ${tileClass}`}
-                  >
-                    <Icon className={`w-6 h-6 ${iconClass}`} />
+            <h2 className={sectionHeading}>A book tracker for your whole shelf</h2>
+            <p className="mt-3 max-w-[36rem] text-foreground-muted">
+              What you own, what you&apos;ve read, and what you&apos;ve spent, always in sync.
+            </p>
+            <ol className="mt-10 grid gap-x-10 sm:grid-cols-2 lg:grid-cols-3">
+              {features.map(({ title, body }, i) => (
+                <li key={title} className="grid grid-cols-[2.25rem_1fr] border-t border-border py-5 lg:block lg:border-t-2 lg:border-foreground lg:pt-4">
+                  <span className="font-serif text-lg italic text-gilt">{ROMAN[i]}</span>
+                  <div>
+                    <h3 className="font-medium lg:mt-1">{title}</h3>
+                    <p className="mt-1 text-[0.95rem] leading-relaxed text-foreground-muted">{body}</p>
                   </div>
-                  <h3 className="text-lg font-semibold mb-2">{title}</h3>
-                  <p className="text-foreground-muted">{body}</p>
-                </div>
+                </li>
               ))}
-            </div>
+            </ol>
           </section>
 
           {/* How it works */}
           <section className="mt-24 sm:mt-32">
-            <h2 className="text-3xl font-bold text-center mb-12">
-              Up and running in minutes
-            </h2>
-            <div className="grid sm:grid-cols-3 gap-8">
-              <div className="text-center animate-fade-in stagger-1">
-                <div className="w-12 h-12 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center mx-auto mb-4 text-accent font-bold text-lg">
-                  1
-                </div>
-                <h3 className="text-lg font-semibold mb-2">Add your books</h3>
-                <p className="text-foreground-muted">
-                  Search by title or ISBN and add books and series in
-                  seconds, covers and details included.
-                </p>
-              </div>
-
-              <div className="text-center animate-fade-in stagger-2">
-                <div className="w-12 h-12 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center mx-auto mb-4 text-accent font-bold text-lg">
-                  2
-                </div>
-                <h3 className="text-lg font-semibold mb-2">Track every copy</h3>
-                <p className="text-foreground-muted">
-                  Mark books owned or read, log prices, and note condition as
-                  your shelves grow.
-                </p>
-              </div>
-
-              <div className="text-center animate-fade-in stagger-3">
-                <div className="w-12 h-12 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center mx-auto mb-4 text-accent font-bold text-lg">
-                  3
-                </div>
-                <h3 className="text-lg font-semibold mb-2">Get insights</h3>
-                <p className="text-foreground-muted">
-                  Watch spending trends, reading progress, and collection stats
-                  come together at a glance.
-                </p>
-              </div>
-            </div>
+            <h2 className={sectionHeading}>Up and running in minutes</h2>
+            <ol className="mt-10 grid gap-x-10 sm:grid-cols-3">
+              {steps.map(({ title, body }, i) => (
+                <li key={title} className="border-t border-border py-5">
+                  <span className="figure text-3xl text-accent">{i + 1}</span>
+                  <h3 className="mt-2 font-medium">{title}</h3>
+                  <p className="mt-1 text-[0.95rem] leading-relaxed text-foreground-muted">{body}</p>
+                </li>
+              ))}
+            </ol>
           </section>
 
           {/* Manga stays first-class: crawl paths into the checklists and manga guides. */}
           <section className="mt-24 sm:mt-32">
-            <div className="text-center max-w-2xl mx-auto mb-10">
-              <h2 className="text-3xl font-bold">For manga collectors</h2>
-              <p className="mt-3 text-foreground-muted">
-                ReadLedger started as a manga tracker. Add a whole series from
-                MangaDex, mark runs as owned or read, and see which volumes
-                you&apos;re missing.
-              </p>
-            </div>
-            <div className="grid gap-10 md:grid-cols-2">
+            <h2 className={sectionHeading}>For manga collectors</h2>
+            <p className="mt-3 max-w-[40rem] text-foreground-muted">
+              ReadLedger started as a manga tracker. Add a whole series from MangaDex, mark runs
+              as owned or read, and see which volumes you&apos;re missing.
+            </p>
+            <div className="mt-10 grid gap-12 md:grid-cols-2">
               <div>
-                <h3 className="text-xl font-bold">Manga volume checklists</h3>
-                <p className="mt-2 text-foreground-muted">
-                  See how many volumes a series has and tick off what you own.
-                  No account needed.
+                <h3 className="font-serif text-xl font-medium">Manga volume checklists</h3>
+                <p className="mt-1 text-[0.95rem] text-foreground-muted">
+                  See how many volumes a series has and tick off what you own. No account needed.
                 </p>
-                <ul className="mt-4 grid grid-cols-2 gap-2">
+                <ul className="mt-4 grid grid-cols-2 gap-x-6 border-t border-border">
                   {popularChecklists.map((series) => (
                     <li key={series.slug}>
-                      <Link href={`/manga/${series.slug}`} className="flex min-h-12 items-center rounded-xl border border-border bg-background-secondary px-3 py-2 text-sm font-medium transition-colors hover:border-border-hover">
+                      <Link href={`/manga/${series.slug}`} className={listLink}>
                         {series.title}
                       </Link>
                     </li>
                   ))}
                 </ul>
-                <Link href="/manga" className="mt-4 inline-block py-1 text-sm font-medium text-accent underline">
+                <Link href="/manga" className={moreLink}>
                   See all checklists
                 </Link>
               </div>
               <div>
-                <h3 className="text-xl font-bold">Manga guides</h3>
-                <p className="mt-2 text-foreground-muted">
+                <h3 className="font-serif text-xl font-medium">Manga guides</h3>
+                <p className="mt-1 text-[0.95rem] text-foreground-muted">
                   Practical advice on tracking, budgeting, and buying used.
                 </p>
-                <ul className="mt-4 space-y-2">
+                <ul className="mt-4 border-t border-border">
                   {mangaGuides.map((guide) => (
                     <li key={guide.slug}>
-                      <Link href={`/guides/${guide.slug}`} className="flex min-h-12 items-center rounded-xl border border-border bg-background-secondary px-3 py-2 text-sm font-medium transition-colors hover:border-border-hover">
+                      <Link href={`/guides/${guide.slug}`} className={listLink}>
                         {guide.title}
                       </Link>
                     </li>
                   ))}
                 </ul>
-                <Link href="/guides" className="mt-4 inline-block py-1 text-sm font-medium text-accent underline">
+                <Link href="/guides" className={moreLink}>
                   See all guides
                 </Link>
               </div>
@@ -417,72 +288,61 @@ export default function Home() {
           </section>
 
           {/* FAQ: native <details> keeps the answers in the HTML and needs no JS. */}
-          <section className="mt-24 sm:mt-32 max-w-3xl mx-auto">
-            <h2 className="text-3xl font-bold text-center mb-12">
-              Frequently asked questions
-            </h2>
-            <div className="space-y-3">
+          <section className="mt-24 max-w-[48rem] sm:mt-32">
+            <h2 className={sectionHeading}>Frequently asked questions</h2>
+            <div className="mt-8 border-t border-border">
               {faqs.map(({ question, answer }) => (
-                <details key={question} className="glass group rounded-2xl">
-                  <summary className="flex cursor-pointer list-none items-center justify-between gap-4 p-5 font-semibold [&::-webkit-details-marker]:hidden">
-                    <h3>{question}</h3>
-                    <ChevronDown className="w-5 h-5 shrink-0 text-foreground-muted transition-transform group-open:rotate-180" />
+                <details key={question} className="group border-b border-border">
+                  <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-4 py-4 [&::-webkit-details-marker]:hidden">
+                    <h3 className="font-medium">{question}</h3>
+                    <ChevronDown className="size-5 shrink-0 text-foreground-muted transition-transform group-open:rotate-180" />
                   </summary>
-                  <p className="px-5 pb-5 text-foreground-muted">{answer}</p>
+                  <p className="pb-5 leading-relaxed text-foreground-muted">{answer}</p>
                 </details>
               ))}
             </div>
           </section>
 
           {/* Crawl paths into the general guides and the /books page. */}
-          <section className="mt-24 sm:mt-32 max-w-3xl mx-auto">
-            <h2 className="text-2xl font-bold">Guides for book collectors</h2>
+          <section className="mt-24 max-w-[48rem] sm:mt-32">
+            <h2 className="font-serif text-2xl font-medium">Guides for book collectors</h2>
             <p className="mt-2 text-foreground-muted">
-              Practical advice on cataloging your shelves and keeping track of
-              what they cost.
+              Practical advice on cataloging your shelves and keeping track of what they cost.
             </p>
-            <ul className="mt-4 space-y-2">
+            <ul className="mt-4 border-t border-border">
               {bookGuides.map((guide) => (
                 <li key={guide.slug}>
-                  <Link href={`/guides/${guide.slug}`} className="flex min-h-12 items-center rounded-xl border border-border bg-background-secondary px-3 py-2 text-sm font-medium transition-colors hover:border-border-hover">
+                  <Link href={`/guides/${guide.slug}`} className={listLink}>
                     {guide.title}
                   </Link>
                 </li>
               ))}
             </ul>
-            <div className="mt-4 flex flex-wrap gap-x-6">
-              <Link href="/books" className="mt-4 inline-block py-1 text-sm font-medium text-accent underline">
+            <div className="flex flex-wrap gap-x-6">
+              <Link href="/books" className={moreLink}>
                 How ReadLedger tracks books
               </Link>
-              <Link href="/guides" className="mt-4 inline-block py-1 text-sm font-medium text-accent underline">
+              <Link href="/guides" className={moreLink}>
                 See all guides
               </Link>
             </div>
           </section>
 
           {/* Closing CTA */}
-          <div className="mt-24 sm:mt-32 animate-fade-in">
-            <div className="glass rounded-3xl px-6 py-12 sm:py-16 text-center relative overflow-hidden">
-              <div className="absolute inset-0 bg-linear-to-br from-accent/10 to-transparent pointer-events-none" />
-              <div className="relative z-10 max-w-2xl mx-auto">
-                <TrendingUp className="w-10 h-10 text-accent mx-auto mb-4" />
-                <h2 className="text-3xl sm:text-4xl font-bold">
-                  Start tracking your collection today
-                </h2>
-                <p className="mt-4 text-foreground-muted text-lg">
-                  Free to start, no clutter. Bring order to your shelves in a few
-                  taps.
+          <section className="mt-24 border-t-2 border-foreground pt-10 sm:mt-32">
+            <div className="grid gap-6 lg:grid-cols-[1fr_auto] lg:items-end">
+              <div>
+                <h2 className={sectionHeading}>Start tracking your collection today</h2>
+                <p className="mt-3 max-w-[36rem] text-lg text-foreground-muted">
+                  Free to start, no clutter. Bring order to your shelves in a few taps.
                 </p>
-                <Link
-                  href="/login"
-                  className="mt-8 inline-flex items-center justify-center gap-2 bg-accent hover:bg-accent-hover text-white font-medium py-3 px-6 rounded-xl transition-colors shadow-lg shadow-accent/20"
-                >
-                  Create your free account
-                  <ArrowRight className="w-5 h-5" />
-                </Link>
               </div>
+              <Link href="/login" className={buttonVariants({ size: "lg" })}>
+                Create your free account
+                <ArrowRight />
+              </Link>
             </div>
-          </div>
+          </section>
         </div>
       </main>
 

@@ -4,6 +4,7 @@ import {
   formatBreakdown,
   isStandalone,
   parseFormat,
+  seriesCaption,
   standaloneStatusAfterRead,
   volumeLabel,
 } from "@/lib/format";
@@ -104,5 +105,28 @@ describe("booksFirstInSearch", () => {
     expect(booksFirstInSearch({ MANGA: 1, NOVEL: 1, COMIC: 1 })).toBe(true);
     expect(booksFirstInSearch({ MANGA: 2, NONFICTION: 2 })).toBe(true);
     expect(booksFirstInSearch({})).toBe(true);
+  });
+});
+
+describe("seriesCaption", () => {
+  it("summarises a series as owned out of total, then read", () => {
+    expect(seriesCaption({ standalone: false, owned: 12, read: 9, total: 14 })).toBe(
+      "12 / 14 owned · 9 read",
+    );
+  });
+
+  it("handles a series with no volumes yet", () => {
+    expect(seriesCaption({ standalone: false, owned: 0, read: 0, total: 0 })).toBe(
+      "0 / 0 owned · 0 read",
+    );
+  });
+
+  it("describes a single book by its owned and read state", () => {
+    expect(seriesCaption({ standalone: true, owned: 1, read: 1, total: 1 })).toBe("Owned · Read");
+    expect(seriesCaption({ standalone: true, owned: 1, read: 0, total: 1 })).toBe("Owned · Unread");
+  });
+
+  it("leaves out the read state of a book you don't own", () => {
+    expect(seriesCaption({ standalone: true, owned: 0, read: 0, total: 1 })).toBe("Not owned");
   });
 });

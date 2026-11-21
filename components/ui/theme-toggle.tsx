@@ -13,16 +13,16 @@ export function ThemeToggle() {
   const { theme, setTheme } = useTheme();
 
   return (
-    <div className="flex items-center gap-1 p-1 rounded-lg bg-background-tertiary/50 border border-border/50">
+    <div className="flex items-center gap-0.5 p-0.5 rounded-md border border-border">
       {themes.map(({ value, icon: Icon, label }) => (
         <button
           suppressHydrationWarning
           key={value}
           onClick={() => setTheme(value)}
           aria-pressed={theme === value}
-          className={`p-2.5 rounded-md transition-colors cursor-pointer ${
+          className={`p-2.5 rounded-[5px] transition-colors cursor-pointer ${
             theme === value
-              ? "bg-accent/15 text-accent"
+              ? "bg-background-tertiary text-foreground"
               : "text-foreground-muted hover:text-foreground"
           }`}
           aria-label={`Switch to ${label} theme`}

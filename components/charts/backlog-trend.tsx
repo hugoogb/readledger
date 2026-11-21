@@ -31,11 +31,11 @@ export function BacklogTrend({ data, granularity }: BacklogTrendProps) {
       <AreaChart data={data} margin={{ left: -20, right: 4 }}>
         <defs>
           <linearGradient id="backlogGradient" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor="var(--color-warning)" stopOpacity={0.3} />
-            <stop offset="95%" stopColor="var(--color-warning)" stopOpacity={0} />
+            <stop offset="5%" stopColor="var(--color-chart-3)" stopOpacity={0.2} />
+            <stop offset="95%" stopColor="var(--color-chart-3)" stopOpacity={0} />
           </linearGradient>
         </defs>
-        <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
+        <CartesianGrid strokeDasharray="2 4" stroke="var(--color-border)" vertical={false} />
         <XAxis
           dataKey="label"
           tick={{ fill: "var(--color-foreground-muted)", fontSize: 12 }}
@@ -51,8 +51,9 @@ export function BacklogTrend({ data, granularity }: BacklogTrendProps) {
           contentStyle={{
             backgroundColor: "var(--color-background-secondary)",
             border: "1px solid var(--color-border)",
-            borderRadius: "0.75rem",
+            borderRadius: "8px",
             color: "var(--color-foreground)",
+            boxShadow: "none",
           }}
           labelFormatter={(label) => (isMonth ? formatChartMonth(String(label)) : String(label))}
           formatter={(value) => [
@@ -63,7 +64,7 @@ export function BacklogTrend({ data, granularity }: BacklogTrendProps) {
         <Area
           type="monotone"
           dataKey="count"
-          stroke="var(--color-warning)"
+          stroke="var(--color-chart-3)"
           strokeWidth={2}
           fill="url(#backlogGradient)"
           name="Unread"

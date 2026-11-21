@@ -12,6 +12,7 @@
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
     "db:migrate:deploy": "prisma migrate deploy",
+    "db:seed:dev": "node scripts/seed-dev.mjs",
     "test": "vitest",
     "test:run": "vitest run",
     "content:refresh-manga": "node scripts/refresh-manga-series.mjs"

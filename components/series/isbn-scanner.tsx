@@ -104,14 +104,14 @@ export function IsbnScanner({ onDetected, onClose }: IsbnScannerProps) {
   return (
     <div className="space-y-3">
       {state.status === "error" ? (
-        <div className="flex flex-col items-center gap-3 rounded-xl border border-border px-4 py-8 text-center">
+        <div className="flex flex-col items-center gap-3 rounded-md border border-border px-4 py-8 text-center">
           <CameraOff className="w-8 h-8 text-foreground-muted" />
           <p role="alert" className="text-sm text-foreground-muted">
             {state.message}
           </p>
         </div>
       ) : (
-        <div className="relative overflow-hidden rounded-xl bg-black aspect-4/3">
+        <div className="relative overflow-hidden rounded-md bg-black aspect-4/3">
           <video
             ref={videoRef}
             className="absolute inset-0 h-full w-full object-cover"

@@ -28,7 +28,7 @@ function EmptyVolumeCell({ volumeNumber }: { volumeNumber: number }) {
   return (
     <div
       className="
-        aspect-3/4 rounded-xl
+        aspect-3/4 rounded-md
         border-2 border-dashed border-border/40
         bg-background-secondary/20
         flex items-center justify-center
@@ -127,7 +127,7 @@ export function VolumeGrid({
   if (volumeSlots.length === 0) {
     return (
       <div className="text-center py-12">
-        <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-accent/10 mb-3">
+        <div className="inline-flex items-center justify-center w-14 h-14 rounded-lg bg-accent/10 mb-3">
           <BookOpen className="w-7 h-7 text-accent" />
         </div>
         <p className="text-foreground-muted">No volumes added yet</p>

@@ -15,7 +15,7 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
       <div className={cn("relative group/select", containerClassName)}>
         <select
           className={cn(
-            "flex h-12 w-full rounded-xl border border-border bg-background-tertiary px-4 py-3 text-base sm:text-sm text-foreground ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-50 transition-colors appearance-none cursor-pointer pr-10 hover:border-border-hover",
+            "flex h-11 w-full rounded-md border border-border bg-background-secondary px-3.5 py-2.5 text-base sm:text-sm text-foreground ring-offset-background focus-visible:outline-none focus-visible:border-accent focus-visible:ring-1 focus-visible:ring-accent disabled:cursor-not-allowed disabled:opacity-50 transition-colors appearance-none cursor-pointer pr-10 hover:border-border-hover",
             error && "border-error focus-visible:ring-error",
             className,
           )}

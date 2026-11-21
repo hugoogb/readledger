@@ -9,9 +9,9 @@ export default function SettingsLoading() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-4xl">
-        <Skeleton className="h-64 lg:col-span-2 rounded-2xl" />
-        <Skeleton className="h-64 rounded-2xl" />
-        <Skeleton className="h-64 rounded-2xl" />
+        <Skeleton className="h-64 lg:col-span-2 rounded-lg" />
+        <Skeleton className="h-64 rounded-lg" />
+        <Skeleton className="h-64 rounded-lg" />
       </div>
     </div>
   );

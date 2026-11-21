@@ -126,7 +126,7 @@ export function EditSeriesModal({ series, publishers = [], variant = "icon" }: E
       >
         {showDeleteConfirm ? (
           <div className="space-y-4">
-            <div className="p-4 bg-error/10 border border-error/20 rounded-xl">
+            <div className="p-4 bg-error/10 border border-error/20 rounded-md">
               <h3 className="font-semibold text-error mb-2">Delete from library?</h3>
               <p className="text-sm text-foreground-muted">
                 This will permanently delete &quot;{series.title}&quot; and
