@@ -175,6 +175,7 @@ describe("resolveIsbnVolume", () => {
       volumeNumber: 3,
       owned: true,
       isbn: ISBN,
+      byIsbn: true,
     });
     expect(lookupIsbnAnySource).not.toHaveBeenCalled();
   });
@@ -192,6 +193,7 @@ describe("resolveIsbnVolume", () => {
       volumeNumber: 3,
       owned: false,
       isbn: ISBN,
+      byIsbn: false,
     });
     expect(searchMangaPaginated).not.toHaveBeenCalled();
   });

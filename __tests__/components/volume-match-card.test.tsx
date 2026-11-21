@@ -16,9 +16,9 @@ vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 import { VolumeMatchCard } from "@/components/series/volume-match-card";
 
 const ISBN = "9788468471549";
-const existing = (owned: boolean) => ({
+const existing = (owned: boolean, byIsbn = false) => ({
   ok: true,
-  data: { kind: "existing", seriesId: "s1", seriesTitle: "One Piece", volumeNumber: 3, owned, isbn: ISBN },
+  data: { kind: "existing", seriesId: "s1", seriesTitle: "One Piece", volumeNumber: 3, owned, isbn: ISBN, byIsbn },
 });
 
 beforeEach(() => vi.clearAllMocks());
@@ -66,11 +66,32 @@ describe("VolumeMatchCard", () => {
   });
 
   it("shows already-owned copy without a button", async () => {
-    resolveIsbnVolume.mockResolvedValue(existing(true));
+    resolveIsbnVolume.mockResolvedValue(existing(true, true));
     await renderCard();
 
     expect(screen.getByText(/already in your library/i)).toBeTruthy();
     expect(screen.queryByRole("button", { name: /mark as owned/i })).toBeNull();
+  });
+
+  it("lets a guessed match onto an owned volume be corrected", async () => {
+    resolveIsbnVolume.mockResolvedValue(existing(true, false));
+    markVolumeOwnedByIsbn.mockResolvedValue({ ok: true, data: undefined });
+    await renderCard();
+
+    expect(screen.getByText(/already own Vol\. 3/i)).toBeTruthy();
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: /next volume/i })));
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: /mark as owned/i })));
+
+    expect(markVolumeOwnedByIsbn).toHaveBeenCalledWith("s1", 4, ISBN);
+  });
+
+  it("offers only to mark a known, not-owned volume, without stepping or refiling", async () => {
+    resolveIsbnVolume.mockResolvedValue(existing(false, true));
+    await renderCard();
+
+    expect(screen.getByRole("button", { name: /mark as owned/i })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /next volume/i })).toBeNull();
+    expect(screen.queryByRole("button", { name: /change series/i })).toBeNull();
   });
 
   it("hands a new-series match to onStartNewSeries", async () => {

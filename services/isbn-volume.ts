@@ -113,6 +113,8 @@ export type VolumeMatch =
       volumeNumber: number;
       owned: boolean;
       isbn: string;
+      /** The ISBN is already on this volume (not a guess from the title). */
+      byIsbn: boolean;
     }
   | {
       kind: "new";
@@ -150,7 +152,7 @@ async function findMangaByTitle(seriesTitle: string): Promise<MangaSearchResult 
 export async function resolveIsbnVolume(userId: string, isbn13: string): Promise<VolumeMatch | null> {
   try {
     const known = await findVolumeByIsbn(userId, isbn13);
-    if (known) return { kind: "existing", ...known, isbn: isbn13 };
+    if (known) return { kind: "existing", ...known, isbn: isbn13, byIsbn: true };
 
     const book = await lookupIsbnAnySource(isbn13);
     const parsed = book && parseVolumeTitle(book.title);
@@ -166,6 +168,7 @@ export async function resolveIsbnVolume(userId: string, isbn13: string): Promise
         volumeNumber,
         owned: await isVolumeOwned(inLibrary.id, volumeNumber),
         isbn: isbn13,
+        byIsbn: false,
       };
     }
 
@@ -185,6 +188,7 @@ export async function resolveIsbnVolume(userId: string, isbn13: string): Promise
         volumeNumber,
         owned: await isVolumeOwned(existing.id, volumeNumber),
         isbn: isbn13,
+        byIsbn: false,
       };
     }
 

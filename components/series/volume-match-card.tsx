@@ -80,7 +80,16 @@ export function VolumeMatchCard({ isbn, onStartNewSeries, onDone }: VolumeMatchC
     }
   };
 
-  const alreadyOwned = match.kind === "existing" && match.owned;
+  // The ISBN is already on this volume: nothing to guess, so no stepper or picker.
+  const known = match.kind === "existing" && match.byIsbn;
+  const alreadyOwned = known && match.owned;
+  // A title guess landed on a volume the user owns: likely another volume or edition.
+  const ownedGuess =
+    match.kind === "existing" &&
+    !match.byIsbn &&
+    match.owned &&
+    series?.id === match.seriesId &&
+    volumeNumber === match.volumeNumber;
 
   const stepper = (
     <div className="flex items-center gap-1" role="group" aria-label="Volume number">
@@ -128,6 +137,11 @@ export function VolumeMatchCard({ isbn, onStartNewSeries, onDone }: VolumeMatchC
           <p className="text-sm">
             Vol. {volumeNumber} of <strong>{series?.title}</strong> is already in your library
           </p>
+        ) : ownedGuess ? (
+          <p className="text-sm">
+            You already own Vol. {volumeNumber} of <strong>{series?.title}</strong>. If this is a different
+            volume or series, pick it below.
+          </p>
         ) : (
           <p className="text-sm">
             Mark Vol. <strong>{volumeNumber}</strong> of <strong>{series?.title}</strong> as owned
@@ -156,9 +170,9 @@ export function VolumeMatchCard({ isbn, onStartNewSeries, onDone }: VolumeMatchC
 
       {!alreadyOwned ? (
         <div className="flex flex-wrap items-center justify-between gap-2">
-          {stepper}
+          {known ? <span /> : stepper}
           <div className="flex gap-2">
-            {match.kind === "existing" && !picking && (
+            {match.kind === "existing" && !known && !picking && (
               <Button type="button" variant="ghost" className="min-h-11" onClick={openPicker}>
                 Change series
               </Button>

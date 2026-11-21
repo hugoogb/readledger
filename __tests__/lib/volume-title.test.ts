@@ -11,6 +11,7 @@ describe("parseVolumeTitle", () => {
     ["Monster Tomo 4", "Monster", 4, null, true],
     ["Chainsaw Man #7", "Chainsaw Man", 7, null, true],
     ["Bleach (Vol. 2)", "Bleach", 2, null, true],
+    ["Gantz N° 5", "Gantz", 5, null, true],
     ["Guardianes de la noche 23", "Guardianes de la noche", 23, null, false],
   ] as const)("%s", (title, seriesTitle, volumeNumber, totalVolumes, marked) => {
     expect(parseVolumeTitle(title)).toEqual({ seriesTitle, volumeNumber, totalVolumes, marked });

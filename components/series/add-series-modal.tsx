@@ -19,6 +19,7 @@ import {
 } from "@/lib/manga-api";
 import type { BookSearchResult } from "@/lib/openlibrary-api";
 import { getSeriesFormDefaults } from "@/lib/form-defaults";
+import { withScannedVolume } from "@/lib/scanned-volume";
 import { Format } from "@/lib/generated/prisma/enums";
 import { seriesSchema, type SeriesSchema } from "@/lib/validations";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -233,11 +234,9 @@ export function AddSeriesModal({ publishers = [], booksFirst = true }: AddSeries
         volumes = volumes.map((v) => (v.volumeNumber === 1 ? { ...v, isbn: bookIsbn } : v));
       }
       if (pendingVolume) {
-        const { volumeNumber, isbn } = pendingVolume;
-        if (!volumes.some((v) => v.volumeNumber === volumeNumber)) {
-          volumes = [...volumes, { volumeNumber }].sort((a, b) => a.volumeNumber - b.volumeNumber);
-        }
-        volumes = volumes.map((v) => (v.volumeNumber === volumeNumber ? { ...v, isbn, owned: true } : v));
+        const applied = withScannedVolume(volumes, input.totalVolumes, pendingVolume);
+        volumes = applied.volumes;
+        input.totalVolumes = applied.totalVolumes;
       }
 
       if (volumes.length > 0) {
