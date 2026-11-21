@@ -8,8 +8,6 @@ export type ParsedVolumeTitle = {
   volumeNumber: number;
   /** The edition's own total when printed ("11/15"), else null. */
   totalVolumes: number | null;
-  /** A volume marker (nº, vol., tomo, #, N/M) was present; false for a bare trailing number. */
-  marked: boolean;
 };
 
 // "nº 11", "n.º 03", "N° 5" (degree sign), "no. 4", "no 04", "vol. 5", "volumen 12", "volume 3", "tomo 4", "#7",
@@ -17,15 +15,15 @@ export type ParsedVolumeTitle = {
 const MARKED = /^(.*?)\s*(?:n\.?\s?[º°]|no\.?(?=\s)|vol(?:umen|ume|\.)?|tomo|#)\s*(\d+)(?:\s*\/\s*(\d+))?\s*\)?\s*$/i;
 // "Dr. Slump 11/15": a printed total marks it as a volume too.
 const WITH_TOTAL = /^(.*?)\s+(\d+)\s*\/\s*(\d+)\s*$/;
-// "ONE PIECE 3": weak evidence, needs a series match to count (see resolver).
+// "ONE PIECE 3": weak evidence on its own. The resolver only acts on it when the
+// series part exactly matches a library series or a MangaDex title.
 const BARE = /^(.*?)[\s,]+(\d+)\s*$/;
 
 const cleanSeries = (s: string) => s.replace(/[\s,:\-(]+$/, "").trim();
 
 export function parseVolumeTitle(title: string): ParsedVolumeTitle | null {
   const t = title.trim();
-  const m = MARKED.exec(t) ?? WITH_TOTAL.exec(t);
-  const match = m ?? BARE.exec(t);
+  const match = MARKED.exec(t) ?? WITH_TOTAL.exec(t) ?? BARE.exec(t);
   if (!match) return null;
 
   const seriesTitle = cleanSeries(match[1]);
@@ -37,7 +35,6 @@ export function parseVolumeTitle(title: string): ParsedVolumeTitle | null {
     seriesTitle,
     volumeNumber,
     totalVolumes: total !== null && total >= volumeNumber && total <= MAX_VOLUMES ? total : null,
-    marked: m !== null,
   };
 }
 
