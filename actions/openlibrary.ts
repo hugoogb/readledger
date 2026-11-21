@@ -2,7 +2,7 @@
 
 import { withResult } from "@/lib/action-result";
 import { requireUser } from "@/lib/auth";
-import { parseIsbnQuery } from "@/lib/isbn";
+import { parseIsbnQuery, toStoredIsbn } from "@/lib/isbn";
 import { lookupIsbnAnySource } from "@/lib/isbn-lookup";
 import {
   getBookDetails as fetchBookDetails,
@@ -39,7 +39,8 @@ export const searchBooks = withResult(
     const isbn = parseIsbnQuery(input.query);
     if (!isbn) return searchOpenLibrary(input.query, input.page);
 
-    const book = await lookupIsbnAnySource(isbn);
+    // ISBN-13, the same key the volume resolver uses, so they share a lookup.
+    const book = await lookupIsbnAnySource(toStoredIsbn(isbn));
     return {
       data: book ? [book] : [],
       pagination: { currentPage: 1, hasNextPage: false },

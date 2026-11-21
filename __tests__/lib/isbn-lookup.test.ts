@@ -46,4 +46,23 @@ describe("lookupIsbnAnySource", () => {
     vi.mocked(lookupIsbnGoogle).mockResolvedValue(null);
     expect(await lookupIsbnAnySource(ISBN)).toBeNull();
   });
+
+  it("shares one lookup between concurrent callers for the same ISBN", async () => {
+    let finish: (b: BookSearchResult | null) => void = () => {};
+    vi.mocked(lookupIsbn).mockReturnValue(new Promise((resolve) => (finish = resolve)));
+
+    const first = lookupIsbnAnySource(ISBN);
+    const second = lookupIsbnAnySource(ISBN);
+    finish(book("openlibrary"));
+
+    expect(await first).toBe(await second);
+    expect(lookupIsbn).toHaveBeenCalledTimes(1);
+  });
+
+  it("looks up again once the previous lookup has settled", async () => {
+    vi.mocked(lookupIsbn).mockResolvedValue(book("openlibrary"));
+    await lookupIsbnAnySource(ISBN);
+    await lookupIsbnAnySource(ISBN);
+    expect(lookupIsbn).toHaveBeenCalledTimes(2);
+  });
 });

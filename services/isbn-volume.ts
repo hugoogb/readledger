@@ -5,8 +5,8 @@ import { isbnVariants } from "@/lib/isbn";
 import { lookupIsbnAnySource } from "@/lib/isbn-lookup";
 import { logger } from "@/lib/logger";
 import {
+  findTopManga,
   formatMangaForSeries,
-  searchMangaPaginated,
   type FormattedMangaData,
   type MangaSearchResult,
 } from "@/lib/manga-api";
@@ -141,7 +141,7 @@ async function isVolumeOwned(seriesId: string, volumeNumber: number): Promise<bo
 /** MangaDex's top result for the title, if its title or an alt title is that title. */
 async function findMangaByTitle(seriesTitle: string): Promise<MangaSearchResult | null> {
   const wanted = normalizeTitle(seriesTitle);
-  const [top] = (await searchMangaPaginated(seriesTitle, 1)).data;
+  const top = await findTopManga(seriesTitle);
   if (!top) return null;
   const names = [top.title, ...top.altTitles];
   return names.some((n) => normalizeTitle(n) === wanted) ? top : null;

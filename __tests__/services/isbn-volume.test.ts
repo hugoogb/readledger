@@ -137,11 +137,11 @@ describe("markVolumeOwnedByIsbn", () => {
 vi.mock("@/lib/isbn-lookup", () => ({ lookupIsbnAnySource: vi.fn() }));
 vi.mock("@/lib/manga-api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/manga-api")>()),
-  searchMangaPaginated: vi.fn(),
+  findTopManga: vi.fn(),
 }));
 
 import { lookupIsbnAnySource } from "@/lib/isbn-lookup";
-import { searchMangaPaginated, type MangaSearchResult } from "@/lib/manga-api";
+import { findTopManga, type MangaSearchResult } from "@/lib/manga-api";
 import type { BookSearchResult } from "@/lib/openlibrary-api";
 import { resolveIsbnVolume } from "@/services/isbn-volume";
 
@@ -165,10 +165,6 @@ const manga = (overrides: Partial<MangaSearchResult> = {}): MangaSearchResult =>
   ...overrides,
 });
 
-const mangaPage = (...data: MangaSearchResult[]) => ({
-  data,
-  pagination: { lastVisiblePage: 1, hasNextPage: false, currentPage: 1 },
-});
 
 describe("resolveIsbnVolume", () => {
   beforeEach(() => {
@@ -211,7 +207,7 @@ describe("resolveIsbnVolume", () => {
       isbn: ISBN,
       byIsbn: false,
     });
-    expect(searchMangaPaginated).not.toHaveBeenCalled();
+    expect(findTopManga).not.toHaveBeenCalled();
   });
 
   it("falls back to the edition title when the work title has no volume number", async () => {
@@ -237,8 +233,8 @@ describe("resolveIsbnVolume", () => {
 
   it("matches via MangaDex alt titles", async () => {
     vi.mocked(lookupIsbnAnySource).mockResolvedValue(bookTitled("Guardianes de la noche 23"));
-    vi.mocked(searchMangaPaginated).mockResolvedValue(
-      mangaPage(manga({ id: "ds-1", title: "Demon Slayer: Kimetsu no Yaiba", altTitles: ["Guardianes de la noche"] })),
+    vi.mocked(findTopManga).mockResolvedValue(
+      manga({ id: "ds-1", title: "Demon Slayer: Kimetsu no Yaiba", altTitles: ["Guardianes de la noche"] }),
     );
     prismaMock.series.findMany.mockImplementation(async (args: { where: { mangadexId?: unknown } }) =>
       args.where.mangadexId
@@ -260,7 +256,7 @@ describe("resolveIsbnVolume", () => {
 
   it("suggests a new series from MangaDex", async () => {
     vi.mocked(lookupIsbnAnySource).mockResolvedValue(bookTitled("Dr. Slump nº 11"));
-    vi.mocked(searchMangaPaginated).mockResolvedValue(mangaPage(manga()));
+    vi.mocked(findTopManga).mockResolvedValue(manga());
 
     const match = await resolveIsbnVolume("user-1", ISBN);
 
@@ -270,7 +266,7 @@ describe("resolveIsbnVolume", () => {
 
   it("uses the printed total and drops MangaDex covers when totals differ", async () => {
     vi.mocked(lookupIsbnAnySource).mockResolvedValue(bookTitled("Dr. Slump nº 11/15"));
-    vi.mocked(searchMangaPaginated).mockResolvedValue(mangaPage(manga()));
+    vi.mocked(findTopManga).mockResolvedValue(manga());
 
     expect(await resolveIsbnVolume("user-1", ISBN)).toMatchObject({
       kind: "new",
@@ -282,7 +278,7 @@ describe("resolveIsbnVolume", () => {
 
   it("bare trailing number without a series match returns null", async () => {
     vi.mocked(lookupIsbnAnySource).mockResolvedValue(bookTitled("Fahrenheit 451"));
-    vi.mocked(searchMangaPaginated).mockResolvedValue(mangaPage(manga({ title: "Fahrenheit 0" })));
+    vi.mocked(findTopManga).mockResolvedValue(manga({ title: "Fahrenheit 0" }));
 
     expect(await resolveIsbnVolume("user-1", ISBN)).toBeNull();
   });

@@ -243,6 +243,44 @@ async function fetchLastVolume(mangadexId: string): Promise<number | null> {
 
 // --- API functions ---
 
+function mangaSearchParams(query: string, limit: number, offset: number): URLSearchParams {
+  const params = new URLSearchParams({
+    title: query,
+    limit: String(limit),
+    offset: String(offset),
+    "order[relevance]": "desc",
+  });
+  for (const rating of ["safe", "suggestive", "erotica"]) {
+    params.append("contentRating[]", rating);
+  }
+  for (const include of ["cover_art", "author", "artist"]) {
+    params.append("includes[]", include);
+  }
+  return params;
+}
+
+/**
+ * The single most relevant manga for a title (alt titles included), or null.
+ * Lighter than a search page: one result, no statistics. Used to match scans.
+ */
+export async function findTopManga(title: string): Promise<MangaSearchResult | null> {
+  try {
+    await throttleMangadex();
+    const response = await fetch(`${MANGADEX_BASE_URL}/manga?${mangaSearchParams(title, 1, 0)}`, {
+      headers: { Accept: "application/json" },
+      signal: AbortSignal.timeout(MANGADEX_TIMEOUT_MS),
+    });
+    if (!response.ok) throw new Error(`MangaDex API error: ${response.status}`);
+    const raw: MangaDexMangaResponse = await response.json();
+    const top = raw.data[0] ? parseMangaDexManga(raw.data[0]) : null;
+    if (top && top.lastVolume === null) top.lastVolume = await fetchLastVolume(top.id);
+    return top;
+  } catch (error) {
+    logger.error("Error finding manga", { error: error instanceof Error ? error.message : String(error) });
+    return null;
+  }
+}
+
 const PAGE_SIZE = 10;
 const searchCache = new TTLCache<PaginatedSearchResult>(60_000); // 1 min TTL
 
@@ -262,20 +300,7 @@ export async function searchMangaPaginated(
   if (cached) return cached;
 
   try {
-    const offset = (page - 1) * PAGE_SIZE;
-    const params = new URLSearchParams({
-      title: query,
-      limit: String(PAGE_SIZE),
-      offset: String(offset),
-      "order[relevance]": "desc",
-    });
-    // Array params
-    for (const rating of ["safe", "suggestive", "erotica"]) {
-      params.append("contentRating[]", rating);
-    }
-    for (const include of ["cover_art", "author", "artist"]) {
-      params.append("includes[]", include);
-    }
+    const params = mangaSearchParams(query, PAGE_SIZE, (page - 1) * PAGE_SIZE);
 
     await throttleMangadex();
     const response = await fetch(`${MANGADEX_BASE_URL}/manga?${params}`, {
