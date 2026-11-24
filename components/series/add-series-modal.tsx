@@ -2,18 +2,16 @@
 
 import { getBookDetails } from "@/actions/openlibrary";
 import {
-  checkDuplicateSeries,
   createSeries,
-  createSeriesWithVolumes,
+  getExistingMangadexIds,
   getExistingOpenLibraryKeys,
-  type CreateSeriesInput,
   type VolumeInput,
 } from "@/actions/series";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { getVolumeCovers } from "@/actions/mangadex";
 import {
-  generateVolumeEntries,
+  placeholderVolumes,
   type FormattedMangaData,
   type VolumeData,
 } from "@/lib/manga-api";
@@ -33,6 +31,7 @@ import { LibrarySearch } from "./library-search";
 import type { NewSeriesMatch } from "./volume-match-card";
 import { SeriesFormFields } from "./series-form-fields";
 import { unwrap } from "@/lib/unwrap";
+import { errorMessage } from "@/lib/utils";
 
 type Publisher = { id: string; name: string };
 
@@ -107,13 +106,10 @@ export function AddSeriesModal({
     data: FormattedMangaData,
     scanned?: { volumeNumber: number; isbn: string; useMangadexCovers: boolean },
   ) => {
-    // Check for duplicate
-    if (data.mangadexId) {
-      const isDuplicate = await checkDuplicateSeries(data.mangadexId);
-      if (isDuplicate) {
-        toast.warning(`"${data.title}" is already in your collection`);
-        return;
-      }
+    const [existing] = await getExistingMangadexIds([data.mangadexId]);
+    if (existing) {
+      toast.warning(`"${data.title}" is already in your collection`);
+      return;
     }
 
     // Set form values immediately. MangaDex can't tell light novels apart;
@@ -138,9 +134,7 @@ export function AddSeriesModal({
     // An edition numbered differently from MangaDex (kanzenban, 3-in-1...)
     // gets plain volume entries: MangaDex's covers would show other books.
     if (data.totalVolumes && data.totalVolumes > 0 && scanned && !scanned.useMangadexCovers) {
-      setVolumeData(
-        generateVolumeEntries(data.totalVolumes).map((v) => ({ ...v, coverImage: null, isbn: null })),
-      );
+      setVolumeData(placeholderVolumes(data.totalVolumes));
     } else if (data.totalVolumes && data.totalVolumes > 0) {
       setIsFetchingVolumes(true);
       setFetchTotal(data.totalVolumes);
@@ -151,15 +145,7 @@ export function AddSeriesModal({
         );
         setVolumeData(volumes);
       } catch {
-        // Fallback to placeholder volumes
-        const placeholders = generateVolumeEntries(data.totalVolumes);
-        setVolumeData(
-          placeholders.map((v) => ({
-            ...v,
-            coverImage: null,
-            isbn: null,
-          })),
-        );
+        setVolumeData(placeholderVolumes(data.totalVolumes));
       } finally {
         setIsFetchingVolumes(false);
       }
@@ -212,29 +198,12 @@ export function AddSeriesModal({
 
   const onSubmit: SubmitHandler<SeriesSchema> = async (data) => {
     try {
-      const input: CreateSeriesInput = {
-        title: data.title,
-        author: data.author,
-        publisherId: data.publisherId || undefined,
-        status: data.status,
-        format: data.format,
-        publishing: data.publishing,
-        totalVolumes: data.totalVolumes ?? null,
-        coverImage: data.coverImage,
-        description: data.description || undefined,
-        retailPrice: data.retailPrice ?? null,
-        mangadexId: data.mangadexId || undefined,
-        openLibraryKey: data.openLibraryKey || undefined,
-      };
+      // Already validated by the form's resolver; the service treats blanks as unset.
+      const input = { ...data };
 
-      let volumes: VolumeInput[] =
-        volumeData.length > 0
-          ? volumeData.map((v) => ({
-              volumeNumber: v.volumeNumber,
-              title: v.title,
-              coverImage: v.coverImage,
-            }))
-          : generateVolumeEntries(input.totalVolumes ?? 0);
+      let volumes: VolumeInput[] = (
+        volumeData.length > 0 ? volumeData : placeholderVolumes(input.totalVolumes ?? 0)
+      ).map((v) => ({ volumeNumber: v.volumeNumber, title: v.title, coverImage: v.coverImage }));
       if (bookIsbn) {
         // Switched to "Series" with no total: keep the looked-up ISBN by
         // creating volume 1 for it rather than dropping it.
@@ -247,19 +216,13 @@ export function AddSeriesModal({
         input.totalVolumes = applied.totalVolumes;
       }
 
-      if (volumes.length > 0) {
-        unwrap(await createSeriesWithVolumes(input, volumes));
-      } else {
-        unwrap(await createSeries(input));
-      }
+      unwrap(await createSeries(input, volumes));
 
       toast.success(`${data.title} added to your library`);
       handleOpenChange(false);
       router.refresh();
     } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Failed to add to your library",
-      );
+      toast.error(errorMessage(err, "Failed to add to your library"));
     }
   };
 

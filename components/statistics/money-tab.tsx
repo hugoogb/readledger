@@ -4,7 +4,7 @@ import {
   getUndatedOwnedCount,
 } from "@/actions/statistics";
 import { SpendingOverTime } from "@/components/charts/spending-over-time";
-import { StoreBreakdown } from "@/components/charts/store-breakdown";
+import { StoreBreakdown } from "@/components/charts/ranked-bar-chart";
 import { ChartCard } from "./chart-card";
 import { UndatedNote } from "./undated-note";
 

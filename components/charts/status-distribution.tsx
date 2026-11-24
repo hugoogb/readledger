@@ -1,133 +1,31 @@
 "use client";
 
-import { Pie, PieChart, ResponsiveContainer, Sector, Tooltip } from "recharts";
-import { BaseTooltipProps } from "./types/shared.types";
 import { BookOpen } from "lucide-react";
-import { ChartEmpty } from "./chart-empty";
+import { statusConfig } from "@/lib/constants";
+import type { SeriesStatus } from "@/lib/generated/prisma/enums";
+import { DonutChart } from "./donut-chart";
 
-type StatusDistributionProps = {
-  data: { status: keyof typeof STATUS_CONFIG; count: number }[];
+const COLORS: Record<SeriesStatus, string> = {
+  READING: "var(--color-chart-1)",
+  COMPLETED: "var(--color-chart-2)",
+  ON_HOLD: "var(--color-chart-4)",
+  DROPPED: "var(--color-chart-3)",
+  PLAN_TO_READ: "var(--color-chart-6)",
 };
 
-const STATUS_CONFIG = {
-  READING: {
-    label: "Reading",
-    color: "var(--color-chart-1)",
-  },
-  COMPLETED: {
-    label: "Completed",
-    color: "var(--color-chart-2)",
-  },
-  ON_HOLD: {
-    label: "On Hold",
-    color: "var(--color-chart-4)",
-  },
-  DROPPED: {
-    label: "Dropped",
-    color: "var(--color-chart-3)",
-  },
-  PLAN_TO_READ: {
-    label: "Plan to Read",
-    color: "var(--color-chart-6)",
-  },
-} as const;
+const CONFIG = Object.fromEntries(
+  (Object.keys(COLORS) as SeriesStatus[]).map((s) => [s, { label: statusConfig[s].label, color: COLORS[s] }]),
+);
 
-type StatusKey = keyof typeof STATUS_CONFIG;
-
-type StatusTooltipData = {
-  status: StatusKey;
-  count: number;
-  _total?: number;
-};
-
-function StatusTooltip({ active, payload }: BaseTooltipProps) {
-  if (!active || !payload || payload.length === 0) return null;
-
-  const data = payload[0].payload as StatusTooltipData;
-  const { status, count, _total } = data;
-  const config = STATUS_CONFIG[status];
-
+export function StatusDistribution({ data }: { data: { status: SeriesStatus; count: number }[] }) {
   return (
-    <div
-      style={{
-        backgroundColor: "var(--color-background-secondary)",
-        border: "1px solid var(--color-border)",
-        borderRadius: "8px",
-        color: "var(--color-foreground)",
-        padding: "0.5rem 0.75rem",
-      }}
-    >
-      <p style={{ fontWeight: 600, marginBottom: 4 }}>
-        {config?.label ?? status}
-      </p>
-      <p style={{ fontSize: 13 }}>
-        {count} title{count !== 1 ? "s" : ""}
-        {_total && _total > 0 && (
-          <span style={{ color: "var(--color-chart-6)" }}>
-            {" "}
-            ({Math.round((count / _total) * 100)}%)
-          </span>
-        )}
-      </p>
-    </div>
-  );
-}
-
-export function StatusDistribution({ data }: StatusDistributionProps) {
-  if (data.length === 0) {
-    return <ChartEmpty label="titles" icon={BookOpen} />;
-  }
-
-  const total = data.reduce((sum, d) => sum + d.count, 0);
-  const enrichedData = data.map((d) => ({ ...d, _total: total }));
-
-  return (
-    <div className="flex flex-col items-center">
-      <ResponsiveContainer width="100%" height={250}>
-        <PieChart>
-          <Pie
-            data={enrichedData}
-            cx="50%"
-            cy="50%"
-            innerRadius={60}
-            outerRadius={100}
-            paddingAngle={3}
-            dataKey="count"
-            nameKey="status"
-            shape={(props) => {
-              const status = props.payload.status as keyof typeof STATUS_CONFIG;
-
-              return (
-                <Sector
-                  {...props}
-                  fill={STATUS_CONFIG[status]?.color ?? "var(--color-chart-1)"}
-                />
-              );
-            }}
-          />
-
-          <Tooltip content={<StatusTooltip />} />
-        </PieChart>
-      </ResponsiveContainer>
-
-      <div className="flex flex-wrap justify-center gap-4 mt-2">
-        {data.map((entry) => {
-          const config = STATUS_CONFIG[entry.status];
-          return (
-            <div key={entry.status} className="flex items-center gap-2 text-sm">
-              <div
-                className="w-3 h-3 rounded-full"
-                style={{
-                  backgroundColor: config?.color ?? "var(--color-chart-1)",
-                }}
-              />
-              <span className="text-foreground-muted">
-                {config?.label ?? entry.status} ({entry.count})
-              </span>
-            </div>
-          );
-        })}
-      </div>
-    </div>
+    <DonutChart
+      data={data.map((d) => ({ key: d.status, count: d.count }))}
+      config={CONFIG}
+      unit="title"
+      percentColor="var(--color-chart-6)"
+      emptyLabel="titles"
+      emptyIcon={BookOpen}
+    />
   );
 }

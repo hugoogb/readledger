@@ -72,3 +72,8 @@ export function parseDateInput(value: string | null | undefined): Date | null {
   const d = new Date(value);
   return isNaN(d.getTime()) || formatDateForInput(d) !== value ? null : d;
 }
+
+/** "YYYY-MM" of `date`'s UTC month, the bucket key monthly charts use. */
+export function monthKey(date: Date): string {
+  return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}`;
+}

@@ -3,7 +3,9 @@
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { BaseTooltipProps } from "./types/shared.types";
 import { Library } from "lucide-react";
+import { plural } from "@/lib/utils";
 import { ChartEmpty } from "./chart-empty";
+import { AXIS_TICK, TOOLTIP_BOX } from "./chart-theme";
 
 type FormatBreakdownProps = {
   data: { label: string; count: number }[];
@@ -16,17 +18,11 @@ function FormatTooltip({ active, payload, label }: BaseTooltipProps) {
 
   return (
     <div
-      style={{
-        backgroundColor: "var(--color-background-secondary)",
-        border: "1px solid var(--color-border)",
-        borderRadius: "8px",
-        color: "var(--color-foreground)",
-        padding: "0.5rem 0.75rem",
-      }}
+      style={TOOLTIP_BOX}
     >
       <p style={{ fontWeight: 600, marginBottom: 4 }}>{label}</p>
       <p style={{ fontSize: 13 }}>
-        {count} book{count !== 1 ? "s" : ""} owned
+        {plural(count, "book")} owned
       </p>
     </div>
   );
@@ -44,7 +40,7 @@ export function FormatBreakdown({ data }: FormatBreakdownProps) {
         <CartesianGrid strokeDasharray="2 4" stroke="var(--color-border)" />
         <XAxis
           type="number"
-          tick={{ fill: "var(--color-foreground-muted)", fontSize: 12 }}
+          tick={AXIS_TICK}
           tickLine={false}
           allowDecimals={false}
         />
@@ -52,7 +48,7 @@ export function FormatBreakdown({ data }: FormatBreakdownProps) {
           type="category"
           dataKey="label"
           width={96}
-          tick={{ fill: "var(--color-foreground-muted)", fontSize: 12 }}
+          tick={AXIS_TICK}
           tickLine={false}
         />
         <Tooltip content={<FormatTooltip />} />

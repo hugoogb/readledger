@@ -6,7 +6,7 @@ import {
   updateVolume,
   deleteVolume,
   toggleVolumeRead,
-  getVolumeStats,
+  computeVolumeStats,
   bulkMarkOwned,
   bulkSetRead,
 } from "@/services/volumes";
@@ -301,20 +301,16 @@ describe("toggleVolumeRead", () => {
   });
 });
 
-// --- getVolumeStats ---
+// --- computeVolumeStats ---
 
-describe("getVolumeStats", () => {
-  it("calculates all stats correctly", async () => {
+describe("computeVolumeStats", () => {
+  it("calculates all stats correctly", () => {
     const volumes = [
       makeVolume({ id: "v1", volumeNumber: 1, owned: true, read: true, pricePaid: 5.0, wishlist: false }),
       makeVolume({ id: "v2", volumeNumber: 2, owned: true, read: false, pricePaid: 7.0, wishlist: false }),
       makeVolume({ id: "v3", volumeNumber: 3, owned: false, read: false, pricePaid: null, wishlist: true }),
     ];
-    prismaMock.series.findFirst.mockResolvedValue(
-      makeSeries({ volumes, totalVolumes: 10, retailPrice: 9.99 }),
-    );
-
-    const stats = await getVolumeStats("user-1", "series-1");
+    const stats = computeVolumeStats(makeSeries({ volumes, totalVolumes: 10, retailPrice: 9.99 }));
 
     expect(stats.owned).toBe(2);
     expect(stats.read).toBe(1);
@@ -332,60 +328,30 @@ describe("getVolumeStats", () => {
     expect(stats.readProgress).toBe(50);
   });
 
-  it("excludes owned volumes without a price from savings", async () => {
+  it("excludes owned volumes without a price from savings", () => {
     const volumes = [
       makeVolume({ id: "v1", owned: true, pricePaid: 8.0 }),
       makeVolume({ id: "v2", volumeNumber: 2, owned: true, pricePaid: null }),
     ];
-    prismaMock.series.findFirst.mockResolvedValue(
-      makeSeries({ volumes, retailPrice: 10 }),
-    );
-
-    const stats = await getVolumeStats("user-1", "series-1");
+    const stats = computeVolumeStats(makeSeries({ volumes, retailPrice: 10 }));
 
     expect(stats.totalRetailValue).toBe(10);
     expect(stats.savings).toBe(2);
     expect(stats.savingsPercentage).toBe(20);
   });
 
-  it("reports no savings when the series has no retail price", async () => {
+  it("reports no savings when the series has no retail price", () => {
     const volumes = [makeVolume({ id: "v1", owned: true, pricePaid: 8.0 })];
-    prismaMock.series.findFirst.mockResolvedValue(
-      makeSeries({ volumes, retailPrice: null }),
-    );
-
-    const stats = await getVolumeStats("user-1", "series-1");
+    const stats = computeVolumeStats(makeSeries({ volumes, retailPrice: null }));
 
     expect(stats.totalSpent).toBe(8);
     expect(stats.savings).toBe(0);
-  });
-
-  it("throws NotFoundError if series not found", async () => {
-    prismaMock.series.findFirst.mockResolvedValue(null);
-
-    await expect(getVolumeStats("user-1", "series-1")).rejects.toThrow(
-      NotFoundError,
-    );
   });
 });
 
 // --- bulkMarkOwned ---
 
 describe("bulkMarkOwned", () => {
-  it("throws on empty array", async () => {
-    await expect(
-      bulkMarkOwned("user-1", [], { condition: "NEW" }),
-    ).rejects.toThrow("No volumes selected");
-  });
-
-  it("throws on more than 500 items", async () => {
-    const ids = Array.from({ length: 501 }, (_, i) => `vol-${i}`);
-
-    await expect(
-      bulkMarkOwned("user-1", ids, { condition: "NEW" }),
-    ).rejects.toThrow("Cannot process more than 500 volumes at once");
-  });
-
   it("throws for unauthorized volumes", async () => {
     prismaMock.volume.findMany.mockResolvedValue([
       makeVolumeWithSeries({ id: "vol-1" }, { userId: "other-user" }),
@@ -400,12 +366,6 @@ describe("bulkMarkOwned", () => {
 // --- bulkSetRead ---
 
 describe("bulkSetRead", () => {
-  it("throws on empty array", async () => {
-    await expect(bulkSetRead("user-1", [])).rejects.toThrow(
-      "No volumes selected",
-    );
-  });
-
   it("only updates owned volumes", async () => {
     const volumes = [
       makeVolumeWithSeries({ id: "vol-1", owned: true }),

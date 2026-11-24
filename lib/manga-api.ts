@@ -3,6 +3,7 @@
 
 import { TTLCache } from "./cache";
 import { logger } from "./logger";
+import { errorMessage } from "./utils";
 import { throttleMangadex } from "./rate-limit";
 
 const MANGADEX_BASE_URL = "https://api.mangadex.org";
@@ -164,23 +165,22 @@ function extractAuthors(manga: MangaDexManga): string[] {
 
 function extractCoverFileName(manga: MangaDexManga): string | null {
   const coverRel = manga.relationships.find((r) => r.type === "cover_art");
-  if (coverRel?.attributes?.fileName) {
-    return coverRel.attributes.fileName as string;
-  }
-  return null;
+  return (coverRel?.attributes?.fileName as string | undefined) ?? null;
 }
 
-function buildCoverUrl(mangaId: string, fileName: string | null): string {
+/** Full-size cover URL, or the 256px thumbnail with `small`. */
+function coverUrl(mangaId: string, fileName: string | null, small = false): string {
   if (!fileName) return "";
-  return `https://uploads.mangadex.org/covers/${mangaId}/${fileName}`;
+  return `https://uploads.mangadex.org/covers/${mangaId}/${fileName}${small ? ".256.jpg" : ""}`;
 }
 
-function buildCoverUrlSmall(
-  mangaId: string,
-  fileName: string | null,
-): string {
-  if (!fileName) return "";
-  return `https://uploads.mangadex.org/covers/${mangaId}/${fileName}.256.jpg`;
+/** GET a MangaDex endpoint; null on a non-OK response. */
+async function mangadexGet<T>(path: string): Promise<T | null> {
+  const res = await fetch(`${MANGADEX_BASE_URL}${path}`, {
+    headers: { Accept: "application/json" },
+    signal: AbortSignal.timeout(MANGADEX_TIMEOUT_MS),
+  });
+  return res.ok ? ((await res.json()) as T) : null;
 }
 
 function extractGenres(
@@ -203,8 +203,8 @@ function parseMangaDexManga(manga: MangaDexManga): MangaSearchResult {
     id: manga.id,
     title: extractTitle(manga),
     titleJapanese: extractJapaneseTitle(manga),
-    coverImage: buildCoverUrl(manga.id, coverFileName),
-    coverImageSmall: buildCoverUrlSmall(manga.id, coverFileName),
+    coverImage: coverUrl(manga.id, coverFileName),
+    coverImageSmall: coverUrl(manga.id, coverFileName, true),
     lastVolume: lastVol ? parseInt(lastVol, 10) || null : null,
     status: manga.attributes.status,
     year: manga.attributes.year,
@@ -222,15 +222,8 @@ function parseMangaDexManga(manga: MangaDexManga): MangaSearchResult {
 
 async function fetchLastVolume(mangadexId: string): Promise<number | null> {
   try {
-    const res = await fetch(
-      `${MANGADEX_BASE_URL}/manga/${mangadexId}/aggregate`,
-      {
-        headers: { Accept: "application/json" },
-        signal: AbortSignal.timeout(MANGADEX_TIMEOUT_MS),
-      },
-    );
-    if (!res.ok) return null;
-    const data: MangaDexAggregateResponse = await res.json();
+    const data = await mangadexGet<MangaDexAggregateResponse>(`/manga/${mangadexId}/aggregate`);
+    if (!data) return null;
     const volumeNumbers = Object.keys(data.volumes)
       .filter((key) => key !== "none")
       .map(Number)
@@ -266,17 +259,13 @@ function mangaSearchParams(query: string, limit: number, offset: number): URLSea
 export async function findTopManga(title: string): Promise<MangaSearchResult | null> {
   try {
     await throttleMangadex();
-    const response = await fetch(`${MANGADEX_BASE_URL}/manga?${mangaSearchParams(title, 1, 0)}`, {
-      headers: { Accept: "application/json" },
-      signal: AbortSignal.timeout(MANGADEX_TIMEOUT_MS),
-    });
-    if (!response.ok) throw new Error(`MangaDex API error: ${response.status}`);
-    const raw: MangaDexMangaResponse = await response.json();
+    const raw = await mangadexGet<MangaDexMangaResponse>(`/manga?${mangaSearchParams(title, 1, 0)}`);
+    if (!raw) throw new Error("MangaDex API error");
     const top = raw.data[0] ? parseMangaDexManga(raw.data[0]) : null;
     if (top && top.lastVolume === null) top.lastVolume = await fetchLastVolume(top.id);
     return top;
   } catch (error) {
-    logger.error("Error finding manga", { error: error instanceof Error ? error.message : String(error) });
+    logger.error("Error finding manga", { error: errorMessage(error) });
     return null;
   }
 }
@@ -284,35 +273,27 @@ export async function findTopManga(title: string): Promise<MangaSearchResult | n
 const PAGE_SIZE = 10;
 const searchCache = new TTLCache<PaginatedSearchResult>(60_000); // 1 min TTL
 
+const emptyPage = (): PaginatedSearchResult => ({
+  data: [],
+  pagination: { lastVisiblePage: 1, hasNextPage: false, currentPage: 1 },
+});
+
 export async function searchMangaPaginated(
   query: string,
   page: number = 1,
 ): Promise<PaginatedSearchResult> {
-  if (!query || query.length < 2) {
-    return {
-      data: [],
-      pagination: { lastVisiblePage: 1, hasNextPage: false, currentPage: 1 },
-    };
-  }
+  if (!query || query.length < 2) return emptyPage();
 
   const cacheKey = `${query}:${page}`;
   const cached = searchCache.get(cacheKey);
   if (cached) return cached;
 
   try {
-    const params = mangaSearchParams(query, PAGE_SIZE, (page - 1) * PAGE_SIZE);
-
     await throttleMangadex();
-    const response = await fetch(`${MANGADEX_BASE_URL}/manga?${params}`, {
-      headers: { Accept: "application/json" },
-      signal: AbortSignal.timeout(MANGADEX_TIMEOUT_MS),
-    });
-
-    if (!response.ok) {
-      throw new Error(`MangaDex API error: ${response.status}`);
-    }
-
-    const raw: MangaDexMangaResponse = await response.json();
+    const raw = await mangadexGet<MangaDexMangaResponse>(
+      `/manga?${mangaSearchParams(query, PAGE_SIZE, (page - 1) * PAGE_SIZE)}`,
+    );
+    if (!raw) throw new Error("MangaDex API error");
     const results = raw.data.map(parseMangaDexManga);
 
     // Resolve lastVolume for manga where it's missing via aggregate endpoint
@@ -331,23 +312,14 @@ export async function searchMangaPaginated(
       }
 
       try {
-        const statsRes = await fetch(
-          `${MANGADEX_BASE_URL}/statistics/manga?${statsParams}`,
-          {
-            headers: { Accept: "application/json" },
-            signal: AbortSignal.timeout(MANGADEX_TIMEOUT_MS),
-          },
-        );
-
-        if (statsRes.ok) {
-          const statsData: MangaDexStatisticsResponse = await statsRes.json();
-          for (const result of results) {
-            const stats = statsData.statistics[result.id];
-            if (stats?.rating) {
-              result.score = stats.rating.bayesian
-                ? Math.round(stats.rating.bayesian * 10) / 10
-                : null;
-            }
+        const statsData = await mangadexGet<MangaDexStatisticsResponse>(`/statistics/manga?${statsParams}`);
+        if (!statsData) return;
+        for (const result of results) {
+          const stats = statsData.statistics[result.id];
+          if (stats?.rating) {
+            result.score = stats.rating.bayesian
+              ? Math.round(stats.rating.bayesian * 10) / 10
+              : null;
           }
         }
       } catch {
@@ -372,11 +344,8 @@ export async function searchMangaPaginated(
     searchCache.set(cacheKey, result);
     return result;
   } catch (error) {
-    logger.error("Error searching manga", { error: error instanceof Error ? error.message : String(error) });
-    return {
-      data: [],
-      pagination: { lastVisiblePage: 1, hasNextPage: false, currentPage: 1 },
-    };
+    logger.error("Error searching manga", { error: errorMessage(error) });
+    return emptyPage();
   }
 }
 
@@ -398,79 +367,9 @@ export function formatMangaForSeries(
   };
 }
 
-// Fetch per-volume cover images from MangaDex
-export async function fetchVolumeCovers(
-  mangadexId: string,
-  totalVolumes: number,
-  onProgress?: (fetched: number, total: number) => void,
-): Promise<VolumeData[]> {
-  try {
-    const coverMap = await fetchMangaDexCovers(mangadexId, totalVolumes, onProgress);
-    if (coverMap.size === 0) {
-      return generatePlaceholderVolumes(totalVolumes);
-    }
-
-    return Array.from({ length: totalVolumes }, (_, i) => {
-      const volNum = i + 1;
-      return {
-        volumeNumber: volNum,
-        title: `Volume ${volNum}`,
-        coverImage: coverMap.get(String(volNum)) || null,
-        isbn: null,
-      };
-    });
-  } catch (error) {
-    logger.error("Error fetching volume covers from MangaDex", { error: error instanceof Error ? error.message : String(error) });
-    return generatePlaceholderVolumes(totalVolumes);
-  }
-}
-
-async function fetchMangaDexCovers(
-  mangaId: string,
-  totalVolumes: number,
-  onProgress?: (fetched: number, total: number) => void,
-): Promise<Map<string, string>> {
-  const coverMap = new Map<string, string>();
-  let offset = 0;
-  const limit = 100;
-
-  while (offset === 0 || offset < totalVolumes) {
-    try {
-      await throttleMangadex();
-      const response = await fetch(
-        `${MANGADEX_BASE_URL}/cover?manga[]=${mangaId}&limit=${limit}&offset=${offset}&order[volume]=asc`,
-        {
-          headers: { Accept: "application/json" },
-          signal: AbortSignal.timeout(MANGADEX_TIMEOUT_MS),
-        },
-      );
-
-      if (!response.ok) break;
-
-      const data: MangaDexCoverResponse = await response.json();
-
-      for (const cover of data.data) {
-        const volume = cover.attributes.volume;
-        if (volume && !coverMap.has(volume)) {
-          const coverUrl = `https://uploads.mangadex.org/covers/${mangaId}/${cover.attributes.fileName}.256.jpg`;
-          coverMap.set(volume, coverUrl);
-        }
-      }
-
-      onProgress?.(coverMap.size, totalVolumes);
-
-      if (data.data.length < limit) break;
-      offset += limit;
-    } catch {
-      break;
-    }
-  }
-
-  return coverMap;
-}
-
-function generatePlaceholderVolumes(totalVolumes: number): VolumeData[] {
-  return Array.from({ length: totalVolumes }, (_, i) => ({
+/** Volume rows 1..total with no covers. */
+export function placeholderVolumes(totalVolumes: number): VolumeData[] {
+  return Array.from({ length: Math.max(0, totalVolumes) }, (_, i) => ({
     volumeNumber: i + 1,
     title: `Volume ${i + 1}`,
     coverImage: null,
@@ -478,16 +377,46 @@ function generatePlaceholderVolumes(totalVolumes: number): VolumeData[] {
   }));
 }
 
-export function generateVolumeEntries(totalVolumes: number): Array<{
-  volumeNumber: number;
-  title: string;
-}> {
-  if (!totalVolumes || totalVolumes <= 0) {
-    return [];
+/** Volume rows 1..total with each volume's MangaDex cover where there is one. */
+export async function fetchVolumeCovers(
+  mangadexId: string,
+  totalVolumes: number,
+): Promise<VolumeData[]> {
+  const coverMap = await fetchMangaDexCovers(mangadexId, totalVolumes);
+  return placeholderVolumes(totalVolumes).map((v) => ({
+    ...v,
+    coverImage: coverMap.get(String(v.volumeNumber)) ?? null,
+  }));
+}
+
+/** Cover thumbnail per volume ("1", "2"...); stops quietly at the first failure. */
+async function fetchMangaDexCovers(mangaId: string, totalVolumes: number): Promise<Map<string, string>> {
+  const coverMap = new Map<string, string>();
+  let offset = 0;
+  const limit = 100;
+
+  while (offset === 0 || offset < totalVolumes) {
+    try {
+      await throttleMangadex();
+      const data = await mangadexGet<MangaDexCoverResponse>(
+        `/cover?manga[]=${mangaId}&limit=${limit}&offset=${offset}&order[volume]=asc`,
+      );
+      if (!data) break;
+
+      for (const cover of data.data) {
+        const volume = cover.attributes.volume;
+        if (volume && !coverMap.has(volume)) {
+          coverMap.set(volume, coverUrl(mangaId, cover.attributes.fileName, true));
+        }
+      }
+
+      if (data.data.length < limit) break;
+      offset += limit;
+    } catch (error) {
+      logger.error("Error fetching volume covers from MangaDex", { error: errorMessage(error) });
+      break;
+    }
   }
 
-  return Array.from({ length: totalVolumes }, (_, i) => ({
-    volumeNumber: i + 1,
-    title: `Volume ${i + 1}`,
-  }));
+  return coverMap;
 }

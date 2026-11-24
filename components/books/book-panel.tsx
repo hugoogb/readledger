@@ -13,6 +13,7 @@ import { BookMarked, Check, Heart, Package, Pencil } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useOptimistic, useState, useTransition } from "react";
 import { toast } from "sonner";
+import { errorMessage } from "@/lib/utils";
 
 type UserStore = { id: string; name: string };
 
@@ -64,7 +65,7 @@ export function BookPanel({ volume, title, retailPrice, stores }: BookPanelProps
       try {
         await action();
       } catch (err) {
-        toast.error(err instanceof Error ? err.message : "Failed to update");
+        toast.error(errorMessage(err, "Failed to update"));
       }
     });
   };

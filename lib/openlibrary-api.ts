@@ -8,8 +8,10 @@
 // rate-limited, ISBN/OLID-keyed ones are (100 per 5 minutes per IP).
 
 import { TTLCache } from "./cache";
+import { isRecord, stringArray } from "./json";
 import { AppError } from "./errors";
 import { logger } from "./logger";
+import { errorMessage } from "./utils";
 import { throttleOpenLibrary } from "./rate-limit";
 import { CONTACT_EMAIL, SITE_NAME, SITE_URL } from "./site";
 
@@ -70,17 +72,11 @@ export type BookSearchPage = {
 
 export class OpenLibraryError extends AppError {
   constructor() {
-    super("Open Library is unavailable right now. Please try again later.", "UPSTREAM_ERROR", 502);
+    super("Open Library is unavailable right now. Please try again later.");
   }
 }
 
 // --- Pure helpers ---
-
-const isRecord = (v: unknown): v is Record<string, unknown> =>
-  typeof v === "object" && v !== null && !Array.isArray(v);
-
-const stringArray = (v: unknown): string[] =>
-  Array.isArray(v) ? v.filter((s): s is string => typeof s === "string" && s.trim() !== "") : [];
 
 const positiveInt = (v: unknown): number | null =>
   typeof v === "number" && Number.isInteger(v) && v > 0 ? v : null;
@@ -160,7 +156,7 @@ async function fetchJson(path: string): Promise<unknown> {
   } catch (error) {
     logger.error("Error fetching from Open Library", {
       path: path.split("?")[0],
-      error: error instanceof Error ? error.message : String(error),
+      error: errorMessage(error),
     });
     throw new OpenLibraryError();
   }

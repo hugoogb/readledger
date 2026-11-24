@@ -1,5 +1,6 @@
 import { seriesTimeline } from "@/lib/reading-stats";
 import { formatShortDate } from "@/utils/date";
+import { plural } from "@/lib/utils";
 
 type SeriesTimelineProps = {
   volumes: Parameters<typeof seriesTimeline>[0];
@@ -18,7 +19,7 @@ export function SeriesTimeline({ volumes }: SeriesTimelineProps) {
       label: "Buy → read",
       value:
         t.averageBuyToRead !== null
-          ? `${t.averageBuyToRead} day${t.averageBuyToRead !== 1 ? "s" : ""} avg`
+          ? `${plural(t.averageBuyToRead, "day")} avg`
           : null,
     },
   ].filter((s): s is { label: string; value: string } => Boolean(s.value));

@@ -2,7 +2,7 @@
 
 import { withResult } from "@/lib/action-result";
 import { requireUser } from "@/lib/auth";
-import { parseIsbnQuery, toStoredIsbn } from "@/lib/isbn";
+import { isbn13FromQuery } from "@/lib/isbn";
 import { lookupIsbnAnySource } from "@/lib/isbn-lookup";
 import {
   getBookDetails as fetchBookDetails,
@@ -13,7 +13,7 @@ import { checkRateLimit } from "@/lib/rate-limit";
 import { openLibraryKeySchema } from "@/lib/validations";
 import { z } from "zod";
 
-// Both actions go through the shared 1 req/s Open Library throttle, so they
+// Both actions go through the shared Open Library throttle, so they
 // require a session and bounded inputs to keep anonymous callers off it.
 // They return ActionResult values so the add modal can show an Open Library
 // failure in the Books section without breaking the Manga section.
@@ -36,11 +36,11 @@ export const searchBooks = withResult(
     const input = searchInput.parse({ query, page });
     limit(user.id);
 
-    const isbn = parseIsbnQuery(input.query);
-    if (!isbn) return searchOpenLibrary(input.query, input.page);
-
     // ISBN-13, the same key the volume resolver uses, so they share a lookup.
-    const book = await lookupIsbnAnySource(toStoredIsbn(isbn));
+    const isbn13 = isbn13FromQuery(input.query);
+    if (!isbn13) return searchOpenLibrary(input.query, input.page);
+
+    const book = await lookupIsbnAnySource(isbn13);
     return {
       data: book ? [book] : [],
       pagination: { currentPage: 1, hasNextPage: false },

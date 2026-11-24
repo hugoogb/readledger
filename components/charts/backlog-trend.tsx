@@ -11,7 +11,9 @@ import {
 } from "recharts";
 import { formatChartMonth, formatChartMonthShort } from "@/utils/date";
 import { Layers } from "lucide-react";
+import { plural } from "@/lib/utils";
 import { ChartEmpty } from "./chart-empty";
+import { AXIS_TICK, TOOLTIP_CONTENT } from "./chart-theme";
 
 type BacklogTrendProps = {
   /** `label` is "YYYY-MM" for months or "YYYY" for years. */
@@ -38,26 +40,20 @@ export function BacklogTrend({ data, granularity }: BacklogTrendProps) {
         <CartesianGrid strokeDasharray="2 4" stroke="var(--color-border)" vertical={false} />
         <XAxis
           dataKey="label"
-          tick={{ fill: "var(--color-foreground-muted)", fontSize: 12 }}
+          tick={AXIS_TICK}
           tickLine={false}
           tickFormatter={(v: string) => (isMonth ? formatChartMonthShort(v) : v)}
         />
         <YAxis
           allowDecimals={false}
-          tick={{ fill: "var(--color-foreground-muted)", fontSize: 12 }}
+          tick={AXIS_TICK}
           tickLine={false}
         />
         <Tooltip
-          contentStyle={{
-            backgroundColor: "var(--color-background-secondary)",
-            border: "1px solid var(--color-border)",
-            borderRadius: "8px",
-            color: "var(--color-foreground)",
-            boxShadow: "none",
-          }}
+          contentStyle={TOOLTIP_CONTENT}
           labelFormatter={(label) => (isMonth ? formatChartMonth(String(label)) : String(label))}
           formatter={(value) => [
-            `${value} book${Number(value) !== 1 ? "s" : ""}`,
+            plural(Number(value), "book"),
             "Unread",
           ]}
         />

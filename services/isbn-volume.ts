@@ -4,6 +4,7 @@ import { isStandalone } from "@/lib/format";
 import { isbnVariants } from "@/lib/isbn";
 import { lookupIsbnAnySource } from "@/lib/isbn-lookup";
 import { logger } from "@/lib/logger";
+import { errorMessage } from "@/lib/utils";
 import {
   findTopManga,
   formatMangaForSeries,
@@ -130,12 +131,25 @@ export type VolumeMatch =
       isbn: string;
     };
 
-async function isVolumeOwned(seriesId: string, volumeNumber: number): Promise<boolean> {
+/** A title-based guess: volume `volumeNumber` of one of the user's series. */
+async function guessedVolume(
+  series: { id: string; title: string },
+  volumeNumber: number,
+  isbn: string,
+): Promise<VolumeMatch> {
   const volume = await prisma.volume.findFirst({
-    where: { seriesId, volumeNumber },
+    where: { seriesId: series.id, volumeNumber },
     select: { owned: true },
   });
-  return volume?.owned ?? false;
+  return {
+    kind: "existing",
+    seriesId: series.id,
+    seriesTitle: series.title,
+    volumeNumber,
+    owned: volume?.owned ?? false,
+    isbn,
+    byIsbn: false,
+  };
 }
 
 /** MangaDex's top result for the title, if its title or an alt title is that title. */
@@ -166,36 +180,18 @@ export async function resolveIsbnVolume(userId: string, isbn13: string): Promise
     const { volumeNumber } = parsed;
 
     const inLibrary = await findSeriesByTitle(userId, normalizeTitle(parsed.seriesTitle));
-    if (inLibrary) {
-      return {
-        kind: "existing",
-        seriesId: inLibrary.id,
-        seriesTitle: inLibrary.title,
-        volumeNumber,
-        owned: await isVolumeOwned(inLibrary.id, volumeNumber),
-        isbn: isbn13,
-        byIsbn: false,
-      };
-    }
+    if (inLibrary) return guessedVolume(inLibrary, volumeNumber, isbn13);
 
     const manga = await findMangaByTitle(parsed.seriesTitle);
     if (!manga) return null;
 
-    const [existing] = await prisma.series.findMany({
+    const existing = await prisma.series.findFirst({
       where: { userId, mangadexId: manga.id },
       select: { id: true, title: true, totalVolumes: true, _count: { select: { volumes: true } } },
     });
     if (existing) {
       if (isStandalone(existing.totalVolumes, existing._count.volumes)) return null;
-      return {
-        kind: "existing",
-        seriesId: existing.id,
-        seriesTitle: existing.title,
-        volumeNumber,
-        owned: await isVolumeOwned(existing.id, volumeNumber),
-        isbn: isbn13,
-        byIsbn: false,
-      };
+      return guessedVolume(existing, volumeNumber, isbn13);
     }
 
     // The edition's printed total wins over MangaDex's (kanzenban, 3-in-1...).
@@ -210,7 +206,7 @@ export async function resolveIsbnVolume(userId: string, isbn13: string): Promise
     };
   } catch (error) {
     logger.error("Error resolving an ISBN to a volume", {
-      error: error instanceof Error ? error.message : String(error),
+      error: errorMessage(error),
     });
     return null;
   }

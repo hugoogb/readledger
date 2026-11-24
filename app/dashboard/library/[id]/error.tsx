@@ -1,33 +1,14 @@
 "use client";
 
-import Link from "next/link";
-import { Button, buttonVariants } from "@/components/ui/button";
-import { PageMessage } from "@/components/ui/page-message";
+import { ErrorPage } from "@/components/ui/error-page";
 
-export default function DetailError({
-  error,
-  reset,
-}: {
-  error: Error & { digest?: string };
-  reset: () => void;
-}) {
+export default function DetailError(props: { error: Error & { digest?: string }; reset: () => void }) {
   return (
-    <PageMessage
-      eyebrow="Something went wrong"
+    <ErrorPage
+      {...props}
       title="This title didn't load"
-      body={
-        <>
-          {process.env.NODE_ENV === "development"
-            ? error.message || "Could not load this series. It may have been deleted or you may not have access."
-            : "Could not load this series. It may have been deleted or you may not have access."}
-          {error.digest && <p className="mt-2 text-xs">Digest: {error.digest}</p>}
-        </>
-      }
-    >
-      <Button onClick={reset}>Try again</Button>
-      <Link href="/dashboard/library" className={buttonVariants({ variant: "outline" })}>
-        Back to library
-      </Link>
-    </PageMessage>
+      message="Could not load this series. It may have been deleted or you may not have access."
+      back={{ href: "/dashboard/library", label: "Back to library" }}
+    />
   );
 }

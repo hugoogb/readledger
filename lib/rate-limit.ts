@@ -90,7 +90,7 @@ export function createThrottle(
     const slot = Math.max(now, nextSlot);
     const wait = slot - now;
     if (wait > maxWaitMs) {
-      throw new AppError(busyMessage, "UPSTREAM_BUSY", 503);
+      throw new AppError(busyMessage);
     }
     nextSlot = slot + intervalMs;
     if (wait > 0) await new Promise((resolve) => setTimeout(resolve, wait));

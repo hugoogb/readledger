@@ -1,7 +1,6 @@
 "use client";
 
 import { bulkSetRead } from "@/actions/volumes";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
@@ -15,8 +14,8 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { todayInputValue } from "@/utils/date";
 import { unwrap } from "@/lib/unwrap";
-
-const today = () => todayInputValue();
+import { errorMessage } from "@/lib/utils";
+import { VolumePicker } from "./volume-picker";
 
 type BulkSetReadModalProps = {
   volumes: Volume[];
@@ -26,7 +25,7 @@ export function BulkSetReadModal({ volumes }: BulkSetReadModalProps) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [readDate, setReadDate] = useState(today);
+  const [readDate, setReadDate] = useState(todayInputValue);
 
   const unreadVolumes = volumes.filter((v) => v.owned && !v.read);
   const {
@@ -34,7 +33,6 @@ export function BulkSetReadModal({ volumes }: BulkSetReadModalProps) {
     toggle,
     selectAll,
     clear,
-    selectUpTo,
     size: selectedCount,
     has,
   } = useToggleSet<string>();
@@ -42,21 +40,14 @@ export function BulkSetReadModal({ volumes }: BulkSetReadModalProps) {
   const handleOpenChange = (open: boolean) => {
     setIsOpen(open);
     if (open) {
-      setReadDate(today());
+      setReadDate(todayInputValue());
     } else {
       clear();
     }
   };
 
-  const handleSelectUpTo = (volumeNumber: number) => {
-    selectUpTo(
-      unreadVolumes.map((v) => v.id),
-      (id) => {
-        const vol = unreadVolumes.find((v) => v.id === id);
-        return vol ? vol.volumeNumber <= volumeNumber : false;
-      },
-    );
-  };
+  const handleSelectUpTo = (volumeNumber: number) =>
+    selectAll(unreadVolumes.filter((v) => v.volumeNumber <= volumeNumber).map((v) => v.id));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,9 +62,7 @@ export function BulkSetReadModal({ volumes }: BulkSetReadModalProps) {
       router.refresh();
       handleOpenChange(false);
     } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Failed to update volumes",
-      );
+      toast.error(errorMessage(err, "Failed to update volumes"));
     } finally {
       setIsLoading(false);
     }
@@ -105,64 +94,18 @@ export function BulkSetReadModal({ volumes }: BulkSetReadModalProps) {
         maxWidth="lg"
       >
         <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Volume Selection */}
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <Label className="mb-0">Select Volumes to Mark as Read</Label>
-              <div className="flex items-center gap-3">
-                <Badge variant="success" size="sm">
-                  <span className="text-nowrap">{selectedCount} selected</span>
-                </Badge>
-                <div className="flex gap-2">
-                  <Button
-                    variant="link"
-                    type="button"
-                    onClick={() => selectAll(unreadVolumes.map((v) => v.id))}
-                    className="h-auto p-0 text-xs font-medium text-success hover:text-success/80"
-                  >
-                    Select All
-                  </Button>
-                  <span className="text-foreground-muted/30">|</span>
-                  <Button
-                    variant="link"
-                    type="button"
-                    onClick={clear}
-                    className="h-auto p-0 text-xs font-medium text-foreground-muted hover:text-foreground"
-                  >
-                    Clear
-                  </Button>
-                </div>
-              </div>
-            </div>
-            <div className="max-h-48 overflow-y-auto border border-border rounded-md p-3 bg-background-tertiary/50">
-              <div className="flex flex-wrap gap-2">
-                {unreadVolumes.length > 0 ? (
-                  unreadVolumes.map((volume) => (
-                    <Button
-                      key={volume.id}
-                      type="button"
-                      variant={has(volume.id) ? "success" : "outline"}
-                      onClick={() => toggle(volume.id)}
-                      className={`
-                        min-w-10 h-10 px-0 rounded-lg text-sm font-semibold
-                        ${
-                          has(volume.id)
-                            ? "ring-2 ring-success ring-offset-2 ring-offset-background-tertiary shadow-lg"
-                            : "hover:border-success/50 hover:bg-success/5"
-                        }
-                      `}
-                    >
-                      {volume.volumeNumber}
-                    </Button>
-                  ))
-                ) : (
-                  <p className="text-sm text-foreground-muted py-2">
-                    All owned volumes are already read!
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
+          <VolumePicker
+            label="Select Volumes to Mark as Read"
+            volumes={unreadVolumes}
+            isSelected={has}
+            selectedCount={selectedCount}
+            onToggle={toggle}
+            onSelectAll={() => selectAll(unreadVolumes.map((v) => v.id))}
+            onClear={clear}
+            emptyText="All owned volumes are already read!"
+            tone="success"
+            maxHeight="max-h-48"
+          />
 
           {/* Quick Select */}
           {quickSelectNumbers.length > 0 && (

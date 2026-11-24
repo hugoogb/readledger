@@ -8,6 +8,8 @@
  * separately via `undatedReadCount`.
  */
 
+import { monthKey } from "@/utils/date";
+
 export type ReadingVolume = {
   id: string;
   seriesId: string;
@@ -35,10 +37,6 @@ function datedReads<T extends DatedVolume>(volumes: T[]): DatedRead<T>[] {
 
 function inPeriod(date: Date, period: Period) {
   return period === "all" || date.getUTCFullYear() === period;
-}
-
-function monthKey(date: Date) {
-  return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}`;
 }
 
 /** Monday-start week number since the epoch (1970-01-01 was a Thursday). */

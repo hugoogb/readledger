@@ -8,6 +8,7 @@ import { Ledger, LedgerRow, LedgerTotal } from "@/components/ui/ledger";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { WishlistActions } from "@/components/wishlist/wishlist-actions";
+import { plural } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "Wishlist",
@@ -64,7 +65,7 @@ export default async function WishlistPage() {
                     <p className="text-sm text-foreground-muted">
                       {group.series.standalone
                         ? "Wishlisted"
-                        : `${group.volumes.length} volume${group.volumes.length !== 1 ? "s" : ""} wishlisted`}
+                        : `${plural(group.volumes.length, "volume")} wishlisted`}
                     </p>
                   </div>
                 </Link>

@@ -13,6 +13,7 @@ import { Library, Minus, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { errorMessage } from "@/lib/utils";
 
 export type NewSeriesMatch = Extract<VolumeMatch, { kind: "new" }>;
 
@@ -75,7 +76,7 @@ export function VolumeMatchCard({ isbn, onStartNewSeries, onDone }: VolumeMatchC
       router.refresh();
       onDone();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't mark the volume as owned");
+      toast.error(errorMessage(err, "Couldn't mark the volume as owned"));
       setSaving(false);
     }
   };

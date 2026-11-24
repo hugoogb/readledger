@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
-import { NotFoundError, ValidationError } from "@/lib/errors";
-import { Condition, type SeriesStatus } from "@/lib/generated/prisma/enums";
+import { NotFoundError } from "@/lib/errors";
+import type { Condition, SeriesStatus } from "@/lib/generated/prisma/enums";
 import type { Prisma } from "@/lib/generated/prisma/client";
 import { isStandalone, standaloneStatusAfterRead } from "@/lib/format";
 import type { VolumeSchema } from "@/lib/validations";
@@ -8,8 +8,6 @@ import { comparableSavings } from "@/lib/savings";
 import { parseDateInput, startOfUtcDay } from "@/utils/date";
 import { blankToNull } from "@/lib/normalize";
 import { assertOwnedStore } from "@/services/ownership";
-
-export const MAX_BULK_SIZE = 500;
 
 export type CreateVolumeInput = VolumeSchema & { seriesId: string };
 export type UpdateVolumeInput = Partial<VolumeSchema>;
@@ -66,7 +64,7 @@ export async function createVolume(userId: string, validated: CreateVolumeInput)
         : null,
       readDate: validated.read ? (validated.readDate ?? startOfUtcDay()) : null,
       storeId: validated.storeId || null,
-      condition: (validated.condition as Condition) || null,
+      condition: validated.condition ?? null,
     },
   });
 }
@@ -94,7 +92,6 @@ export async function updateVolume(userId: string, id: string, validated: Update
         // removing it from the collection later doesn't resurrect the wish.
         ...(validated.owned === true && { wishlist: false }),
         storeId: validated.storeId !== undefined ? (validated.storeId || null) : undefined,
-        condition: validated.condition ? (validated.condition as Condition) : validated.condition === null ? null : undefined,
         readDate: resolveReadDate(validated, volume.readDate),
       },
     });
@@ -122,7 +119,7 @@ function resolveReadDate(
 export async function deleteVolume(userId: string, id: string) {
   const volume = await prisma.volume.findFirst({
     where: { id },
-    include: { series: true },
+    select: { seriesId: true, series: { select: { userId: true } } },
   });
 
   if (!volume || volume.series.userId !== userId) {
@@ -164,19 +161,6 @@ export async function toggleVolumeRead(userId: string, id: string, today?: strin
   return { updated, seriesId: volume.seriesId };
 }
 
-export async function getVolumeStats(userId: string, seriesId: string) {
-  const series = await prisma.series.findFirst({
-    where: { id: seriesId, userId },
-    include: { volumes: true },
-  });
-
-  if (!series) {
-    throw new NotFoundError("Series");
-  }
-
-  return computeVolumeStats(series);
-}
-
 type StatsVolume = { owned: boolean; read: boolean; wishlist: boolean; pricePaid: number | null };
 
 export function computeVolumeStats(series: {
@@ -214,6 +198,24 @@ export function computeVolumeStats(series: {
   };
 }
 
+/**
+ * The volumes behind `volumeIds` with their series' sync fields, and the
+ * series they belong to. Throws unless every id is one of the user's volumes.
+ */
+async function findOwnedVolumes(userId: string, volumeIds: string[]) {
+  const volumes = await prisma.volume.findMany({
+    where: { id: { in: volumeIds } },
+    include: { series: seriesForSync },
+  });
+
+  if (volumes.length !== volumeIds.length || volumes.some((v) => v.series.userId !== userId)) {
+    throw new NotFoundError("Some volumes");
+  }
+
+  return { volumes, seriesIds: new Set(volumes.map((v) => v.seriesId)) };
+}
+
+/** `volumeIds` is validated by the action (volumeIdsSchema: 1 to MAX_BULK_SIZE ids). */
 export async function bulkMarkOwned(
   userId: string,
   volumeIds: string[],
@@ -225,26 +227,7 @@ export async function bulkMarkOwned(
     notes?: string;
   },
 ) {
-  if (volumeIds.length === 0) throw new ValidationError("No volumes selected");
-  if (volumeIds.length > MAX_BULK_SIZE) throw new ValidationError(`Cannot process more than ${MAX_BULK_SIZE} volumes at once`);
-
-  const volumes = await prisma.volume.findMany({
-    where: { id: { in: volumeIds } },
-    include: { series: true },
-  });
-
-  if (volumes.length !== volumeIds.length) {
-    throw new NotFoundError("Some volumes");
-  }
-
-  const seriesIds = new Set<string>();
-  for (const volume of volumes) {
-    if (volume.series.userId !== userId) {
-      throw new NotFoundError("Some volumes");
-    }
-    seriesIds.add(volume.seriesId);
-  }
-
+  const { seriesIds } = await findOwnedVolumes(userId, volumeIds);
   await assertOwnedStore(userId, data.storeId);
 
   await prisma.volume.updateMany({
@@ -268,25 +251,7 @@ export async function bulkSetRead(
   volumeIds: string[],
   readDate?: Date,
 ) {
-  if (volumeIds.length === 0) throw new ValidationError("No volumes selected");
-  if (volumeIds.length > MAX_BULK_SIZE) throw new ValidationError(`Cannot process more than ${MAX_BULK_SIZE} volumes at once`);
-
-  const volumes = await prisma.volume.findMany({
-    where: { id: { in: volumeIds } },
-    include: { series: seriesForSync },
-  });
-
-  if (volumes.length !== volumeIds.length) {
-    throw new NotFoundError("Some volumes");
-  }
-
-  const seriesIds = new Set<string>();
-  for (const volume of volumes) {
-    if (volume.series.userId !== userId) {
-      throw new NotFoundError("Some volumes");
-    }
-    seriesIds.add(volume.seriesId);
-  }
+  const { volumes, seriesIds } = await findOwnedVolumes(userId, volumeIds);
 
   await prisma.$transaction(async (tx) => {
     await tx.volume.updateMany({

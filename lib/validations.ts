@@ -6,6 +6,9 @@ import { toStoredIsbn } from "./isbn";
 /** Upper bound for volumes in one series — keeps volume generation bounded. */
 export const MAX_VOLUMES = 1000;
 
+/** Most volumes one bulk action may change. */
+export const MAX_BULK_SIZE = 500;
+
 // Covers render through next/image, which only allows the hosts in
 // lib/covers.ts (see next.config.ts). Any other URL would crash the page.
 const coverImageSchema = z
@@ -57,12 +60,13 @@ export const bulkMarkOwnedSchema = z.object({
   notes: z.string().max(1000).optional().or(z.literal("")),
 });
 
-export const bulkSetReadSchema = z.object({
-  volumeIds: z.array(z.string()).min(1, "Select at least one volume"),
-});
+/** Volume ids for bulk server actions. */
+export const volumeIdsSchema = z
+  .array(idSchema)
+  .min(1, "No volumes selected")
+  .max(MAX_BULK_SIZE, `Cannot process more than ${MAX_BULK_SIZE} volumes at once`);
 
-/** Volume ids for bulk server actions (matches MAX_BULK_SIZE in services). */
-export const volumeIdsSchema = z.array(idSchema).min(1, "No volumes selected").max(500);
+export const readDateSchema = z.date("Invalid read date").optional();
 
 /** Server-side payload of bulkMarkOwned (the form schema above is client-side). */
 export const bulkOwnedPayloadSchema = z.object({
@@ -128,5 +132,4 @@ export const displayNameSchema = z
 export type SeriesSchema = z.infer<typeof seriesSchema>;
 export type VolumeSchema = z.infer<typeof volumeSchema>;
 export type BulkMarkOwnedSchema = z.infer<typeof bulkMarkOwnedSchema>;
-export type BulkSetReadSchema = z.infer<typeof bulkSetReadSchema>;
 export type ReadingGoalSchema = z.infer<typeof readingGoalSchema>;

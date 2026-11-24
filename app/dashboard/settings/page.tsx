@@ -1,7 +1,6 @@
 import { getPublishers } from "@/actions/publishers";
 import { getStores } from "@/actions/stores";
-import { PublisherList } from "@/components/settings/publisher-list";
-import { StoreList } from "@/components/settings/store-list";
+import { PublisherList, StoreList } from "@/components/settings/name-list";
 import { CurrencyForm } from "@/components/account/currency-form";
 import { DisplayNameForm } from "@/components/account/display-name-form";
 import {

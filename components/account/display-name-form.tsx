@@ -8,6 +8,7 @@ import { User } from "lucide-react";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { unwrap } from "@/lib/unwrap";
+import { errorMessage } from "@/lib/utils";
 
 export function DisplayNameForm({ initialName }: { initialName: string | null }) {
   const [name, setName] = useState(initialName ?? "");
@@ -22,7 +23,7 @@ export function DisplayNameForm({ initialName }: { initialName: string | null })
         setSaved(name.trim());
         toast.success("Name updated");
       } catch (err) {
-        toast.error(err instanceof Error ? err.message : "Failed to update name");
+        toast.error(errorMessage(err, "Failed to update name"));
       }
     });
   }

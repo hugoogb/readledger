@@ -1,10 +1,7 @@
 "use client";
 
-import { createStore } from "@/actions/stores";
 import { bulkMarkOwned } from "@/actions/volumes";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { CreatableSelect } from "@/components/ui/creatable-select";
 import { FormField } from "@/components/ui/form-field";
 import { FormSection } from "@/components/ui/form-section";
 import { Input } from "@/components/ui/input";
@@ -34,6 +31,9 @@ import { useForm, type SubmitHandler } from "react-hook-form";
 import { toast } from "sonner";
 import { parseDateInput, todayInputValue } from "@/utils/date";
 import { unwrap } from "@/lib/unwrap";
+import { errorMessage } from "@/lib/utils";
+import { StoreSelect } from "./store-select";
+import { VolumePicker } from "./volume-picker";
 
 type UserStore = { id: string; name: string };
 
@@ -115,9 +115,7 @@ export function BulkMarkOwnedModal({
       router.refresh();
       handleOpenChange(false);
     } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Failed to update volumes",
-      );
+      toast.error(errorMessage(err, "Failed to update volumes"));
     }
   };
 
@@ -139,66 +137,17 @@ export function BulkMarkOwnedModal({
         maxWidth="lg"
       >
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-          {/* Volume Selection */}
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <FormField label="Select Volumes">
-                <span />
-              </FormField>
-              <div className="flex items-center gap-3">
-                <Badge variant="default" size="sm">
-                  {selectedCount} selected
-                </Badge>
-                <div className="flex gap-2">
-                  <Button
-                    variant="link"
-                    type="button"
-                    onClick={() => selectAll(unownedVolumes.map((v) => v.id))}
-                    className="h-auto p-0 text-xs font-medium text-accent hover:text-accent-hover"
-                  >
-                    Select All
-                  </Button>
-                  <span className="text-foreground-muted/30">|</span>
-                  <Button
-                    variant="link"
-                    type="button"
-                    onClick={clear}
-                    className="h-auto p-0 text-xs font-medium text-foreground-muted hover:text-foreground"
-                  >
-                    Clear
-                  </Button>
-                </div>
-              </div>
-            </div>
-            <div className="max-h-40 overflow-y-auto border border-border rounded-md p-3 bg-background-tertiary/50">
-              <div className="flex flex-wrap gap-2">
-                {unownedVolumes.length > 0 ? (
-                  unownedVolumes.map((volume) => (
-                    <Button
-                      key={volume.id}
-                      type="button"
-                      variant={has(volume.id) ? "default" : "outline"}
-                      onClick={() => toggle(volume.id)}
-                      className={`
-                        min-w-10 h-10 px-0 rounded-lg text-sm font-semibold
-                        ${
-                          has(volume.id)
-                            ? "ring-2 ring-accent ring-offset-2 ring-offset-background-tertiary shadow-lg"
-                            : "hover:border-accent/50 hover:bg-accent/5"
-                        }
-                      `}
-                    >
-                      {volume.volumeNumber}
-                    </Button>
-                  ))
-                ) : (
-                  <p className="text-sm text-foreground-muted py-2">
-                    All volumes are already owned!
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
+          <VolumePicker
+            label="Select Volumes"
+            volumes={unownedVolumes}
+            isSelected={has}
+            selectedCount={selectedCount}
+            onToggle={toggle}
+            onSelectAll={() => selectAll(unownedVolumes.map((v) => v.id))}
+            onClear={clear}
+            emptyText="All volumes are already owned!"
+            tone="accent"
+          />
 
           {/* Total Price with calculation preview */}
           <FormField
@@ -238,31 +187,10 @@ export function BulkMarkOwnedModal({
               htmlFor="storeId"
               error={errors.storeId?.message}
             >
-              <CreatableSelect
-                id="storeId"
-                options={stores.map((s) => ({
-                  value: s.id,
-                  label: s.name,
-                }))}
+              <StoreSelect
+                stores={stores}
                 value={storeId ?? ""}
                 onChange={(val) => setValue("storeId", val || "")}
-                onCreate={async (name) => {
-                  try {
-                    const store = unwrap(await createStore(name));
-                    toast.success(`Store "${store.name}" created`);
-                    router.refresh();
-                    return store;
-                  } catch (err) {
-                    toast.error(
-                      err instanceof Error
-                        ? err.message
-                        : "Failed to create store",
-                    );
-                    throw err;
-                  }
-                }}
-                placeholder="No store"
-                createLabel="Add new store..."
                 error={!!errors.storeId}
               />
             </FormField>

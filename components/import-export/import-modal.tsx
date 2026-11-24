@@ -20,6 +20,7 @@ import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { MAX_IMPORT_SIZE } from "@/lib/import";
 import { unwrap } from "@/lib/unwrap";
+import { errorMessage, plural } from "@/lib/utils";
 
 export function ImportModal() {
   const router = useRouter();
@@ -53,7 +54,7 @@ export function ImportModal() {
       const result = unwrap(await previewImport(content, format));
       setPreview(result);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to parse file");
+      toast.error(errorMessage(err, "Failed to parse file"));
     } finally {
       setIsPreviewing(false);
     }
@@ -66,14 +67,12 @@ export function ImportModal() {
     try {
       const result = unwrap(await importCollection(fileData.content, fileData.format));
       toast.success(
-        `Imported ${result.volumeCount} book${result.volumeCount !== 1 ? "s" : ""} across ${result.seriesCount} title${result.seriesCount !== 1 ? "s" : ""}`,
+        `Imported ${plural(result.volumeCount, "book")} across ${plural(result.seriesCount, "title")}`,
       );
       router.refresh();
       handleClose();
     } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Failed to import",
-      );
+      toast.error(errorMessage(err, "Failed to import"));
     } finally {
       setIsImporting(false);
     }
@@ -152,10 +151,10 @@ export function ImportModal() {
               {/* Stats */}
               <div className="flex gap-3">
                 <Badge variant="default" className="gap-1">
-                  {preview.seriesCount} title{preview.seriesCount !== 1 ? "s" : ""}
+                  {plural(preview.seriesCount, "title")}
                 </Badge>
                 <Badge variant="default" className="gap-1">
-                  {preview.volumeCount} book{preview.volumeCount !== 1 ? "s" : ""}
+                  {plural(preview.volumeCount, "book")}
                 </Badge>
               </div>
 
@@ -164,7 +163,7 @@ export function ImportModal() {
                 <div className="p-3 bg-error/10 border border-error/20 rounded-md space-y-1">
                   <div className="flex items-center gap-2 text-error font-medium text-sm">
                     <AlertCircle className="w-4 h-4" />
-                    {preview.errors.length} error{preview.errors.length !== 1 ? "s" : ""} found
+                    {plural(preview.errors.length, "error")} found
                   </div>
                   <ul className="text-sm text-foreground-muted space-y-0.5 max-h-32 overflow-y-auto">
                     {preview.errors.slice(0, 10).map((err, i) => (

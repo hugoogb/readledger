@@ -2,11 +2,11 @@
 
 import { requireUser } from "@/lib/auth";
 import { withResult } from "@/lib/action-result";
-import { revalidatePath } from "next/cache";
+import { revalidateLibrary } from "@/lib/revalidate";
 import { cache } from "react";
 import { idSchema, openLibraryKeySchema, seriesSchema, seriesVolumesSchema } from "@/lib/validations";
 import { checkUserActionLimit } from "@/lib/rate-limit";
-import { parseIsbnQuery, toStoredIsbn } from "@/lib/isbn";
+import { isbn13FromQuery } from "@/lib/isbn";
 import * as seriesService from "@/services/series";
 import { booksFirstInSearch } from "@/lib/format";
 import { getPublishers } from "@/actions/publishers";
@@ -14,32 +14,18 @@ import { findVolumeByIsbn } from "@/services/isbn-volume";
 
 export type { CreateSeriesInput, UpdateSeriesInput, VolumeInput, SortOption, LibraryQuery } from "@/services/series";
 
-export const createSeries = withResult(async (input: seriesService.CreateSeriesInput) => {
-  const user = await requireUser();
-  checkUserActionLimit(user.id);
-  const validated = seriesSchema.parse(input);
-
-  const series = await seriesService.createSeries(user.id, validated);
-
-  revalidatePath("/dashboard");
-  revalidatePath("/dashboard/library");
-
-  return series;
-});
-
-export const createSeriesWithVolumes = withResult(async (
+export const createSeries = withResult(async (
   input: seriesService.CreateSeriesInput,
-  volumes: seriesService.VolumeInput[],
+  volumes: seriesService.VolumeInput[] = [],
 ) => {
   const user = await requireUser();
   checkUserActionLimit(user.id);
   const validated = seriesSchema.parse(input);
   const validatedVolumes = seriesVolumesSchema.parse(volumes);
 
-  const series = await seriesService.createSeriesWithVolumes(user.id, validated, validatedVolumes);
+  const series = await seriesService.createSeries(user.id, validated, validatedVolumes);
 
-  revalidatePath("/dashboard");
-  revalidatePath("/dashboard/library");
+  revalidateLibrary();
 
   return series;
 });
@@ -51,9 +37,7 @@ export const updateSeries = withResult(async (id: string, input: seriesService.U
 
   const updated = await seriesService.updateSeries(user.id, id, validated);
 
-  revalidatePath("/dashboard");
-  revalidatePath("/dashboard/library");
-  revalidatePath(`/dashboard/library/${id}`);
+  revalidateLibrary([id]);
 
   return updated;
 });
@@ -64,8 +48,7 @@ export const deleteSeries = withResult(async (id: string) => {
 
   await seriesService.deleteSeries(user.id, id);
 
-  revalidatePath("/dashboard");
-  revalidatePath("/dashboard/library");
+  revalidateLibrary();
 });
 
 export const getSeries = cache(async function getSeries(id: string) {
@@ -85,11 +68,6 @@ export const getLibraryFormats = cache(async function getLibraryFormats() {
   return seriesService.getLibraryFormats(user.id);
 });
 
-export async function checkDuplicateSeries(mangadexId: string): Promise<boolean> {
-  const user = await requireUser();
-  return seriesService.checkDuplicateSeries(user.id, mangadexId);
-}
-
 export async function getExistingMangadexIds(mangadexIds: string[]): Promise<string[]> {
   const user = await requireUser();
   return seriesService.getExistingMangadexIds(user.id, mangadexIds);
@@ -105,9 +83,9 @@ export async function getExistingOpenLibraryKeys(keys: string[]): Promise<string
 /** Whether any volume in the user's library holds this ISBN. */
 export async function isIsbnInLibrary(isbn: string): Promise<boolean> {
   const user = await requireUser();
-  const parsed = parseIsbnQuery(isbn);
-  if (!parsed) return false;
-  return (await findVolumeByIsbn(user.id, toStoredIsbn(parsed))) !== null;
+  const isbn13 = isbn13FromQuery(isbn);
+  if (!isbn13) return false;
+  return (await findVolumeByIsbn(user.id, isbn13)) !== null;
 }
 
 export const getFormatCounts = cache(async function getFormatCounts() {

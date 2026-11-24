@@ -23,12 +23,5 @@ export function useToggleSet<T>(initialValues?: Iterable<T>) {
     setSet(new Set());
   }, []);
 
-  const selectUpTo = useCallback(
-    (values: T[], predicate: (value: T) => boolean) => {
-      setSet(new Set(values.filter(predicate)));
-    },
-    [],
-  );
-
-  return { set, toggle, selectAll, clear, selectUpTo, size: set.size, has: set.has.bind(set) };
+  return { set, toggle, selectAll, clear, size: set.size, has: set.has.bind(set) };
 }

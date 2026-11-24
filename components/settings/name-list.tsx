@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { createStore, updateStore, deleteStore } from "@/actions/stores";
+import { createPublisher, deletePublisher, updatePublisher } from "@/actions/publishers";
+import { createStore, deleteStore, updateStore } from "@/actions/stores";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -9,14 +10,40 @@ import { Check, Loader2, Pencil, Plus, Trash2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { unwrap } from "@/lib/unwrap";
+import { errorMessage } from "@/lib/utils";
 
-type Store = { id: string; name: string };
+type Item = { id: string; name: string };
 
-type StoreListProps = {
-  stores: Store[];
-};
+// Stores and publishers are the same kind of per-user name list.
+const KINDS = {
+  store: {
+    noun: "store",
+    Noun: "Store",
+    create: createStore,
+    update: updateStore,
+    remove: deleteStore,
+    usedBy: "Volumes",
+  },
+  publisher: {
+    noun: "publisher",
+    Noun: "Publisher",
+    create: createPublisher,
+    update: updatePublisher,
+    remove: deletePublisher,
+    usedBy: "Series",
+  },
+} as const;
 
-export function StoreList({ stores }: StoreListProps) {
+export function StoreList({ stores }: { stores: Item[] }) {
+  return <NameList kind="store" items={stores} />;
+}
+
+export function PublisherList({ publishers }: { publishers: Item[] }) {
+  return <NameList kind="publisher" items={publishers} />;
+}
+
+function NameList({ kind, items }: { kind: keyof typeof KINDS; items: Item[] }) {
+  const { noun, Noun, create, update, remove, usedBy } = KINDS[kind];
   const router = useRouter();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
@@ -30,14 +57,12 @@ export function StoreList({ stores }: StoreListProps) {
 
     setLoading("create");
     try {
-      unwrap(await createStore(trimmed));
+      unwrap(await create(trimmed));
       setNewName("");
-      toast.success("Store created");
+      toast.success(`${Noun} created`);
       router.refresh();
     } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Failed to create store",
-      );
+      toast.error(errorMessage(err, `Failed to create ${noun}`));
     } finally {
       setLoading(null);
     }
@@ -49,14 +74,12 @@ export function StoreList({ stores }: StoreListProps) {
 
     setLoading(id);
     try {
-      unwrap(await updateStore(id, trimmed));
+      unwrap(await update(id, trimmed));
       setEditingId(null);
-      toast.success("Store updated");
+      toast.success(`${Noun} updated`);
       router.refresh();
     } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Failed to update store",
-      );
+      toast.error(errorMessage(err, `Failed to update ${noun}`));
     } finally {
       setLoading(null);
     }
@@ -66,14 +89,12 @@ export function StoreList({ stores }: StoreListProps) {
     if (!deleteTarget) return;
     setLoading(deleteTarget.id);
     try {
-      unwrap(await deleteStore(deleteTarget.id));
+      unwrap(await remove(deleteTarget.id));
       setDeleteTarget(null);
-      toast.success("Store deleted");
+      toast.success(`${Noun} deleted`);
       router.refresh();
     } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Failed to delete store",
-      );
+      toast.error(errorMessage(err, `Failed to delete ${noun}`));
     } finally {
       setLoading(null);
     }
@@ -85,24 +106,24 @@ export function StoreList({ stores }: StoreListProps) {
       isOpen={!!deleteTarget}
       onClose={() => setDeleteTarget(null)}
       onConfirm={handleDelete}
-      title="Delete store"
-      description={`Delete "${deleteTarget?.name}"? Volumes using this store will lose the association.`}
+      title={`Delete ${noun}`}
+      description={`Delete "${deleteTarget?.name}"? ${usedBy} using this ${noun} will lose the association.`}
       confirmLabel="Delete"
       isLoading={!!loading}
     />
     <div className="space-y-3">
-      {stores.length === 0 && (
+      {items.length === 0 && (
         <p className="text-sm text-foreground-muted py-2">
-          No stores yet. Add one below.
+          No {noun}s yet. Add one below.
         </p>
       )}
 
-      {stores.map((store) => (
+      {items.map((item) => (
         <div
-          key={store.id}
+          key={item.id}
           className="flex items-center gap-2 p-3 rounded-md bg-background-tertiary border border-border/50"
         >
-          {editingId === store.id ? (
+          {editingId === item.id ? (
             <>
               <Input
                 value={editName}
@@ -110,22 +131,22 @@ export function StoreList({ stores }: StoreListProps) {
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     e.preventDefault();
-                    handleUpdate(store.id);
+                    handleUpdate(item.id);
                   }
                   if (e.key === "Escape") setEditingId(null);
                 }}
                 className="flex-1"
-                aria-label="Store name"
+                aria-label={`${Noun} name`}
                 autoFocus
               />
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => handleUpdate(store.id)}
-                disabled={loading === store.id}
+                onClick={() => handleUpdate(item.id)}
+                disabled={loading === item.id}
                 aria-label="Save changes"
               >
-                {loading === store.id ? (
+                {loading === item.id ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
                   <Check className="w-4 h-4" />
@@ -142,27 +163,27 @@ export function StoreList({ stores }: StoreListProps) {
             </>
           ) : (
             <>
-              <span className="flex-1 text-sm font-medium">{store.name}</span>
+              <span className="flex-1 text-sm font-medium">{item.name}</span>
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => {
-                  setEditingId(store.id);
-                  setEditName(store.name);
+                  setEditingId(item.id);
+                  setEditName(item.name);
                 }}
-                aria-label={`Edit ${store.name}`}
+                aria-label={`Edit ${item.name}`}
               >
                 <Pencil className="w-4 h-4" />
               </Button>
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => setDeleteTarget({ id: store.id, name: store.name })}
-                disabled={loading === store.id}
+                onClick={() => setDeleteTarget({ id: item.id, name: item.name })}
+                disabled={loading === item.id}
                 className="text-foreground-muted hover:text-error hover:bg-error/10"
-                aria-label={`Delete ${store.name}`}
+                aria-label={`Delete ${item.name}`}
               >
-                {loading === store.id ? (
+                {loading === item.id ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
                   <Trash2 className="w-4 h-4" />
@@ -183,8 +204,8 @@ export function StoreList({ stores }: StoreListProps) {
               handleCreate();
             }
           }}
-          placeholder="New store name..."
-          aria-label="New store name"
+          placeholder={`New ${noun} name...`}
+          aria-label={`New ${noun} name`}
           className="flex-1"
         />
         <Button

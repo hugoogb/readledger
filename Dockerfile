@@ -41,8 +41,7 @@ COPY prisma ./prisma
 # ── runtime ───────────────────────────────────────────────────────────────────────
 FROM node:22-alpine AS runtime
 
-# Stored timestamps are UTC; keep server-side date formatting on UTC as it was
-# on Vercel.
+# Stored timestamps are UTC; keep server-side date formatting on UTC too.
 #
 # HOSTNAME=:: listens dual-stack. The platform's compose healthcheck probes
 # http://localhost:3000, and inside Alpine `localhost` resolves to ::1 first;

@@ -7,21 +7,17 @@
 // credited to Google Books where they are shown.
 
 import { TTLCache } from "./cache";
+import { isRecord, stringArray } from "./json";
 import { toStoredIsbn } from "./isbn";
 import { logger } from "./logger";
+import { errorMessage } from "./utils";
 import { guessFormat, type BookSearchResult } from "./openlibrary-api";
 import { throttleGoogleBooks } from "./rate-limit";
 
 const GOOGLE_BOOKS_URL = "https://www.googleapis.com/books/v1/volumes";
 const GOOGLE_BOOKS_TIMEOUT_MS = 10_000;
 
-const isRecord = (v: unknown): v is Record<string, unknown> =>
-  typeof v === "object" && v !== null && !Array.isArray(v);
-
 const str = (v: unknown): string => (typeof v === "string" ? v.trim() : "");
-
-const stringArray = (v: unknown): string[] =>
-  Array.isArray(v) ? v.filter((s): s is string => typeof s === "string" && s.trim() !== "") : [];
 
 /** The thumbnail over https, without the page-curl effect; "" when absent. */
 function coverUrl(volumeInfo: Record<string, unknown>): string {
@@ -97,7 +93,7 @@ export async function lookupIsbnGoogle(isbn: string): Promise<BookSearchResult |
   } catch (error) {
     // Not cached: a transient failure shouldn't hide the book for 10 minutes.
     logger.error("Error fetching from Google Books", {
-      error: error instanceof Error ? error.message : String(error),
+      error: errorMessage(error),
     });
     return null;
   }

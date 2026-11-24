@@ -4,8 +4,13 @@ ReadLedger runs as a Docker container on a Hetzner VPS (the `infra-setup`
 platform, app name `readledger`), with PostgreSQL behind PgBouncer on the same
 server. Cloudflare sits in front of `readledger.app`.
 
-It moved off Vercel + Supabase on 2026-10-01; see `docs/vps-migration-plan.md`
-for the history and the post-cutover checklist.
+It moved off Vercel + Supabase on 2026-10-01 (the migration plan is in git
+history: `docs/vps-migration-plan.md`, removed after cutover).
+
+Still open from the migration:
+
+- [ ] Confirm the nightly backup includes the `readledger` DB, and restore it
+      once to a scratch DB
 
 ---
 

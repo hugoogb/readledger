@@ -7,6 +7,7 @@ import { unwrap } from "@/lib/unwrap";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
+import { errorMessage } from "@/lib/utils";
 
 const CURRENCIES = [
   { code: "EUR", label: "Euro (€)" },
@@ -42,7 +43,7 @@ export function CurrencyForm({ initialCurrency }: { initialCurrency: string }) {
         router.refresh();
       } catch (err) {
         setCurrency(previous);
-        toast.error(err instanceof Error ? err.message : "Failed to update currency");
+        toast.error(errorMessage(err, "Failed to update currency"));
       }
     });
   }
