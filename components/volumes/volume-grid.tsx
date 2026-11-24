@@ -10,6 +10,7 @@ import { todayInputValue } from "@/utils/date";
 import { VolumeCell } from "./volume-cell";
 import { VolumeDetailsModal } from "./volume-details-modal";
 import { unwrap } from "@/lib/unwrap";
+import { errorMessage } from "@/lib/utils";
 
 type UserStore = { id: string; name: string };
 
@@ -87,7 +88,7 @@ export function VolumeGrid({
               : undefined,
           );
         } catch (err) {
-          toast.error(err instanceof Error ? err.message : "Failed to update volume");
+          toast.error(errorMessage(err, "Failed to update volume"));
         }
       });
     },
@@ -107,7 +108,7 @@ export function VolumeGrid({
               : `Volume ${volume.volumeNumber} removed from wishlist`,
           );
         } catch (err) {
-          toast.error(err instanceof Error ? err.message : "Failed to update wishlist");
+          toast.error(errorMessage(err, "Failed to update wishlist"));
         }
       });
     },

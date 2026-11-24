@@ -14,6 +14,7 @@ import { useFormatCurrency } from "@/components/providers/currency-provider";
 import { formatChartMonth, formatChartMonthShort } from "@/utils/date";
 import { Wallet } from "lucide-react";
 import { ChartEmpty } from "./chart-empty";
+import { AXIS_TICK, TOOLTIP_CONTENT } from "./chart-theme";
 
 type SpendingOverTimeProps = {
   data: { month: string; amount: number; cumulative: number }[];
@@ -41,23 +42,17 @@ export function SpendingOverTime({ data }: SpendingOverTimeProps) {
         <CartesianGrid strokeDasharray="2 4" stroke="var(--color-border)" />
         <XAxis
           dataKey="month"
-          tick={{ fill: "var(--color-foreground-muted)", fontSize: 12 }}
+          tick={AXIS_TICK}
           tickLine={false}
           tickFormatter={formatChartMonthShort}
         />
         <YAxis
-          tick={{ fill: "var(--color-foreground-muted)", fontSize: 12 }}
+          tick={AXIS_TICK}
           tickLine={false}
           tickFormatter={(v) => formatCurrency(v)}
         />
         <Tooltip
-          contentStyle={{
-            backgroundColor: "var(--color-background-secondary)",
-            border: "1px solid var(--color-border)",
-            borderRadius: "8px",
-            color: "var(--color-foreground)",
-            boxShadow: "none",
-          }}
+          contentStyle={TOOLTIP_CONTENT}
           labelFormatter={(label) => formatChartMonth(String(label))}
           formatter={(value, name) => [
             formatCurrency(Number(value)),

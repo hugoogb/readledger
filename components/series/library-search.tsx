@@ -28,6 +28,7 @@ import dynamic from "next/dynamic";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { VolumeMatchCard, type NewSeriesMatch } from "./volume-match-card";
+import { errorMessage } from "@/lib/utils";
 
 // Lazy: the barcode library loads only when someone taps Scan.
 const IsbnScanner = dynamic(() => import("./isbn-scanner").then((m) => m.IsbnScanner), {
@@ -215,7 +216,7 @@ function usePagedSearch<T>(fetchPage: (page: number) => Promise<PageResult<T>>) 
         setState({
           status: "error",
           page,
-          message: err instanceof Error ? err.message : "Search failed. Please try again.",
+          message: errorMessage(err, "Search failed. Please try again."),
         }),
     );
     return () => {

@@ -34,25 +34,14 @@ const CLEARABLE_FIELDS = ["author", "coverImage", "description"] as const;
 const needsStandaloneVolume = (totalVolumes: number | null | undefined, volumeCount: number) =>
   totalVolumes === 1 && volumeCount === 0;
 
-export async function createSeries(userId: string, validated: CreateSeriesInput) {
-  await assertOwnedPublisher(userId, validated.publisherId);
-
-  return prisma.series.create({
-    data: {
-      ...blankToNull(validated, CLEARABLE_FIELDS),
-      userId,
-      publisherId: validated.publisherId || null,
-      ...(needsStandaloneVolume(validated.totalVolumes, 0) && {
-        volumes: { create: [{ volumeNumber: 1 }] },
-      }),
-    },
-  });
-}
-
-export async function createSeriesWithVolumes(
+/**
+ * Creates a title with its volume rows. A one-volume title with no rows given
+ * gets volume 1, so it can render as a standalone book.
+ */
+export async function createSeries(
   userId: string,
   validated: CreateSeriesInput,
-  volumes: VolumeInput[],
+  volumes: VolumeInput[] = [],
 ) {
   await assertOwnedPublisher(userId, validated.publisherId);
 
@@ -243,14 +232,6 @@ export async function getRecentSeries(userId: string, take = 5) {
       volumes: { select: { owned: true } },
     },
   });
-}
-
-export async function checkDuplicateSeries(userId: string, mangadexId: string): Promise<boolean> {
-  const existing = await prisma.series.findFirst({
-    where: { userId, mangadexId },
-  });
-
-  return !!existing;
 }
 
 export async function getExistingMangadexIds(userId: string, mangadexIds: string[]): Promise<string[]> {

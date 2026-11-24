@@ -3,38 +3,39 @@
 import { requireUser } from "@/lib/auth";
 import { formatBreakdown } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
+import { monthKey } from "@/utils/date";
+
+/** Rounds money to cents. */
+const cents = (amount: number) => Math.round(amount * 100) / 100;
+
+/** Dated owned volumes, oldest first; `pricePaid` for the spending chart. */
+async function datedOwnedVolumes(userId: string) {
+  const volumes = await prisma.volume.findMany({
+    where: { series: { userId }, owned: true, purchaseDate: { not: null } },
+    select: { pricePaid: true, purchaseDate: true },
+    orderBy: { purchaseDate: "asc" },
+  });
+  return volumes as { pricePaid: number | null; purchaseDate: Date }[];
+}
+
+/** Sum of `value` per purchase month, in month order. */
+function byMonth<T extends { purchaseDate: Date }>(rows: T[], value: (row: T) => number) {
+  const months = new Map<string, number>();
+  for (const row of rows) {
+    const key = monthKey(row.purchaseDate);
+    months.set(key, (months.get(key) ?? 0) + value(row));
+  }
+  return [...months.entries()].sort(([a], [b]) => a.localeCompare(b));
+}
 
 export async function getSpendingOverTime() {
   const user = await requireUser();
-
-  const volumes = await prisma.volume.findMany({
-    where: {
-      series: { userId: user.id },
-      owned: true,
-      purchaseDate: { not: null },
-    },
-    select: {
-      pricePaid: true,
-      purchaseDate: true,
-    },
-    orderBy: { purchaseDate: "asc" },
-  });
-
-  const monthlyMap = new Map<string, number>();
-  for (const vol of volumes) {
-    if (!vol.purchaseDate) continue;
-    const key = `${vol.purchaseDate.getUTCFullYear()}-${String(vol.purchaseDate.getUTCMonth() + 1).padStart(2, "0")}`;
-    monthlyMap.set(key, (monthlyMap.get(key) || 0) + (vol.pricePaid || 0));
-  }
-
-  const entries = Array.from(monthlyMap.entries()).sort(([a], [b]) =>
-    a.localeCompare(b),
-  );
+  const volumes = await datedOwnedVolumes(user.id);
 
   let cumulative = 0;
-  return entries.map(([month, amount]) => {
+  return byMonth(volumes, (v) => v.pricePaid || 0).map(([month, amount]) => {
     cumulative += amount;
-    return { month, amount: Math.round(amount * 100) / 100, cumulative: Math.round(cumulative * 100) / 100 };
+    return { month, amount: cents(amount), cumulative: cents(cumulative) };
   });
 }
 
@@ -55,32 +56,12 @@ export async function getStatusDistribution() {
 
 export async function getCollectionGrowth() {
   const user = await requireUser();
+  const volumes = await datedOwnedVolumes(user.id);
 
-  const volumes = await prisma.volume.findMany({
-    where: {
-      series: { userId: user.id },
-      owned: true,
-      purchaseDate: { not: null },
-    },
-    select: { purchaseDate: true },
-    orderBy: { purchaseDate: "asc" },
-  });
-
-  const monthlyMap = new Map<string, number>();
-  for (const vol of volumes) {
-    if (!vol.purchaseDate) continue;
-    const key = `${vol.purchaseDate.getUTCFullYear()}-${String(vol.purchaseDate.getUTCMonth() + 1).padStart(2, "0")}`;
-    monthlyMap.set(key, (monthlyMap.get(key) || 0) + 1);
-  }
-
-  const entries = Array.from(monthlyMap.entries()).sort(([a], [b]) =>
-    a.localeCompare(b),
-  );
-
-  let cumulative = 0;
-  return entries.map(([month, count]) => {
-    cumulative += count;
-    return { month, added: count, total: cumulative };
+  let total = 0;
+  return byMonth(volumes, () => 1).map(([month, added]) => {
+    total += added;
+    return { month, added, total };
   });
 }
 
@@ -95,22 +76,29 @@ export async function getPublisherBreakdown() {
     },
   });
 
-  const publisherMap = new Map<string, { volumes: number; spent: number }>();
+  return rankByName(
+    series.map((s) => ({
+      name: s.publisher?.name,
+      count: s.volumes.length,
+      spent: s.volumes.reduce((acc, v) => acc + (v.pricePaid || 0), 0),
+    })),
+  );
+}
 
-  for (const s of series) {
-    const name = s.publisher?.name || "Unknown";
-    const existing = publisherMap.get(name) || { volumes: 0, spent: 0 };
-    const ownedCount = s.volumes.length;
-    const spent = s.volumes.reduce((acc, v) => acc + (v.pricePaid || 0), 0);
-    publisherMap.set(name, {
-      volumes: existing.volumes + ownedCount,
-      spent: Math.round((existing.spent + spent) * 100) / 100,
-    });
+/**
+ * Rows merged by name ("Unknown" when unnamed), most books first, spending
+ * rounded to cents.
+ */
+function rankByName(rows: { name: string | undefined; count: number; spent: number }[]) {
+  const byName = new Map<string, { count: number; spent: number }>();
+  for (const row of rows) {
+    const name = row.name || "Unknown";
+    const entry = byName.get(name) ?? { count: 0, spent: 0 };
+    byName.set(name, { count: entry.count + row.count, spent: cents(entry.spent + row.spent) });
   }
-
-  return Array.from(publisherMap.entries())
+  return [...byName.entries()]
     .map(([name, data]) => ({ name, ...data }))
-    .sort((a, b) => b.volumes - a.volumes);
+    .sort((a, b) => b.count - a.count);
 }
 
 /** Owned books per format; every format in the library appears, even at 0. */
@@ -168,20 +156,13 @@ export async function getStoreBreakdown() {
   ]);
 
   const storeNames = new Map(stores.map((s) => [s.id, s.name]));
-  const storeMap = new Map<string, { count: number; spent: number }>();
-
-  for (const g of groups) {
-    const name = (g.storeId && storeNames.get(g.storeId)) || "Unknown";
-    const existing = storeMap.get(name) || { count: 0, spent: 0 };
-    storeMap.set(name, {
-      count: existing.count + g._count._all,
-      spent: Math.round((existing.spent + (g._sum.pricePaid || 0)) * 100) / 100,
-    });
-  }
-
-  return Array.from(storeMap.entries())
-    .map(([name, data]) => ({ name, ...data }))
-    .sort((a, b) => b.count - a.count);
+  return rankByName(
+    groups.map((g) => ({
+      name: g.storeId ? storeNames.get(g.storeId) : undefined,
+      count: g._count._all,
+      spent: g._sum.pricePaid || 0,
+    })),
+  );
 }
 
 /** Owned volumes the date-based charts can't place (no purchaseDate). */

@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import {
   updateSeries,
   deleteSeries,
-  type UpdateSeriesInput,
 } from "@/actions/series";
 import { Settings, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -18,6 +17,7 @@ import { seriesSchema, type SeriesSchema } from "@/lib/validations";
 import { toast } from "sonner";
 import { SeriesFormFields } from "./series-form-fields";
 import { unwrap } from "@/lib/unwrap";
+import { errorMessage } from "@/lib/utils";
 
 type Publisher = { id: string; name: string };
 
@@ -56,28 +56,13 @@ export function EditSeriesModal({ series, publishers = [], variant = "icon" }: E
 
   const onSubmit: SubmitHandler<SeriesSchema> = async (data) => {
     try {
-      const input: UpdateSeriesInput = {
-        title: data.title,
-        author: data.author ?? "",
-        publisherId: data.publisherId || null,
-        status: data.status,
-        format: data.format,
-        publishing: data.publishing,
-        totalVolumes: data.totalVolumes ?? undefined,
-        coverImage: data.coverImage ?? "",
-        description: data.description ?? "",
-        retailPrice: data.retailPrice ?? undefined,
-        mangadexId: data.mangadexId ?? undefined,
-      };
-
-      unwrap(await updateSeries(series.id, input));
+      // Validated by the form; blanks clear the field (see services/series).
+      unwrap(await updateSeries(series.id, data));
       toast.success(`${series.title} updated`);
       setIsOpen(false);
       router.refresh();
     } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Failed to save changes",
-      );
+      toast.error(errorMessage(err, "Failed to save changes"));
     }
   };
 
@@ -88,9 +73,7 @@ export function EditSeriesModal({ series, publishers = [], variant = "icon" }: E
       toast.success(`${series.title} deleted`);
       router.push("/dashboard/library");
     } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Failed to delete",
-      );
+      toast.error(errorMessage(err, "Failed to delete"));
       setIsDeleting(false);
     }
   }

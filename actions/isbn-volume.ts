@@ -3,11 +3,12 @@
 import { withResult } from "@/lib/action-result";
 import { requireUser } from "@/lib/auth";
 import { ValidationError } from "@/lib/errors";
-import { parseIsbnQuery, toStoredIsbn } from "@/lib/isbn";
+import { isbn13FromQuery } from "@/lib/isbn";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { idSchema, MAX_VOLUMES } from "@/lib/validations";
 import * as isbnVolumeService from "@/services/isbn-volume";
 import { revalidatePath } from "next/cache";
+import { revalidateLibrary } from "@/lib/revalidate";
 import { z } from "zod";
 
 export type { VolumeMatch } from "@/services/isbn-volume";
@@ -22,9 +23,9 @@ function limit(userId: string) {
 
 /** Bare ISBN-13 for a valid ISBN-10/13 query; throws otherwise. */
 function isbnInput(isbn: string): string {
-  const parsed = parseIsbnQuery(isbn);
-  if (!parsed) throw new ValidationError("Not a valid ISBN");
-  return toStoredIsbn(parsed);
+  const isbn13 = isbn13FromQuery(isbn);
+  if (!isbn13) throw new ValidationError("Not a valid ISBN");
+  return isbn13;
 }
 
 /** What a scanned ISBN most likely is in the library; null for a plain book. */
@@ -47,9 +48,7 @@ export const markVolumeOwnedByIsbn = withResult(
       isbnInput(isbn),
     );
 
-    revalidatePath("/dashboard");
-    revalidatePath("/dashboard/library");
-    revalidatePath(`/dashboard/library/${id}`);
+    revalidateLibrary([id]);
     revalidatePath("/dashboard/wishlist");
   },
 );

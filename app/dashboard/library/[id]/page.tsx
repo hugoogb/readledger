@@ -1,13 +1,11 @@
 import { getPublishers } from "@/actions/publishers";
 import { getSeries } from "@/actions/series";
 import { getStores } from "@/actions/stores";
-import { getVolumeStats } from "@/actions/volumes";
 import { BookPanel } from "@/components/books/book-panel";
 import { EditSeriesModal } from "@/components/series/edit-series-modal";
 import { SeriesTimeline } from "@/components/series/series-timeline";
 import { Badge } from "@/components/ui/badge";
 import { ProgressBar } from "@/components/ui/progress-bar";
-import { LedgerSkeleton } from "@/components/ui/skeletons";
 import { Ledger, LedgerRow, LedgerTotal } from "@/components/ui/ledger";
 import { CoverImage } from "@/components/books/cover-image";
 import { BulkMarkOwnedModal } from "@/components/volumes/bulk-mark-owned-modal";
@@ -21,7 +19,8 @@ import { ArrowLeft, BookMarked, Heart, Package } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Suspense } from "react";
+import { computeVolumeStats } from "@/services/volumes";
+import { SITE_NAME } from "@/lib/site";
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -37,25 +36,27 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     };
   }
 
+  const description = series.description || `Track your collection of ${series.title}`;
   return {
     title: series.title,
-    description:
-      series.description || `Track your collection of ${series.title}`,
+    description,
     openGraph: {
-      title: `${series.title} | ReadLedger`,
-      description:
-        series.description || `Track your collection of ${series.title}`,
+      title: `${series.title} | ${SITE_NAME}`,
+      description,
       images: series.coverImage ? [series.coverImage] : [],
     },
   };
 }
 
-async function SeriesLedger({ seriesId }: { seriesId: string }) {
-  const [stats, formatCurrency] = await Promise.all([
-    getVolumeStats(seriesId),
-    getFormatCurrency(),
-  ]);
+type VolumeStats = ReturnType<typeof computeVolumeStats>;
 
+function SeriesLedger({
+  stats,
+  formatCurrency,
+}: {
+  stats: VolumeStats;
+  formatCurrency: (amount: number) => string;
+}) {
   return (
     <Ledger className="mb-10 max-w-[40rem]">
       <LedgerRow label="Owned" note={`of ${stats.total}`} value={stats.owned} />
@@ -76,9 +77,7 @@ async function SeriesLedger({ seriesId }: { seriesId: string }) {
   );
 }
 
-async function SeriesProgressSection({ seriesId }: { seriesId: string }) {
-  const stats = await getVolumeStats(seriesId);
-
+function SeriesProgressSection({ stats }: { stats: VolumeStats }) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
       <div>
@@ -122,7 +121,8 @@ export default async function SeriesDetailPage({ params }: Props) {
     notFound();
   }
 
-  const statusInfo = statusConfig[series.status] || statusConfig.READING;
+  const statusInfo = statusConfig[series.status];
+  const stats = computeVolumeStats(series);
   // A standalone book shows its single copy instead of a volume grid. The
   // migration and the series service guarantee the row exists.
   const book = isStandalone(series.totalVolumes, series.volumes.length)
@@ -220,9 +220,7 @@ export default async function SeriesDetailPage({ params }: Props) {
             ) : (
               <>
                 {/* Progress Bars */}
-                <Suspense fallback={null}>
-                  <SeriesProgressSection seriesId={id} />
-                </Suspense>
+                <SeriesProgressSection stats={stats} />
 
                 <SeriesTimeline volumes={series.volumes} />
               </>
@@ -234,9 +232,7 @@ export default async function SeriesDetailPage({ params }: Props) {
       {!book && (
       <>
 
-      <Suspense fallback={<LedgerSkeleton rows={5} />}>
-        <SeriesLedger seriesId={id} />
-      </Suspense>
+      <SeriesLedger stats={stats} formatCurrency={formatCurrency} />
 
       {/* Volume Grid */}
       <section>

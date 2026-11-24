@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { unwrap } from "@/lib/unwrap";
+import { errorMessage } from "@/lib/utils";
 
 /** Shown once to users who have never set a name (e.g. right after sign-up). */
 export function NamePrompt() {
@@ -21,7 +22,7 @@ export function NamePrompt() {
         unwrap(await updateDisplayName(value));
         if (action === "save") toast.success(`Nice to meet you, ${value.trim()}!`);
       } catch (err) {
-        toast.error(err instanceof Error ? err.message : "Failed to save name");
+        toast.error(errorMessage(err, "Failed to save name"));
       } finally {
         setPendingAction(null);
       }

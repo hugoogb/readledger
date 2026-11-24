@@ -236,11 +236,13 @@ describe("resolveIsbnVolume", () => {
     vi.mocked(findTopManga).mockResolvedValue(
       manga({ id: "ds-1", title: "Demon Slayer: Kimetsu no Yaiba", altTitles: ["Guardianes de la noche"] }),
     );
-    prismaMock.series.findMany.mockImplementation(async (args: { where: { mangadexId?: unknown } }) =>
-      args.where.mangadexId
-        ? [{ id: "s9", mangadexId: "ds-1", title: "Demon Slayer", totalVolumes: 23, _count: { volumes: 23 } }]
-        : [],
-    );
+    prismaMock.series.findMany.mockResolvedValue([]);
+    prismaMock.series.findFirst.mockResolvedValueOnce({
+      id: "s9",
+      title: "Demon Slayer",
+      totalVolumes: 23,
+      _count: { volumes: 23 },
+    } as never);
     prismaMock.volume.findFirst.mockImplementation(async (args: { where: { seriesId?: string } }) =>
       args.where.seriesId ? { owned: false } : null,
     );

@@ -13,7 +13,9 @@ import {
 } from "recharts";
 import { formatChartMonth, formatChartMonthShort } from "@/utils/date";
 import { TrendingUp } from "lucide-react";
+import { plural } from "@/lib/utils";
 import { ChartEmpty } from "./chart-empty";
+import { AXIS_TICK, TOOLTIP_CONTENT } from "./chart-theme";
 
 type CollectionGrowthProps = {
   data: { month: string; added: number; total: number }[];
@@ -30,13 +32,13 @@ export function CollectionGrowth({ data }: CollectionGrowthProps) {
         <CartesianGrid strokeDasharray="2 4" stroke="var(--color-border)" />
         <XAxis
           dataKey="month"
-          tick={{ fill: "var(--color-foreground-muted)", fontSize: 12 }}
+          tick={AXIS_TICK}
           tickLine={false}
           tickFormatter={formatChartMonthShort}
         />
         <YAxis
           yAxisId="left"
-          tick={{ fill: "var(--color-foreground-muted)", fontSize: 12 }}
+          tick={AXIS_TICK}
           tickLine={false}
           label={{
             value: "Added",
@@ -49,7 +51,7 @@ export function CollectionGrowth({ data }: CollectionGrowthProps) {
         <YAxis
           yAxisId="right"
           orientation="right"
-          tick={{ fill: "var(--color-foreground-muted)", fontSize: 12 }}
+          tick={AXIS_TICK}
           tickLine={false}
           label={{
             value: "Total",
@@ -60,16 +62,10 @@ export function CollectionGrowth({ data }: CollectionGrowthProps) {
           }}
         />
         <Tooltip
-          contentStyle={{
-            backgroundColor: "var(--color-background-secondary)",
-            border: "1px solid var(--color-border)",
-            borderRadius: "8px",
-            color: "var(--color-foreground)",
-            boxShadow: "none",
-          }}
+          contentStyle={TOOLTIP_CONTENT}
           labelFormatter={(label) => formatChartMonth(String(label))}
           formatter={(value, name) => [
-            `${value} book${Number(value) !== 1 ? "s" : ""}`,
+            plural(Number(value), "book"),
             name === "added" ? "Added" : "Total",
           ]}
         />

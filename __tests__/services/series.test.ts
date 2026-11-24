@@ -3,12 +3,10 @@ import { prismaMock } from "@/__tests__/__mocks__/prisma";
 import { NotFoundError } from "@/lib/errors";
 import {
   createSeries,
-  createSeriesWithVolumes,
   updateSeries,
   deleteSeries,
   getAllSeries,
   getSeriesStats,
-  checkDuplicateSeries,
   getExistingMangadexIds,
   getExistingOpenLibraryKeys,
   getFormatCounts,
@@ -85,85 +83,39 @@ describe("createSeries", () => {
       totalVolumes: 17,
       publisherId: "pub-001",
     };
-    const expected = makeSeries();
     prismaMock.publisher.findFirst.mockResolvedValue({ id: "pub-001" } as never);
-    prismaMock.series.create.mockResolvedValue(expected);
-
-    const result = await createSeries(USER_ID, input);
-
-    expect(result).toEqual(expected);
-    expect(prismaMock.series.create).toHaveBeenCalledWith({
-      data: {
-        ...input,
-        userId: USER_ID,
-        publisherId: "pub-001",
-      },
-    });
-  });
-
-  it("sets publisherId to null when it is empty string", async () => {
-    const input = {
-      title: "Solo Leveling",
-      status: "PLAN_TO_READ" as const,
-      format: "MANGA" as const,
-      publishing: false,
-      totalVolumes: null,
-      publisherId: "",
-    };
-    const expected = makeSeries({ title: "Solo Leveling", publisherId: null });
-    prismaMock.series.create.mockResolvedValue(expected);
+    prismaMock.series.create.mockResolvedValue(makeSeries());
 
     await createSeries(USER_ID, input);
 
     expect(prismaMock.series.create).toHaveBeenCalledWith({
-      data: expect.objectContaining({ publisherId: null }),
-    });
-  });
-});
-
-describe("createSeries for a standalone book", () => {
-  it("stores the format and creates volume 1 when totalVolumes is 1", async () => {
-    prismaMock.series.create.mockResolvedValue(makeSeries());
-
-    await createSeries(USER_ID, {
-      title: "Dune",
-      status: "READING",
-      format: "NOVEL",
-      publishing: false,
-      totalVolumes: 1,
-    });
-
-    expect(prismaMock.series.create).toHaveBeenCalledWith({
-      data: expect.objectContaining({
-        format: "NOVEL",
-        volumes: { create: [{ volumeNumber: 1 }] },
-      }),
+      data: { ...input, userId: USER_ID, publisherId: "pub-001", volumes: { create: [] } },
+      include: { volumes: true },
     });
   });
 
-  it("creates no volumes for other totals", async () => {
-    prismaMock.series.create.mockResolvedValue(makeSeries());
+  it("sets publisherId to null when it is empty string", async () => {
+    prismaMock.series.create.mockResolvedValue(makeSeries({ publisherId: null }));
 
     await createSeries(USER_ID, {
-      title: "Berserk",
-      status: "READING",
+      title: "Solo Leveling",
+      status: "PLAN_TO_READ",
       format: "MANGA",
-      publishing: true,
-      totalVolumes: 5,
+      publishing: false,
+      totalVolumes: null,
+      publisherId: "",
     });
 
-    expect(prismaMock.series.create.mock.calls[0][0].data.volumes).toBeUndefined();
+    expect(prismaMock.series.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ publisherId: null }) }),
+    );
   });
-});
 
-// ---- createSeriesWithVolumes ----------------------------------------------
-
-describe("createSeriesWithVolumes", () => {
   it("writes owned volumes with a purchase date", async () => {
     prismaMock.series.create.mockResolvedValue(makeSeries());
     const input = { title: "Dr. Slump", status: "READING" as const, format: "MANGA" as const, publishing: false, totalVolumes: 15 };
 
-    await createSeriesWithVolumes(USER_ID, input, [
+    await createSeries(USER_ID, input, [
       { volumeNumber: 10 },
       { volumeNumber: 11, owned: true, isbn: "9788468476117" },
     ]);
@@ -192,7 +144,7 @@ describe("createSeriesWithVolumes", () => {
     });
     prismaMock.series.create.mockResolvedValue(expected);
 
-    const result = await createSeriesWithVolumes(USER_ID, input, volumes);
+    const result = await createSeries(USER_ID, input, volumes);
 
     expect(result).toEqual(expected);
     expect(prismaMock.series.create).toHaveBeenCalledWith({
@@ -224,7 +176,7 @@ describe("createSeriesWithVolumes", () => {
     const expected = makeSeries({ title: "Jujutsu Kaisen" });
     prismaMock.series.create.mockResolvedValue(expected);
 
-    await createSeriesWithVolumes(USER_ID, input, volumes);
+    await createSeries(USER_ID, input, volumes);
 
     const call = prismaMock.series.create.mock.calls[0][0];
     expect(call.data.volumes.create[0].coverImage).toBeNull();
@@ -232,11 +184,11 @@ describe("createSeriesWithVolumes", () => {
   });
 });
 
-describe("createSeriesWithVolumes with an ISBN", () => {
+describe("createSeries with an ISBN", () => {
   it("stores the ISBN on the volume", async () => {
     prismaMock.series.create.mockResolvedValue(makeSeries());
 
-    await createSeriesWithVolumes(
+    await createSeries(
       USER_ID,
       {
         title: "Dune",
@@ -257,11 +209,11 @@ describe("createSeriesWithVolumes with an ISBN", () => {
   });
 });
 
-describe("createSeriesWithVolumes for a standalone book", () => {
+describe("createSeries for a standalone book", () => {
   it("creates volume 1 when no volumes are given", async () => {
     prismaMock.series.create.mockResolvedValue(makeSeries());
 
-    await createSeriesWithVolumes(
+    await createSeries(
       USER_ID,
       { title: "Dune", status: "READING", format: "NOVEL", publishing: false, totalVolumes: 1 },
       [],
@@ -641,18 +593,6 @@ describe("getSeriesStats", () => {
     expect(stats.averagePrice).toBe(0);
     expect(stats.collectionProgress).toBe(0);
     expect(stats.readingProgress).toBe(0);
-  });
-});
-
-// ---- checkDuplicateSeries -------------------------------------------------
-
-describe("checkDuplicateSeries", () => {
-  it("returns true when a duplicate exists and false when not", async () => {
-    prismaMock.series.findFirst.mockResolvedValue(makeSeries());
-    expect(await checkDuplicateSeries(USER_ID, "mdx-001")).toBe(true);
-
-    prismaMock.series.findFirst.mockResolvedValue(null);
-    expect(await checkDuplicateSeries(USER_ID, "mdx-999")).toBe(false);
   });
 });
 

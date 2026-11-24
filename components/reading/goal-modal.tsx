@@ -11,6 +11,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { unwrap } from "@/lib/unwrap";
+import { errorMessage } from "@/lib/utils";
 
 type GoalModalProps = {
   year: number;
@@ -42,7 +43,7 @@ export function GoalModal({ year, currentTarget, isOpen, onClose }: GoalModalPro
         router.refresh();
         onClose();
       } catch (err) {
-        toast.error(err instanceof Error ? err.message : "Failed to save goal");
+        toast.error(errorMessage(err, "Failed to save goal"));
       }
     });
   };
@@ -55,7 +56,7 @@ export function GoalModal({ year, currentTarget, isOpen, onClose }: GoalModalPro
         router.refresh();
         onClose();
       } catch (err) {
-        toast.error(err instanceof Error ? err.message : "Failed to remove goal");
+        toast.error(errorMessage(err, "Failed to remove goal"));
       }
     });
   };

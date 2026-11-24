@@ -1,6 +1,5 @@
 "use client";
 
-import { createStore } from "@/actions/stores";
 import {
   updateVolume,
   type UpdateVolumeInput,
@@ -9,7 +8,6 @@ import { toggleWishlist } from "@/actions/wishlist";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { CreatableSelect } from "@/components/ui/creatable-select";
 import { FormField } from "@/components/ui/form-field";
 import { FormSection } from "@/components/ui/form-section";
 import { Input } from "@/components/ui/input";
@@ -39,6 +37,8 @@ import { useEffect, useState, useTransition } from "react";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { toast } from "sonner";
 import { unwrap } from "@/lib/unwrap";
+import { errorMessage } from "@/lib/utils";
+import { StoreSelect } from "./store-select";
 
 type UserStore = { id: string; name: string };
 
@@ -54,7 +54,28 @@ type VolumeDetailsModalProps = {
   label?: string;
 };
 
-const todayInput = () => todayInputValue();
+function formValues(volume: Volume, seriesDefaults?: SeriesDefaults): VolumeSchema {
+  return {
+    volumeNumber: volume.volumeNumber,
+    title: volume.title || "",
+    owned: volume.owned,
+    read: volume.read,
+    pricePaid:
+      volume.pricePaid != null ? Number(volume.pricePaid.toFixed(2)) : seriesDefaults?.retailPrice,
+    storeId: volume.storeId ?? "",
+    coverImage: volume.coverImage || "",
+    condition: volume.condition ?? "NEW",
+    notes: volume.notes || "",
+    // The date input holds "YYYY-MM-DD"; setValueAs turns it into a Date on edit.
+    purchaseDate: (volume.owned
+      ? formatDateForInput(volume.purchaseDate)
+      : todayInputValue()) as unknown as Date,
+  };
+}
+
+/** The "Read on" input: the stored date, else today for a read volume. */
+const readOnValue = (volume: Volume) =>
+  volume.readDate ? formatDateForInput(volume.readDate) : volume.read ? todayInputValue() : "";
 
 export function VolumeDetailsModal({
   volume,
@@ -75,7 +96,7 @@ export function VolumeDetailsModal({
   // a "YYYY-MM-DD" string that we prefill programmatically, which RHF's
   // setValueAs (input-event only) wouldn't convert for the Date schema.
   const [isReadChecked, setIsReadChecked] = useState(volume.read);
-  const [readOn, setReadOn] = useState(formatDateForInput(volume.readDate));
+  const [readOn, setReadOn] = useState(() => readOnValue(volume));
 
   const {
     register,
@@ -86,58 +107,20 @@ export function VolumeDetailsModal({
     formState: { errors, isSubmitting },
   } = useForm<VolumeSchema>({
     resolver: zodResolver(volumeSchema),
-    defaultValues: {
-      volumeNumber: volume.volumeNumber,
-      title: volume.title || "",
-      owned: volume.owned,
-      read: volume.read,
-      pricePaid:
-        volume.pricePaid !== null && volume.pricePaid !== undefined
-          ? Number(volume.pricePaid?.toFixed(2))
-          : seriesDefaults?.retailPrice,
-      storeId: volume.storeId ?? "",
-      coverImage: volume.coverImage || "",
-      condition: volume.condition ?? "NEW",
-      notes: volume.notes || "",
-      purchaseDate: (volume.owned
-        ? formatDateForInput(volume.purchaseDate)
-        : todayInput()) as unknown as Date,
-    },
+    defaultValues: formValues(volume, seriesDefaults),
   });
 
   useEffect(() => {
     if (isOpen) {
-      reset({
-        volumeNumber: volume.volumeNumber,
-        title: volume.title || "",
-        owned: volume.owned,
-        read: volume.read,
-        pricePaid:
-          volume.pricePaid !== null && volume.pricePaid !== undefined
-            ? Number(volume.pricePaid?.toFixed(2))
-            : seriesDefaults?.retailPrice,
-        storeId: volume.storeId ?? "",
-        coverImage: volume.coverImage || "",
-        condition: volume.condition ?? "NEW",
-        notes: volume.notes || "",
-        purchaseDate: (volume.owned
-          ? formatDateForInput(volume.purchaseDate)
-          : todayInput()) as unknown as Date,
-      });
+      reset(formValues(volume, seriesDefaults));
       setIsReadChecked(volume.read);
-      setReadOn(
-        volume.readDate
-          ? formatDateForInput(volume.readDate)
-          : volume.read
-            ? todayInput()
-            : "",
-      );
+      setReadOn(readOnValue(volume));
     }
   }, [isOpen, volume, seriesDefaults, reset]);
 
   const handleReadChange = (checked: boolean) => {
     setIsReadChecked(checked);
-    if (checked && !readOn) setReadOn(todayInput());
+    if (checked && !readOn) setReadOn(todayInputValue());
   };
 
   const onSubmit: SubmitHandler<VolumeSchema> = async (data) => {
@@ -146,7 +129,8 @@ export function VolumeDetailsModal({
         volumeNumber: data.volumeNumber,
         owned: true,
         read: isReadChecked,
-        pricePaid: Number(data.pricePaid?.toFixed(2)) ?? undefined,
+        // No price and no series retail price: save without one rather than NaN.
+        pricePaid: data.pricePaid == null ? null : Number(data.pricePaid.toFixed(2)),
         condition: data.condition,
         storeId: data.storeId || null,
         coverImage: data.coverImage ?? "",
@@ -160,9 +144,7 @@ export function VolumeDetailsModal({
       router.refresh();
       onClose();
     } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Failed to update volume",
-      );
+      toast.error(errorMessage(err, "Failed to update volume"));
     }
   };
 
@@ -184,9 +166,7 @@ export function VolumeDetailsModal({
         router.refresh();
         onClose();
       } catch (err) {
-        toast.error(
-          err instanceof Error ? err.message : "Failed to remove volume",
-        );
+        toast.error(errorMessage(err, "Failed to remove volume"));
       }
     });
   };
@@ -333,31 +313,10 @@ export function VolumeDetailsModal({
               htmlFor="storeId"
               error={errors.storeId?.message}
             >
-              <CreatableSelect
-                id="storeId"
-                options={stores.map((s) => ({
-                  value: s.id,
-                  label: s.name,
-                }))}
+              <StoreSelect
+                stores={stores}
                 value={storeId ?? ""}
                 onChange={(val) => setValue("storeId", val || null)}
-                onCreate={async (name) => {
-                  try {
-                    const store = unwrap(await createStore(name));
-                    toast.success(`Store "${store.name}" created`);
-                    router.refresh();
-                    return store;
-                  } catch (err) {
-                    toast.error(
-                      err instanceof Error
-                        ? err.message
-                        : "Failed to create store",
-                    );
-                    throw err;
-                  }
-                }}
-                placeholder="No store"
-                createLabel="Add new store..."
                 error={!!errors.storeId}
               />
             </FormField>

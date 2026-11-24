@@ -1,6 +1,7 @@
 import {
   bulkMarkOwnedSchema,
-  bulkSetReadSchema,
+  volumeIdsSchema,
+  readDateSchema,
   readingGoalSchema,
   seriesSchema,
   seriesVolumesSchema,
@@ -344,15 +345,24 @@ describe("bulkMarkOwnedSchema", () => {
   });
 });
 
-describe("bulkSetReadSchema", () => {
-  it("accepts array with at least one ID", () => {
-    const result = bulkSetReadSchema.safeParse({ volumeIds: ["abc"] });
-    expect(result.success).toBe(true);
+describe("volumeIdsSchema", () => {
+  const id = "3f1c2b4a-8d6e-4f7a-9b2c-1d3e5f7a9b0c";
+
+  it("rejects an empty selection", () => {
+    expect(volumeIdsSchema.safeParse([]).error?.issues[0].message).toBe("No volumes selected");
   });
 
-  it("rejects empty array", () => {
-    const result = bulkSetReadSchema.safeParse({ volumeIds: [] });
-    expect(result.success).toBe(false);
+  it("rejects more than 500 volumes", () => {
+    const result = volumeIdsSchema.safeParse(Array.from({ length: 501 }, () => id));
+    expect(result.error?.issues[0].message).toBe("Cannot process more than 500 volumes at once");
+  });
+});
+
+describe("readDateSchema", () => {
+  it("accepts a date or nothing, and rejects an invalid date", () => {
+    expect(readDateSchema.safeParse(new Date("2025-06-01")).success).toBe(true);
+    expect(readDateSchema.safeParse(undefined).success).toBe(true);
+    expect(readDateSchema.safeParse(new Date("nope")).error?.issues[0].message).toBe("Invalid read date");
   });
 });
 

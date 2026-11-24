@@ -5,7 +5,7 @@ vi.mock("@/lib/rate-limit", () => ({ throttleMangadex: vi.fn(async () => {}) }))
 import {
   formatMangaForSeries,
   findTopManga,
-  generateVolumeEntries,
+  placeholderVolumes,
   searchMangaPaginated,
   type MangaSearchResult,
 } from "@/lib/manga-api";
@@ -83,25 +83,17 @@ describe("formatMangaForSeries", () => {
   });
 });
 
-describe("generateVolumeEntries", () => {
-  it("generates correct number of entries", () => {
-    const result = generateVolumeEntries(5);
-    expect(result).toHaveLength(5);
+describe("placeholderVolumes", () => {
+  it("numbers volumes 1..total with no covers", () => {
+    expect(placeholderVolumes(2)).toEqual([
+      { volumeNumber: 1, title: "Volume 1", coverImage: null, isbn: null },
+      { volumeNumber: 2, title: "Volume 2", coverImage: null, isbn: null },
+    ]);
   });
 
-  it("generates sequential volume numbers starting at 1", () => {
-    const result = generateVolumeEntries(3);
-    expect(result[0]).toEqual({ volumeNumber: 1, title: "Volume 1" });
-    expect(result[1]).toEqual({ volumeNumber: 2, title: "Volume 2" });
-    expect(result[2]).toEqual({ volumeNumber: 3, title: "Volume 3" });
-  });
-
-  it("returns empty array for 0", () => {
-    expect(generateVolumeEntries(0)).toEqual([]);
-  });
-
-  it("returns empty array for negative number", () => {
-    expect(generateVolumeEntries(-1)).toEqual([]);
+  it("returns no volumes for 0 or less", () => {
+    expect(placeholderVolumes(0)).toEqual([]);
+    expect(placeholderVolumes(-1)).toEqual([]);
   });
 });
 

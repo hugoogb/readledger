@@ -15,6 +15,7 @@ import { useRouter } from "next/navigation";
 import { useFormContext } from "react-hook-form";
 import { toast } from "sonner";
 import { unwrap } from "@/lib/unwrap";
+import { errorMessage } from "@/lib/utils";
 
 type Publisher = { id: string; name: string };
 
@@ -117,11 +118,7 @@ export function SeriesFormFields({
                 router.refresh();
                 return pub;
               } catch (err) {
-                toast.error(
-                  err instanceof Error
-                    ? err.message
-                    : "Failed to create publisher",
-                );
+                toast.error(errorMessage(err, "Failed to create publisher"));
                 throw err;
               }
             }}

@@ -6,11 +6,6 @@ import { revalidatePath } from "next/cache";
 import { currencySchema, displayNameSchema } from "@/lib/validations";
 import { withResult } from "@/lib/action-result";
 
-export async function getUserSettings() {
-  const user = await requireUser();
-  return { currency: user.currency };
-}
-
 export const updateCurrency = withResult(async (currency: string) => {
   const user = await requireUser();
   const code = currencySchema.parse(currency);

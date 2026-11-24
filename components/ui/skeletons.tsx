@@ -11,7 +11,7 @@ export function Skeleton({ className }: { className?: string }) {
   );
 }
 
-export function SeriesCardSkeleton() {
+function SeriesCardSkeleton() {
   return (
     <div>
       <Skeleton className="aspect-2/3 rounded-[3px]" />
@@ -22,7 +22,7 @@ export function SeriesCardSkeleton() {
   );
 }
 
-export function VolumeGridSkeleton() {
+function VolumeGridSkeleton() {
   return (
     <div className="grid grid-cols-3 sm:grid-cols-6 lg:grid-cols-9 gap-2">
       {Array.from({ length: 20 }).map((_, i) => (

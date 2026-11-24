@@ -3,13 +3,17 @@
 import { requireUser } from "@/lib/auth";
 import { withResult } from "@/lib/action-result";
 import { revalidatePath } from "next/cache";
-import { cache } from "react";
-import { Condition } from "@/lib/generated/prisma/enums";
-import { bulkOwnedPayloadSchema, idSchema, volumeIdsSchema, volumeSchema } from "@/lib/validations";
-import { getSeries } from "@/actions/series";
-import { NotFoundError, ValidationError } from "@/lib/errors";
+import { revalidateLibrary } from "@/lib/revalidate";
+import {
+  bulkOwnedPayloadSchema,
+  idSchema,
+  readDateSchema,
+  volumeIdsSchema,
+  volumeSchema,
+} from "@/lib/validations";
 import { checkUserActionLimit } from "@/lib/rate-limit";
 import * as volumeService from "@/services/volumes";
+import type { z } from "zod";
 
 export type { CreateVolumeInput, UpdateVolumeInput } from "@/services/volumes";
 
@@ -19,15 +23,9 @@ export const createVolume = withResult(async (input: volumeService.CreateVolumeI
   const validated = volumeSchema.parse(input);
   const seriesId = idSchema.parse(input.seriesId);
 
-  const volume = await volumeService.createVolume(user.id, {
-    ...validated,
-    seriesId,
-    condition: validated.condition as Condition | undefined,
-  });
+  const volume = await volumeService.createVolume(user.id, { ...validated, seriesId });
 
-  revalidatePath("/dashboard");
-  revalidatePath("/dashboard/library");
-  revalidatePath(`/dashboard/library/${seriesId}`);
+  revalidateLibrary([seriesId]);
 
   return volume;
 });
@@ -39,8 +37,7 @@ export const updateVolume = withResult(async (id: string, input: volumeService.U
 
   const updated = await volumeService.updateVolume(user.id, id, validated);
 
-  revalidatePath("/dashboard");
-  revalidatePath("/dashboard/library");
+  revalidateLibrary();
   revalidatePath("/dashboard/wishlist");
 
   return updated;
@@ -51,9 +48,7 @@ export const deleteVolume = withResult(async (id: string) => {
 
   const seriesId = await volumeService.deleteVolume(user.id, id);
 
-  revalidatePath("/dashboard");
-  revalidatePath("/dashboard/library");
-  revalidatePath(`/dashboard/library/${seriesId}`);
+  revalidateLibrary([seriesId]);
 });
 
 export const toggleVolumeRead = withResult(async (id: string, today?: string) => {
@@ -62,57 +57,26 @@ export const toggleVolumeRead = withResult(async (id: string, today?: string) =>
   const { updated, seriesId } = await volumeService.toggleVolumeRead(user.id, id, today);
 
   // Reading a standalone book can change its status, shown in the list too.
-  revalidatePath("/dashboard");
-  revalidatePath("/dashboard/library");
-  revalidatePath(`/dashboard/library/${seriesId}`);
+  revalidateLibrary([seriesId]);
 
   return updated;
 });
 
-// Reuses the page's cached getSeries() instead of fetching the series again.
-export const getVolumeStats = cache(async function getVolumeStats(seriesId: string) {
-  const series = await getSeries(seriesId);
-  if (!series) throw new NotFoundError("Series");
-  return volumeService.computeVolumeStats(series);
-});
+export const bulkMarkOwned = withResult(
+  async (volumeIds: string[], data: z.input<typeof bulkOwnedPayloadSchema>) => {
+    const user = await requireUser();
+    checkUserActionLimit(user.id);
+    const ids = volumeIdsSchema.parse(volumeIds);
+    const payload = bulkOwnedPayloadSchema.parse(data);
 
-export const bulkMarkOwned = withResult(async (
-  volumeIds: string[],
-  data: {
-    pricePaid?: number;
-    storeId?: string;
-    condition: Condition;
-    purchaseDate?: Date;
-    notes?: string;
+    revalidateLibrary(await volumeService.bulkMarkOwned(user.id, ids, payload));
   },
-) => {
-  const user = await requireUser();
-  checkUserActionLimit(user.id);
-  const ids = volumeIdsSchema.parse(volumeIds);
-  const payload = bulkOwnedPayloadSchema.parse(data);
-
-  const seriesIds = await volumeService.bulkMarkOwned(user.id, ids, payload);
-
-  revalidatePath("/dashboard");
-  revalidatePath("/dashboard/library");
-  for (const seriesId of seriesIds) {
-    revalidatePath(`/dashboard/library/${seriesId}`);
-  }
-});
+);
 
 export const bulkSetRead = withResult(async (volumeIds: string[], readDate?: Date) => {
   const user = await requireUser();
   checkUserActionLimit(user.id);
   const ids = volumeIdsSchema.parse(volumeIds);
-  if (readDate !== undefined && (!(readDate instanceof Date) || isNaN(readDate.getTime()))) {
-    throw new ValidationError("Invalid read date");
-  }
 
-  const seriesIds = await volumeService.bulkSetRead(user.id, ids, readDate);
-
-  revalidatePath("/dashboard");
-  revalidatePath("/dashboard/library");
-  for (const seriesId of seriesIds) {
-    revalidatePath(`/dashboard/library/${seriesId}`);
-  }
+  revalidateLibrary(await volumeService.bulkSetRead(user.id, ids, readDateSchema.parse(readDate)));
 });

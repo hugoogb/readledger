@@ -20,6 +20,7 @@ import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { MAX_IMPORT_SIZE } from "@/lib/import";
 import { unwrap } from "@/lib/unwrap";
+import { errorMessage } from "@/lib/utils";
 
 export function ImportModal() {
   const router = useRouter();
@@ -53,7 +54,7 @@ export function ImportModal() {
       const result = unwrap(await previewImport(content, format));
       setPreview(result);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to parse file");
+      toast.error(errorMessage(err, "Failed to parse file"));
     } finally {
       setIsPreviewing(false);
     }
@@ -71,9 +72,7 @@ export function ImportModal() {
       router.refresh();
       handleClose();
     } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Failed to import",
-      );
+      toast.error(errorMessage(err, "Failed to import"));
     } finally {
       setIsImporting(false);
     }

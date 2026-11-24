@@ -16,7 +16,7 @@ export function SeriesCard({ series, showFormat = false }: SeriesCardProps) {
   const owned = series.volumes.filter((v) => v.owned).length;
   const read = series.volumes.filter((v) => v.read).length;
   const total = series.totalVolumes || series.volumes.length;
-  const status = (statusConfig[series.status] || statusConfig.READING).label;
+  const status = statusConfig[series.status].label;
 
   return (
     <Link href={`/dashboard/library/${series.id}`} className="group block">

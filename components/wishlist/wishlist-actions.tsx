@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { unwrap } from "@/lib/unwrap";
+import { errorMessage } from "@/lib/utils";
 
 type WishlistActionsProps = {
   volume: {
@@ -41,14 +42,14 @@ export function WishlistActions({ volume, chipLabel, name }: WishlistActionsProp
                 unwrap(await toggleWishlist(volume.id));
                 router.refresh();
               } catch (err) {
-                toast.error(err instanceof Error ? err.message : "Failed to undo");
+                toast.error(errorMessage(err, "Failed to undo"));
               }
             },
           },
         });
         router.refresh();
       } catch (err) {
-        toast.error(err instanceof Error ? err.message : "Failed to update wishlist");
+        toast.error(errorMessage(err, "Failed to update wishlist"));
         setRemoving(false);
       }
     });
