@@ -1,9 +1,6 @@
+/** An expected failure whose message is safe to show the user (see lib/action-result.ts). */
 export class AppError extends Error {
-  constructor(
-    message: string,
-    public readonly code: string,
-    public readonly statusCode: number = 400,
-  ) {
+  constructor(message: string) {
     super(message);
     this.name = "AppError";
   }
@@ -11,18 +8,14 @@ export class AppError extends Error {
 
 export class NotFoundError extends AppError {
   constructor(resource: string) {
-    super(`${resource} not found`, "NOT_FOUND", 404);
+    super(`${resource} not found`);
   }
 }
 
 export class UnauthorizedError extends AppError {
   constructor() {
-    super("Unauthorized", "UNAUTHORIZED", 401);
+    super("Unauthorized");
   }
 }
 
-export class ValidationError extends AppError {
-  constructor(message: string) {
-    super(message, "VALIDATION_ERROR", 422);
-  }
-}
+export class ValidationError extends AppError {}

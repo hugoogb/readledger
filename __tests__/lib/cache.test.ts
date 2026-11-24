@@ -49,6 +49,16 @@ describe("TTLCache", () => {
     expect(cache.get("c")).toBe("3");
   });
 
+  it("doesn't evict another entry when overwriting a key in a full cache", () => {
+    const cache = new TTLCache<string>(10_000, 2);
+    cache.set("a", "1");
+    cache.set("b", "2");
+    cache.set("b", "3");
+
+    expect(cache.get("a")).toBe("1");
+    expect(cache.get("b")).toBe("3");
+  });
+
   it("overwrites existing keys", () => {
     const cache = new TTLCache<string>(1000);
     cache.set("key", "old");

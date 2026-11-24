@@ -72,7 +72,7 @@ export type BookSearchPage = {
 
 export class OpenLibraryError extends AppError {
   constructor() {
-    super("Open Library is unavailable right now. Please try again later.", "UPSTREAM_ERROR", 502);
+    super("Open Library is unavailable right now. Please try again later.");
   }
 }
 

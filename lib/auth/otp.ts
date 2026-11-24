@@ -11,16 +11,8 @@ const OTP_RETENTION_MS = 24 * 60 * 60_000;
 
 export class OtpThrottledError extends AppError {
   constructor() {
-    super(
-      "Too many codes requested. Please wait a moment and try again.",
-      "OTP_THROTTLED",
-      429,
-    );
+    super("Too many codes requested. Please wait a moment and try again.");
   }
-}
-
-export function normalizeEmail(email: string): string {
-  return email.trim().toLowerCase();
 }
 
 function getAuthSecret(): string {

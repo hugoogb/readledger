@@ -19,9 +19,11 @@ export class TTLCache<T> {
   }
 
   set(key: string, value: T): void {
-    if (this.store.size >= this.maxSize) {
+    // Re-inserting moves the key to the newest position; only a new key can
+    // push the cache over its size, evicting the oldest entry.
+    if (!this.store.delete(key) && this.store.size >= this.maxSize) {
       const oldestKey = this.store.keys().next().value;
-      if (oldestKey) this.store.delete(oldestKey);
+      if (oldestKey !== undefined) this.store.delete(oldestKey);
     }
     this.store.set(key, { value, expiresAt: Date.now() + this.ttlMs });
   }

@@ -4,9 +4,9 @@ Thanks for your interest in contributing! This guide covers everything you need 
 
 ## Prerequisites
 
-- **Node.js** 20+
+- **Node.js** 22 (the version CI and the Docker image use)
 - **pnpm** (package manager)
-- **Supabase** account (free tier works) for PostgreSQL and auth
+- **Docker**, for the local PostgreSQL database
 
 ## Setup
 
@@ -35,7 +35,7 @@ app/            Next.js App Router (pages, layouts, error boundaries)
 actions/        Server actions — thin wrappers: auth → validate → service → revalidate
 services/       Business logic layer — testable, framework-agnostic functions
 components/     React components (UI primitives, charts, modals, forms)
-lib/            Shared utilities (auth, cache, errors, logger, validations, MangaDex API)
+lib/            Shared utilities (auth, cache, errors, logger, validations, book APIs)
 hooks/          Custom React hooks
 utils/          Pure utility functions (currency, date formatting)
 __tests__/      Test suite (Vitest)
@@ -62,7 +62,7 @@ prisma/         Database schema and migrations
 - **Tailwind CSS** for styling (no CSS modules or styled-components)
 - **Zod** for input validation (schemas in `lib/validations.ts`)
 - **Server actions** should be thin — business logic goes in `services/`
-- **Custom errors** (`NotFoundError`, `UnauthorizedError`, `ValidationError`) from `lib/errors.ts`
+- **Custom errors** (`NotFoundError`, `UnauthorizedError`, `ValidationError`) from `lib/errors.ts`. Their messages reach the user: actions wrapped in `withResult()` return them as values
 - Prefer simple functions over classes; match existing patterns
 
 ## Testing
@@ -87,7 +87,7 @@ beforeEach(() => vi.clearAllMocks());
 
 describe("createSeries", () => {
   it("creates a series with the correct userId", async () => {
-    prismaMock.series.create.mockResolvedValue({ id: "1", title: "Test" });
+    prismaMock.series.create.mockResolvedValue({ id: "1", title: "Test" } as never);
     const result = await createSeries("user-1", { title: "Test", /* ... */ });
     expect(prismaMock.series.create).toHaveBeenCalledWith(
       expect.objectContaining({ data: expect.objectContaining({ userId: "user-1" }) })
@@ -101,5 +101,5 @@ describe("createSeries", () => {
 - **Service layer** (`services/`): Pure business logic. Accepts `userId` as first parameter, throws custom errors, no framework dependencies.
 - **Action layer** (`actions/`): `"use server"` wrappers that handle `requireUser()`, rate limiting, Zod validation, and `revalidatePath()`.
 - **Rate limiting:** Mutations are limited to 30 requests/min per user via `lib/rate-limit.ts`.
-- **MangaDex API:** Public API integration in `lib/manga-api.ts` with TTL cache and request throttling.
+- **Book APIs:** MangaDex (`lib/manga-api.ts`), Open Library (`lib/openlibrary-api.ts`) and the Google Books ISBN fallback (`lib/googlebooks-api.ts`), each with a TTL cache and a shared outbound throttle.
 - **Security headers:** CSP, HSTS, X-Frame-Options applied in `proxy.ts` middleware.

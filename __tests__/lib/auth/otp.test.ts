@@ -10,7 +10,6 @@ import {
   generateOtp,
   hashOtp,
   issueOtp,
-  normalizeEmail,
 } from "@/lib/auth/otp";
 
 const EMAIL = "reader@example.com";
@@ -26,12 +25,6 @@ beforeEach(() => {
 afterEach(() => {
   vi.useRealTimers();
   vi.unstubAllEnvs();
-});
-
-describe("normalizeEmail", () => {
-  it("trims and lower-cases", () => {
-    expect(normalizeEmail("  Reader@Example.COM ")).toBe("reader@example.com");
-  });
 });
 
 describe("generateOtp", () => {

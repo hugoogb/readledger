@@ -26,6 +26,7 @@ import { Check, Target } from "lucide-react";
 import { ChartCard } from "./chart-card";
 import { ChipNav } from "./chip-nav";
 import { UndatedNote } from "./undated-note";
+import { plural } from "@/lib/utils";
 
 const readingHref = (year: string) => `/dashboard/statistics?tab=reading&year=${year}`;
 
@@ -42,8 +43,6 @@ function monthName(label: string) {
     timeZone: "UTC",
   });
 }
-
-const plural = (n: number, word: string) => `${n} ${word}${n !== 1 ? "s" : ""}`;
 
 export async function ReadingTab({ yearParam }: { yearParam?: string }) {
   const [volumes, goals] = await Promise.all([getReadingVolumes(), getReadingGoals()]);
