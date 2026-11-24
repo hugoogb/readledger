@@ -11,10 +11,6 @@ Still open from the migration:
 
 - [ ] Confirm the nightly backup includes the `readledger` DB, and restore it
       once to a scratch DB
-- [ ] Take a final archive dump of Supabase (`public` + `auth`), then delete the
-      Supabase project, and remove Supabase credentials from local `.env`
-- [ ] Delete the Vercel project (paused since cutover). After that, delete
-      `vercel.json`: it only stops Vercel from building pushes.
 
 ---
 
