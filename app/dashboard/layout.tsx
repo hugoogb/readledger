@@ -12,6 +12,7 @@ export default async function DashboardLayout({
   children: React.ReactNode;
 }) {
   const user = await getCurrentUser();
+  const avatarUser = user && { id: user.id, avatarUrl: user.avatarUrl };
 
   return (
     <CurrencyProvider currency={user?.currency ?? "EUR"}>
@@ -24,12 +25,12 @@ export default async function DashboardLayout({
             Skip to main content
           </a>
 
-          <MobileHeader />
+          <MobileHeader user={avatarUser} />
           <aside
             aria-label="Main sidebar"
             className="fixed top-0 left-0 hidden h-screen w-60 border-r border-border bg-background-secondary lg:block"
           >
-            <Sidebar />
+            <Sidebar user={avatarUser} />
           </aside>
 
           <main

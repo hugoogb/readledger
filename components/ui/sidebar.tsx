@@ -5,10 +5,11 @@ import { usePathname } from "next/navigation";
 import { UserRound } from "lucide-react";
 import { AddBookButton } from "@/components/series/add-book-provider";
 import { Logo } from "@/components/ui/logo";
+import { UserAvatar, type AvatarUser } from "@/components/ui/user-avatar";
 import { isNavActive, NAV_ITEMS } from "./nav-items";
 import { ThemeToggle } from "./theme-toggle";
 
-export function Sidebar() {
+export function Sidebar({ user }: { user: AvatarUser | null }) {
   const pathname = usePathname();
   const profileActive =
     isNavActive(pathname, "/dashboard/profile") || isNavActive(pathname, "/dashboard/settings");
@@ -55,7 +56,11 @@ export function Sidebar() {
               : "text-foreground-muted hover:bg-background hover:text-foreground"
           }`}
         >
-          <UserRound className="size-5" aria-hidden="true" />
+          {user ? (
+            <UserAvatar user={user} size={20} className="size-5" />
+          ) : (
+            <UserRound className="size-5" aria-hidden="true" />
+          )}
           Profile &amp; settings
         </Link>
         <div className="px-1.5">
