@@ -31,7 +31,7 @@ export function StoreSelect({ stores, value, onChange, error }: StoreSelectProps
           return store;
         } catch (err) {
           toast.error(errorMessage(err, "Failed to create store"));
-          throw err;
+          return null;
         }
       }}
       placeholder="No store"

@@ -26,7 +26,7 @@ import {
 } from "lucide-react";
 import dynamic from "next/dynamic";
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useEffectEvent, useState } from "react";
 import { VolumeMatchCard, type NewSeriesMatch } from "./volume-match-card";
 import { errorMessage } from "@/lib/utils";
 
@@ -183,29 +183,30 @@ type PagedSearch<T> =
   | { status: "error"; page: number; message: string }
   | ({ status: "done"; page: number } & PageResult<T>);
 
-function usePagedSearch<T>(fetchPage: (page: number) => Promise<PageResult<T>>) {
+function usePagedSearch<T>(query: string, fetchPage: (page: number) => Promise<PageResult<T>>) {
   const [page, setPage] = useState(1);
   const [attempt, setAttempt] = useState(0);
-  const [state, setState] = useState<PagedSearch<T>>({ status: "loading", page: 1 });
+  const [settled, setSettled] = useState<{ request: string; state: PagedSearch<T> } | null>(null);
+  const loadPage = useEffectEvent(fetchPage);
+  const request = `${attempt}:${page}:${query}`;
+  const state: PagedSearch<T> =
+    settled?.request === request ? settled.state : { status: "loading", page };
 
   useEffect(() => {
     let cancelled = false;
-    setState({ status: "loading", page });
-    fetchPage(page).then(
-      (result) => !cancelled && setState({ status: "done", page, ...result }),
+    loadPage(page).then(
+      (result) => !cancelled && setSettled({ request, state: { status: "done", page, ...result } }),
       (err: unknown) =>
         !cancelled &&
-        setState({
-          status: "error",
-          page,
-          message: errorMessage(err, "Search failed. Please try again."),
+        setSettled({
+          request,
+          state: { status: "error", page, message: errorMessage(err, "Search failed. Please try again.") },
         }),
     );
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, attempt]);
+  }, [request, page]);
 
   return { state, setPage, retry: () => setAttempt((a) => a + 1) };
 }
@@ -367,7 +368,7 @@ function BookResults({
   onSelect: (book: BookSearchResult) => void;
   onAddManually: (isbn: string) => void;
 }) {
-  const search = usePagedSearch<BookSearchResult>(async (page) => {
+  const search = usePagedSearch<BookSearchResult>(query, async (page) => {
     const result = await searchBooks(query, page);
     if (!result.ok) throw new Error(result.error);
     const books = result.data.data;
@@ -438,7 +439,7 @@ function MangaResults({
   query: string;
   onSelect: (data: FormattedMangaData) => void;
 }) {
-  const search = usePagedSearch<MangaSearchResult>(async (page) => {
+  const search = usePagedSearch<MangaSearchResult>(query, async (page) => {
     let result;
     try {
       result = await searchManga(query, page);

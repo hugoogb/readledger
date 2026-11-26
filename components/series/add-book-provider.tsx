@@ -5,6 +5,8 @@ import { usePathname } from "next/navigation";
 import { createContext, useContext, useState, type ReactNode } from "react";
 import { getAddBookOptions } from "@/actions/series";
 import { Button, type ButtonProps } from "@/components/ui/button";
+import { logger } from "@/lib/logger";
+import { errorMessage } from "@/lib/utils";
 import { AddSeriesModal } from "./add-series-modal";
 
 type Publisher = { id: string; name: string };
@@ -22,7 +24,9 @@ export function AddBookProvider({ children }: { children: ReactNode }) {
     setOpenOn(pathname);
     getAddBookOptions()
       .then(setOptions)
-      .catch(() => {});
+      .catch((error: unknown) =>
+        logger.warn("Add-book options unavailable; keeping the last known ones", { error: errorMessage(error) }),
+      );
   };
 
   return (

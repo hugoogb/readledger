@@ -11,6 +11,7 @@ type ModalProps = {
   title: string;
   children: React.ReactNode;
   maxWidth?: "sm" | "md" | "lg" | "xl";
+  initialFocus?: string;
 };
 
 const maxWidthClasses = {
@@ -26,10 +27,11 @@ export function Modal({
   title,
   children,
   maxWidth = "lg",
+  initialFocus,
 }: ModalProps) {
   const [mounted, setMounted] = useState(false);
   const titleId = useId();
-  const focusTrapRef = useFocusTrap(isOpen && mounted);
+  const focusTrapRef = useFocusTrap(isOpen && mounted, initialFocus);
 
   useEffect(() => {
     setTimeout(() => {

@@ -10,7 +10,7 @@ type CreatableSelectProps = {
   options: Option[];
   value: string;
   onChange: (value: string) => void;
-  onCreate: (name: string) => Promise<{ id: string; name: string }>;
+  onCreate: (name: string) => Promise<{ id: string; name: string } | null>;
   placeholder?: string;
   createLabel?: string;
   error?: boolean;
@@ -43,7 +43,7 @@ export function CreatableSelect({
     if (!trimmed || isSubmitting) return;
 
     setIsSubmitting(true);
-    const created = await onCreate(trimmed).catch(() => null);
+    const created = await onCreate(trimmed);
     setIsSubmitting(false);
     if (!created) return;
     onChange(created.id);

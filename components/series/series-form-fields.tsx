@@ -110,7 +110,7 @@ export function SeriesFormFields({
                 return pub;
               } catch (err) {
                 toast.error(errorMessage(err, "Failed to create publisher"));
-                throw err;
+                return null;
               }
             }}
             placeholder="No publisher"

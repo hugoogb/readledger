@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   updateSeries,
   deleteSeries,
@@ -38,15 +38,12 @@ export function EditSeriesModal({ series, publishers = [], variant = "icon" }: E
     defaultValues: getSeriesFormDefaults(series),
   });
 
-  const { handleSubmit, reset, setFocus, formState: { isSubmitting } } = methods;
+  const { handleSubmit, reset, formState: { isSubmitting } } = methods;
 
-  useEffect(() => {
-    if (!isOpen) return;
+  const openModal = () => {
     reset(getSeriesFormDefaults(series));
-    if (variant !== "seriesHint") return;
-    const timer = setTimeout(() => setFocus("totalVolumes", { shouldSelect: true }), 0);
-    return () => clearTimeout(timer);
-  }, [isOpen, series, reset, setFocus, variant]);
+    setIsOpen(true);
+  };
 
   const onSubmit: SubmitHandler<SeriesSchema> = async (data) => {
     try {
@@ -77,7 +74,7 @@ export function EditSeriesModal({ series, publishers = [], variant = "icon" }: E
         <Button
           variant="link"
           type="button"
-          onClick={() => setIsOpen(true)}
+          onClick={openModal}
           className="h-auto min-h-11 p-0 text-sm"
         >
           Part of a series? Set total volumes
@@ -86,7 +83,7 @@ export function EditSeriesModal({ series, publishers = [], variant = "icon" }: E
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => setIsOpen(true)}
+          onClick={openModal}
           className="text-foreground-muted hover:text-foreground"
           aria-label="Edit details"
           title="Edit details"
@@ -99,6 +96,7 @@ export function EditSeriesModal({ series, publishers = [], variant = "icon" }: E
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
         title="Edit details"
+        initialFocus={variant === "seriesHint" ? "#totalVolumes" : undefined}
       >
         {showDeleteConfirm ? (
           <div className="space-y-4">

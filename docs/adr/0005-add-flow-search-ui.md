@@ -6,7 +6,7 @@ Status: accepted
 
 Where: `components/series/library-search.tsx` (`LibrarySearch`, `usePagedSearch`)
 
-One search box queries MangaDex and Open Library, and each source has its own section with its own loading, empty and error state, so one failing source never hides the other. An ISBN query searches only Open Library. Each section is remounted (via `key`) per query, so `usePagedSearch` treats the query as fixed for its lifetime.
+One search box queries MangaDex and Open Library, and each source has its own section with its own loading, empty and error state, so one failing source never hides the other. An ISBN query searches only Open Library. A section is remounted (via `key`) per query so its page resets to 1; `usePagedSearch` also keys each request on query, page and attempt, so a stale response is never shown for a newer request.
 
 ### Scanner loading and availability
 

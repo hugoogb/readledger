@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createThrottle, throttleMangadex, throttleOpenLibrary } from "@/lib/rate-limit";
+import { createThrottle } from "@/lib/rate-limit";
 import { AppError } from "@/lib/errors";
 
 describe("createThrottle", () => {
@@ -59,31 +59,33 @@ describe("createThrottle", () => {
 });
 
 describe("shared upstream throttles", () => {
-  beforeEach(() => {
+  let throttles: typeof import("@/lib/rate-limit");
+
+  beforeEach(async () => {
     vi.useFakeTimers();
-    vi.setSystemTime(1_000_000);
+    vi.setSystemTime(10_000);
+    vi.resetModules();
+    throttles = await import("@/lib/rate-limit");
   });
   afterEach(() => vi.useRealTimers());
 
   function resolveTimes(promises: Promise<void>[]) {
+    const start = Date.now();
     const times: number[] = [];
-    promises.forEach((p, i) => p.then(() => (times[i] = Date.now() - 1_000_000)));
+    promises.forEach((p, i) => p.then(() => (times[i] = Date.now() - start)));
     return times;
   }
 
   it("spaces concurrent MangaDex callers 200ms apart (5 req/s)", async () => {
+    const { throttleMangadex } = throttles;
     const times = resolveTimes([throttleMangadex(), throttleMangadex(), throttleMangadex()]);
     await vi.advanceTimersByTimeAsync(1000);
     expect(times).toEqual([0, 200, 400]);
   });
 
   it("spaces concurrent Open Library callers for 3 req/s", async () => {
-    vi.setSystemTime(2_000_000);
-    const start = Date.now();
-    const times: number[] = [];
-    [throttleOpenLibrary(), throttleOpenLibrary(), throttleOpenLibrary(), throttleOpenLibrary()].forEach(
-      (p, i) => p.then(() => (times[i] = Date.now() - start)),
-    );
+    const { throttleOpenLibrary } = throttles;
+    const times = resolveTimes([throttleOpenLibrary(), throttleOpenLibrary(), throttleOpenLibrary(), throttleOpenLibrary()]);
     await vi.advanceTimersByTimeAsync(2000);
     expect(times).toEqual([0, 334, 668, 1002]);
     expect(times[3] - times[0]).toBeGreaterThanOrEqual(1000);
