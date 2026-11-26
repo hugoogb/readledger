@@ -25,7 +25,6 @@ const sortOptions = [
 ];
 
 type SeriesFiltersProps = {
-  /** Formats present in the library; chips show only when there are several. */
   formats: Format[];
 };
 
@@ -33,7 +32,6 @@ export function SeriesFilters({ formats }: SeriesFiltersProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const currentStatus = searchParams.get("status") || "";
-  // Same parsing as the page, so a hand-typed "?format=novel" lights its chip.
   const currentFormat = parseFormat(searchParams.get("format")) ?? "";
   const currentSearch = searchParams.get("q") || "";
   const currentSort = searchParams.get("sort") || "";
@@ -48,7 +46,6 @@ export function SeriesFilters({ formats }: SeriesFiltersProps) {
     } else {
       params.delete(key);
     }
-    // Reset page when changing filters
     if (key !== "page") {
       params.delete("page");
     }
@@ -57,7 +54,6 @@ export function SeriesFilters({ formats }: SeriesFiltersProps) {
     });
   }
 
-  // Debounce the free-text search so we don't navigate on every keystroke.
   function handleSearchChange(value: string) {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
@@ -74,7 +70,6 @@ export function SeriesFilters({ formats }: SeriesFiltersProps) {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col sm:flex-row items-center gap-4">
-        {/* Search */}
         <Input
           id="series-search"
           type="search"
@@ -93,7 +88,6 @@ export function SeriesFilters({ formats }: SeriesFiltersProps) {
           className="flex-1"
         />
 
-        {/* Sort */}
         <Select
           id="series-sort"
           aria-label="Sort library"
@@ -109,7 +103,6 @@ export function SeriesFilters({ formats }: SeriesFiltersProps) {
         </Select>
       </div>
 
-      {/* Format Filter: hidden for single-format libraries (e.g. manga only) */}
       {formats.length > 1 && (
         <div
           role="group"
@@ -135,7 +128,6 @@ export function SeriesFilters({ formats }: SeriesFiltersProps) {
         </div>
       )}
 
-      {/* Status Filter */}
       <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-1 px-1">
         {statusFilters.map((filter) => {
           const isActive = currentStatus === filter.value;

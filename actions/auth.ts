@@ -25,13 +25,6 @@ import { emailSchema, otpSchema } from "@/lib/validations";
 
 export type SendOtpResult = { email: string; error?: never } | { error: string; email?: never };
 
-/**
- * Client IP for rate limiting. On the VPS platform the origin firewall only
- * admits Cloudflare, which overwrites CF-Connecting-IP on every request, and
- * the edge Caddy passes it through untouched, so it cannot be spoofed.
- * X-Real-IP is the fallback for a proxy that sets it. X-Forwarded-For is never
- * used: its left-most entry is client-controlled.
- */
 async function clientIp(): Promise<string> {
   const h = await headers();
   return h.get("cf-connecting-ip") ?? h.get("x-real-ip") ?? "unknown";
@@ -47,9 +40,6 @@ export async function sendOtp(formData: FormData): Promise<SendOtpResult> {
   try {
     checkRateLimit(`otp-send:${await clientIp()}`, 20, 60 * 60_000);
     const code = await issueOtp(email);
-    // Deliberately not awaited: the response must look the same whether or
-    // not the address has an account, and must not wait on the email
-    // provider. Safe on a long-lived Node server (not serverless).
     sendOtpEmail(email, code).catch((error) =>
       logger.error("Failed to send OTP email", { error: String(error) }),
     );
@@ -90,8 +80,6 @@ export async function verifyOtp(formData: FormData): Promise<{ error: string } |
     return { error: "That code is invalid or has expired." };
   }
 
-  // Existing accounts (including users migrated from Supabase) are matched by
-  // email; new addresses get an account on first sign-in.
   const user = await prisma.user.upsert({
     where: { email: email.data },
     update: {},

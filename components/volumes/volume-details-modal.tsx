@@ -48,9 +48,7 @@ type VolumeDetailsModalProps = {
   stores?: UserStore[];
   isOpen: boolean;
   onClose: () => void;
-  /** Focus this field when the modal opens (e.g. from the "Change date" toast). */
   focusField?: "readDate";
-  /** How to name the volume, e.g. a standalone book's title. Default "Volume N". */
   label?: string;
 };
 
@@ -66,14 +64,12 @@ function formValues(volume: Volume, seriesDefaults?: SeriesDefaults): VolumeSche
     coverImage: volume.coverImage || "",
     condition: volume.condition ?? "NEW",
     notes: volume.notes || "",
-    // The date input holds "YYYY-MM-DD"; setValueAs turns it into a Date on edit.
     purchaseDate: (volume.owned
       ? formatDateForInput(volume.purchaseDate)
       : todayInputValue()) as unknown as Date,
   };
 }
 
-/** The "Read on" input: the stored date, else today for a read volume. */
 const readOnValue = (volume: Volume) =>
   volume.readDate ? formatDateForInput(volume.readDate) : volume.read ? todayInputValue() : "";
 
@@ -88,13 +84,8 @@ export function VolumeDetailsModal({
 }: VolumeDetailsModalProps) {
   const router = useRouter();
   const name = label ?? `Volume ${volume.volumeNumber}`;
-  // Pending state for the secondary actions (wishlist / remove) which run
-  // outside react-hook-form's submit lifecycle.
   const [isActionPending, startAction] = useTransition();
 
-  // The read flag and date live outside react-hook-form: the date input holds
-  // a "YYYY-MM-DD" string that we prefill programmatically, which RHF's
-  // setValueAs (input-event only) wouldn't convert for the Date schema.
   const [isReadChecked, setIsReadChecked] = useState(volume.read);
   const [readOn, setReadOn] = useState(() => readOnValue(volume));
 
@@ -129,7 +120,6 @@ export function VolumeDetailsModal({
         volumeNumber: data.volumeNumber,
         owned: true,
         read: isReadChecked,
-        // No price and no series retail price: save without one rather than NaN.
         pricePaid: data.pricePaid == null ? null : Number(data.pricePaid.toFixed(2)),
         condition: data.condition,
         storeId: data.storeId || null,

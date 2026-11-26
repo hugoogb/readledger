@@ -7,7 +7,7 @@ import { MAX_VOLUMES, openLibraryKeySchema } from "@/lib/validations";
 
 export type ImportFormat = "csv" | "json";
 
-export const MAX_IMPORT_SIZE = 5 * 1024 * 1024; // 5 MB
+export const MAX_IMPORT_SIZE = 5 * 1024 * 1024;
 export const MAX_IMPORT_ROWS = 10_000;
 
 export type ImportRow = {
@@ -19,16 +19,13 @@ export type ImportRow = {
   pricePaid: number | null;
   store: string | null;
   condition: Condition | null;
-  /** "YYYY-MM-DD" */
   purchaseDate: string | null;
-  /** "YYYY-MM-DD" */
   readDate: string | null;
   notes: string | null;
   isbn: string | null;
   coverImage: string | null;
 };
 
-/** Series-level fields only present in JSON exports. */
 export type ImportSeriesMeta = {
   author: string | null;
   status: SeriesStatus | null;
@@ -46,13 +43,7 @@ export type ImportPreview = {
   errors: { row: number; message: string }[];
   seriesCount: number;
   volumeCount: number;
-  /** Keyed by series title. */
   seriesMeta: Record<string, ImportSeriesMeta>;
-  /**
-   * Format per title, keyed by title; absent when the file doesn't say (new
-   * titles are then MANGA, as every pre-format export was). The first
-   * non-empty value of a title wins; later conflicting ones are ignored.
-   */
   formats: Record<string, Format>;
 };
 
@@ -61,7 +52,6 @@ const STATUSES = new Set<string>(Object.values(SeriesStatus));
 
 const LIMITS = { title: 255, store: 100, notes: 1000, isbn: 32, author: 255, description: 2000 };
 
-/** Thrown for a single bad cell; becomes a per-row preview error. */
 class RowError extends Error {}
 
 function text(value: unknown, field: keyof typeof LIMITS): string | null {
@@ -86,7 +76,6 @@ function volumeNumber(value: unknown): number {
 
 function price(value: unknown, field: string): number | null {
   if (value == null || value === "") return null;
-  // Accept "7,95" as written by spreadsheets in comma-decimal locales.
   const n = typeof value === "number" ? value : Number(String(value).trim().replace(",", "."));
   if (!Number.isFinite(n) || n < 0 || n > 100_000) {
     throw new RowError(`${field} must be a number of 0 or more`);
@@ -94,7 +83,6 @@ function price(value: unknown, field: string): number | null {
   return Math.round(n * 100) / 100;
 }
 
-/** Accepts "YYYY-MM-DD" or the European "DD/MM/YYYY"; returns "YYYY-MM-DD". */
 function date(value: unknown, field: string): string | null {
   if (value == null || value === "") return null;
   const s = String(value).trim();
@@ -129,10 +117,6 @@ function condition(value: unknown): Condition | null {
 
 const yes = (value: string) => ["yes", "true", "1"].includes(value.toLowerCase());
 
-/**
- * The CSV export prefixes cells starting with = + - @ with an apostrophe so
- * spreadsheets don't run them as formulas; undo that on the way back in.
- */
 function unescapeCell(value: string): string {
   return /^'[=+\-@\t\r]/.test(value) ? value.slice(1) : value;
 }
@@ -242,7 +226,7 @@ export function parseImport(data: string, format: ImportFormat): ImportPreview {
 
     for (let i = 0; i < csvRows.length; i++) {
       const row = csvRows[i];
-      const line = i + 2; // 1-based, after the header row
+      const line = i + 2;
       try {
         const title = text(getCol(row, "series_title"), "title");
         if (!title) throw new RowError("missing series_title");

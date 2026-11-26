@@ -1,10 +1,8 @@
 type UndatedNoteProps = {
   count: number;
-  /** Which date is missing: purchase for collection charts, read for reading ones. */
   kind: "purchase" | "read";
 };
 
-/** Footnote for books a date-based chart can't place. */
 export function UndatedNote({ count, kind }: UndatedNoteProps) {
   if (count === 0) return null;
   const plural = count !== 1;

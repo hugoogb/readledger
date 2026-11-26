@@ -14,17 +14,13 @@ type WishlistActionsProps = {
     volumeNumber: number;
     coverImage?: string | null;
   };
-  /** Text on the chip, e.g. "Vol. 3" (or "Remove" for a standalone book). */
   chipLabel: string;
-  /** Full name for toasts and screen readers, e.g. "One Piece · Vol 3" or "Dune". */
   name: string;
 };
 
 export function WishlistActions({ volume, chipLabel, name }: WishlistActionsProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  // Optimistically collapse the chip on click; the server revalidation then
-  // removes it for good. Restored only if the action fails.
   const [removing, setRemoving] = useState(false);
 
   const handleRemove = () => {
@@ -32,8 +28,6 @@ export function WishlistActions({ volume, chipLabel, name }: WishlistActionsProp
     startTransition(async () => {
       try {
         unwrap(await toggleWishlist(volume.id));
-        // One tap removes the chip, so a mis-tap while scrolling is easy:
-        // offer an undo that toggles it back.
         toast.success(`${name} removed from wishlist`, {
           action: {
             label: "Undo",

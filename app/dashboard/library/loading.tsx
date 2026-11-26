@@ -3,7 +3,6 @@ import { SeriesGridSkeleton } from "@/components/ui/skeletons";
 export default function SeriesLoading() {
   return (
     <div className="p-4 lg:p-8">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
           <div className="h-8 w-32 rounded-md bg-background-tertiary/60 animate-pulse" />
@@ -12,7 +11,6 @@ export default function SeriesLoading() {
         <div className="h-10 w-32 rounded-md bg-background-tertiary/60 animate-pulse" />
       </div>
 
-      {/* Filters: search + sort, then status chips */}
       <div className="flex flex-col gap-4 mb-8">
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="h-12 flex-1 rounded-md bg-background-tertiary/60 animate-pulse" />

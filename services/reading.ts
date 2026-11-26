@@ -3,7 +3,6 @@ import { isStandalone } from "@/lib/format";
 import type { ReadingVolume } from "@/lib/reading-stats";
 import type { ReadingGoalSchema } from "@/lib/validations";
 
-/** Every volume that can appear in reading stats, with only the fields they use. */
 export async function getReadingVolumes(userId: string): Promise<ReadingVolume[]> {
   const volumes = await prisma.volume.findMany({
     where: {
@@ -53,6 +52,5 @@ export async function upsertReadingGoal(userId: string, { year, target }: Readin
 }
 
 export async function deleteReadingGoal(userId: string, year: number) {
-  // deleteMany scopes by user and is a no-op when no goal exists.
   await prisma.readingGoal.deleteMany({ where: { userId, year } });
 }

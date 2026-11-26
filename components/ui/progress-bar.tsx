@@ -2,7 +2,6 @@ type ProgressBarProps = {
   value: number;
   max?: number;
   label?: string;
-  /** Accessible name when no visible label is shown. */
   ariaLabel?: string;
   showPercentage?: boolean;
   variant?: "accent" | "gilt" | "success" | "warning";

@@ -1,11 +1,6 @@
 import type { Metadata } from "next";
 import { SITE_NAME } from "@/lib/site";
 
-/**
- * Metadata for a public content page. Open Graph and Twitter are set in full
- * because a child's `openGraph` replaces the root layout's instead of merging,
- * which would otherwise leave these pages with the home page's URL or no image.
- */
 export function contentMetadata({
   title,
   description,

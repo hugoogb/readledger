@@ -32,7 +32,6 @@ function byline(series: MangaSeries) {
   return series.authors.join(" and ");
 }
 
-/** The direct answer, so it can be quoted for "how many volumes" searches. */
 function volumeAnswer(series: MangaSeries) {
   if (series.exact) {
     return `${series.title} has ${series.volumes} volumes in its original Japanese release, and the series is finished.`;
@@ -46,7 +45,6 @@ function volumeAnswer(series: MangaSeries) {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const series = getMangaSeries((await params).slug);
   if (!series) return {};
-  // Subtitles are dropped so that search results don't cut the title off.
   const shortTitle = series.title.split(":")[0];
   return contentMetadata({
     title: `${shortTitle} Volume Checklist (${formatVolumeCount(series)} Volumes)`,

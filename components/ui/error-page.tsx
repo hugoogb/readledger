@@ -8,12 +8,10 @@ type ErrorPageProps = {
   error: Error & { digest?: string };
   reset: () => void;
   title: string;
-  /** Shown in production; development shows the error's own message. */
   message: string;
   back: { href: string; label: string };
 };
 
-/** Body of a route's error.tsx: what failed, a retry and a way back. */
 export function ErrorPage({ error, reset, title, message, back }: ErrorPageProps) {
   return (
     <PageMessage

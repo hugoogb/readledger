@@ -56,7 +56,6 @@ export const toggleVolumeRead = withResult(async (id: string, today?: string) =>
 
   const { updated, seriesId } = await volumeService.toggleVolumeRead(user.id, id, today);
 
-  // Reading a standalone book can change its status, shown in the list too.
   revalidateLibrary([seriesId]);
 
   return updated;

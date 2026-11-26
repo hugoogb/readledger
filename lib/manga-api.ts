@@ -1,6 +1,3 @@
-// MangaDex API
-// Documentation: https://api.mangadex.org/docs/
-
 import { TTLCache } from "./cache";
 import { logger } from "./logger";
 import { errorMessage } from "./utils";
@@ -8,8 +5,6 @@ import { throttleMangadex } from "./rate-limit";
 
 const MANGADEX_BASE_URL = "https://api.mangadex.org";
 const MANGADEX_TIMEOUT_MS = 10_000;
-
-// --- Raw MangaDex response types ---
 
 type MangaDexMangaResponse = {
   result: string;
@@ -88,8 +83,6 @@ type MangaDexCoverResponse = {
   offset: number;
 };
 
-// --- Normalized app types ---
-
 export type MangaSearchResult = {
   id: string;
   title: string;
@@ -104,7 +97,6 @@ export type MangaSearchResult = {
   genres: Array<{ id: string; name: string }>;
   score: number | null;
   demographic: string | null;
-  /** Every alt title, any language (e.g. Spanish names used to match scans). */
   altTitles: string[];
 };
 
@@ -138,19 +130,15 @@ export type FormattedMangaData = {
   genres: string[];
 };
 
-// --- Helper functions ---
-
 function extractTitle(manga: MangaDexManga): string {
   const titles = manga.attributes.title;
   return titles.en || titles["ja-ro"] || Object.values(titles)[0] || "Unknown";
 }
 
 function extractJapaneseTitle(manga: MangaDexManga): string | null {
-  // Check altTitles for Japanese
   for (const alt of manga.attributes.altTitles) {
     if (alt.ja) return alt.ja;
   }
-  // Check main title
   if (manga.attributes.title.ja) return manga.attributes.title.ja;
   return null;
 }
@@ -160,7 +148,7 @@ function extractAuthors(manga: MangaDexManga): string[] {
     .filter((r) => r.type === "author" || r.type === "artist")
     .map((r) => (r.attributes?.name as string) || "")
     .filter(Boolean)
-    .filter((name, i, arr) => arr.indexOf(name) === i); // dedupe
+    .filter((name, i, arr) => arr.indexOf(name) === i);
 }
 
 function extractCoverFileName(manga: MangaDexManga): string | null {
@@ -168,13 +156,11 @@ function extractCoverFileName(manga: MangaDexManga): string | null {
   return (coverRel?.attributes?.fileName as string | undefined) ?? null;
 }
 
-/** Full-size cover URL, or the 256px thumbnail with `small`. */
 function coverUrl(mangaId: string, fileName: string | null, small = false): string {
   if (!fileName) return "";
   return `https://uploads.mangadex.org/covers/${mangaId}/${fileName}${small ? ".256.jpg" : ""}`;
 }
 
-/** GET a MangaDex endpoint; null on a non-OK response. */
 async function mangadexGet<T>(path: string): Promise<T | null> {
   const res = await fetch(`${MANGADEX_BASE_URL}${path}`, {
     headers: { Accept: "application/json" },
@@ -214,7 +200,7 @@ function parseMangaDexManga(manga: MangaDexManga): MangaSearchResult {
       null,
     authors: extractAuthors(manga),
     genres: extractGenres(manga),
-    score: null, // filled in separately via statistics endpoint
+    score: null,
     demographic: manga.attributes.publicationDemographic,
     altTitles: manga.attributes.altTitles.flatMap((alt) => Object.values(alt)),
   };
@@ -234,8 +220,6 @@ async function fetchLastVolume(mangadexId: string): Promise<number | null> {
   }
 }
 
-// --- API functions ---
-
 function mangaSearchParams(query: string, limit: number, offset: number): URLSearchParams {
   const params = new URLSearchParams({
     title: query,
@@ -252,10 +236,6 @@ function mangaSearchParams(query: string, limit: number, offset: number): URLSea
   return params;
 }
 
-/**
- * The single most relevant manga for a title (alt titles included), or null.
- * Lighter than a search page: one result, no statistics. Used to match scans.
- */
 export async function findTopManga(title: string): Promise<MangaSearchResult | null> {
   try {
     await throttleMangadex();
@@ -271,7 +251,7 @@ export async function findTopManga(title: string): Promise<MangaSearchResult | n
 }
 
 const PAGE_SIZE = 10;
-const searchCache = new TTLCache<PaginatedSearchResult>(60_000); // 1 min TTL
+const searchCache = new TTLCache<PaginatedSearchResult>(60_000);
 
 const emptyPage = (): PaginatedSearchResult => ({
   data: [],
@@ -296,14 +276,12 @@ export async function searchMangaPaginated(
     if (!raw) throw new Error("MangaDex API error");
     const results = raw.data.map(parseMangaDexManga);
 
-    // Resolve lastVolume for manga where it's missing via aggregate endpoint
     const aggregatePromises = results.map(async (r) => {
       if (r.lastVolume === null) {
         r.lastVolume = await fetchLastVolume(r.id);
       }
     });
 
-    // Batch-fetch statistics for all results
     const statsPromise = (async () => {
       if (results.length === 0) return;
       const statsParams = new URLSearchParams();
@@ -322,12 +300,11 @@ export async function searchMangaPaginated(
               : null;
           }
         }
-      } catch {
-        // Statistics are optional — continue without scores
+      } catch (error) {
+        logger.warn("MangaDex statistics unavailable", { error: errorMessage(error) });
       }
     })();
 
-    // Run aggregate and stats fetches in parallel
     await Promise.all([...aggregatePromises, statsPromise]);
 
     const totalPages = Math.max(1, Math.ceil(raw.total / PAGE_SIZE));
@@ -367,7 +344,6 @@ export function formatMangaForSeries(
   };
 }
 
-/** Volume rows 1..total with no covers. */
 export function placeholderVolumes(totalVolumes: number): VolumeData[] {
   return Array.from({ length: Math.max(0, totalVolumes) }, (_, i) => ({
     volumeNumber: i + 1,
@@ -377,7 +353,6 @@ export function placeholderVolumes(totalVolumes: number): VolumeData[] {
   }));
 }
 
-/** Volume rows 1..total with each volume's MangaDex cover where there is one. */
 export async function fetchVolumeCovers(
   mangadexId: string,
   totalVolumes: number,
@@ -389,7 +364,6 @@ export async function fetchVolumeCovers(
   }));
 }
 
-/** Cover thumbnail per volume ("1", "2"...); stops quietly at the first failure. */
 async function fetchMangaDexCovers(mangaId: string, totalVolumes: number): Promise<Map<string, string>> {
   const coverMap = new Map<string, string>();
   let offset = 0;

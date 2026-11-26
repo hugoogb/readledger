@@ -8,8 +8,6 @@ function storageKey(slug: string) {
   return `readledger:checklist:${slug}`;
 }
 
-// Browser storage can throw or come back empty (private windows, blocked site
-// data). Writes also go to this map, so the checklist still works for the visit.
 const memory = new Map<string, string>();
 const listeners = new Set<() => void>();
 
@@ -23,18 +21,22 @@ function readRaw(key: string): string | null {
   }
 }
 
-function writeRaw(key: string, value: string) {
-  memory.set(key, value);
+function persist(key: string, value: string): boolean {
   try {
     window.localStorage.setItem(key, value);
+    return true;
   } catch {
-    // Not saved between visits; still usable now.
+    return false;
   }
+}
+
+function writeRaw(key: string, value: string) {
+  memory.set(key, value);
+  persist(key, value);
   listeners.forEach((listener) => listener());
 }
 
 function subscribe(listener: () => void) {
-  // Another tab changed the list, so this tab's copy in memory is out of date.
   const onStorage = (event: StorageEvent) => {
     if (event.key) memory.delete(event.key);
     listener();
@@ -62,11 +64,6 @@ function parse(raw: string | null, volumes: number): Saved {
   }
 }
 
-/**
- * The volumes render on the server, so the full list is in the page's HTML.
- * useSyncExternalStore renders the empty server snapshot first, then swaps in
- * saved ticks after hydration without a mismatch.
- */
 export function VolumeChecklist({
   slug,
   title,
@@ -158,7 +155,6 @@ export function VolumeChecklist({
             placeholder="e.g. 10"
             value={price}
             onChange={(e) => update({ price: e.target.value })}
-            // 16px stops iOS Safari zooming the page when the field is focused.
             className="mt-1.5 h-11 w-32 rounded-md border border-border bg-background px-3 text-base text-foreground"
           />
           {showEstimate && (

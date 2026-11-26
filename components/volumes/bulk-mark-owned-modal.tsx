@@ -149,7 +149,6 @@ export function BulkMarkOwnedModal({
             tone="accent"
           />
 
-          {/* Total Price with calculation preview */}
           <FormField
             label="Total Price Paid"
             htmlFor="totalPrice"
@@ -180,7 +179,6 @@ export function BulkMarkOwnedModal({
             )}
           </FormField>
 
-          {/* Store and Condition */}
           <FormSection columns={2}>
             <FormField
               label="Store"
@@ -214,7 +212,6 @@ export function BulkMarkOwnedModal({
             </FormField>
           </FormSection>
 
-          {/* Purchase Date */}
           <FormField
             label="Purchase Date"
             htmlFor="purchaseDate"
@@ -230,7 +227,6 @@ export function BulkMarkOwnedModal({
             />
           </FormField>
 
-          {/* Notes */}
           <FormField
             label="Notes"
             htmlFor="notes"
@@ -246,7 +242,6 @@ export function BulkMarkOwnedModal({
             />
           </FormField>
 
-          {/* Actions */}
           <div className="flex gap-3 pt-2">
             <Button
               variant="outline"

@@ -30,7 +30,6 @@ describe("AddBookProvider", () => {
     fireEvent.click(screen.getByRole("button", { name: "Add a book" }));
     expect(modalProps).toHaveBeenLastCalledWith(expect.objectContaining({ open: true }));
 
-    // A back swipe or link changes the route while the sheet is open.
     pathname = "/dashboard/wishlist";
     act(() => {
       rerender(
@@ -57,7 +56,6 @@ describe("AddBookProvider", () => {
       expect.objectContaining({ open: true, booksFirst: false }),
     );
 
-    // Close, then reopen while the next options request is still in flight.
     getAddBookOptions.mockImplementationOnce(() => new Promise(() => {}));
     pathname = "/dashboard/library";
     act(() => rerender(tree));

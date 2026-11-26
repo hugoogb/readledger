@@ -39,15 +39,12 @@ type AddSeriesModalProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   publishers: Publisher[];
-  /** Show Open Library results above MangaDex ones (see booksFirstInSearch). */
   booksFirst: boolean;
   onPublisherCreated: (publisher: Publisher) => void;
 };
 
 type Step = "search" | "form";
 type Kind = "single" | "series";
-// Where the form's values came from. MangaDex results are always series;
-// manual entries and Open Library books can be a single book or a series.
 type Source = "manual" | "mangadex" | "openlibrary";
 
 export function AddSeriesModal({
@@ -62,11 +59,8 @@ export function AddSeriesModal({
   const [query, setQuery] = useState("");
   const [source, setSource] = useState<Source>("mangadex");
   const [kind, setKind] = useState<Kind>("series");
-  // ISBN from an Open Library ISBN lookup, stored on volume 1.
   const [bookIsbn, setBookIsbn] = useState<string | null>(null);
-  // A scanned volume of a new series: created owned, with its ISBN.
   const [pendingVolume, setPendingVolume] = useState<{ volumeNumber: number; isbn: string } | null>(null);
-  // Ignores a late description for a book the user has already left.
   const selection = useRef(0);
   const [volumeData, setVolumeData] = useState<VolumeData[]>([]);
   const [isFetchingVolumes, setIsFetchingVolumes] = useState(false);
@@ -112,8 +106,6 @@ export function AddSeriesModal({
       return;
     }
 
-    // Set form values immediately. MangaDex can't tell light novels apart;
-    // the user can change the format in the form.
     reset(getSeriesFormDefaults());
     setSource("mangadex");
     setKind("series");
@@ -128,11 +120,8 @@ export function AddSeriesModal({
     setValue("publishing", data.publishing);
     setValue("mangadexId", data.mangadexId);
 
-    // Show loading state while fetching volumes
     setStep("form");
 
-    // An edition numbered differently from MangaDex (kanzenban, 3-in-1...)
-    // gets plain volume entries: MangaDex's covers would show other books.
     if (data.totalVolumes && data.totalVolumes > 0 && scanned && !scanned.useMangadexCovers) {
       setVolumeData(placeholderVolumes(data.totalVolumes));
     } else if (data.totalVolumes && data.totalVolumes > 0) {
@@ -167,7 +156,6 @@ export function AddSeriesModal({
       }
     }
 
-    // Books are added as a single book; the user can switch to Series.
     reset({
       ...getSeriesFormDefaults(),
       format: book.formatGuess === "COMIC" ? Format.COMIC : Format.NOVEL,
@@ -185,11 +173,8 @@ export function AddSeriesModal({
     setVolumeData([]);
     setStep("form");
 
-    // Google Books results have no Open Library work to describe them.
     if (book.source !== "openlibrary") return;
 
-    // The description needs one more request; show the form without waiting
-    // and fill it in unless the user has typed one or moved on.
     const token = ++selection.current;
     const details = await getBookDetails(book.key);
     if (token !== selection.current || !details.ok || !details.data.description) return;
@@ -198,15 +183,12 @@ export function AddSeriesModal({
 
   const onSubmit: SubmitHandler<SeriesSchema> = async (data) => {
     try {
-      // Already validated by the form's resolver; the service treats blanks as unset.
       const input = { ...data };
 
       let volumes: VolumeInput[] = (
         volumeData.length > 0 ? volumeData : placeholderVolumes(input.totalVolumes ?? 0)
       ).map((v) => ({ volumeNumber: v.volumeNumber, title: v.title, coverImage: v.coverImage }));
       if (bookIsbn) {
-        // Switched to "Series" with no total: keep the looked-up ISBN by
-        // creating volume 1 for it rather than dropping it.
         if (volumes.length === 0) volumes = [{ volumeNumber: 1 }];
         volumes = volumes.map((v) => (v.volumeNumber === 1 ? { ...v, isbn: bookIsbn } : v));
       }
@@ -357,7 +339,6 @@ export function AddSeriesModal({
                 }
               />
 
-              {/* Volume cover preview */}
               {isSingle ? null : volumeData.length > 0 ? (
                 <div className="p-4 bg-accent/5 border border-accent/20 rounded-md space-y-3">
                   <div className="flex items-center gap-3">

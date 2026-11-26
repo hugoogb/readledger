@@ -10,12 +10,10 @@ import { toast } from "sonner";
 type StoreSelectProps = {
   stores: { id: string; name: string }[];
   value: string;
-  /** "" when cleared. */
   onChange: (storeId: string) => void;
   error?: boolean;
 };
 
-/** The store picker of the purchase forms; a new store can be added inline. */
 export function StoreSelect({ stores, value, onChange, error }: StoreSelectProps) {
   const router = useRouter();
 

@@ -30,7 +30,6 @@ import { useEffect, useState } from "react";
 import { VolumeMatchCard, type NewSeriesMatch } from "./volume-match-card";
 import { errorMessage } from "@/lib/utils";
 
-// Lazy: the barcode library loads only when someone taps Scan.
 const IsbnScanner = dynamic(() => import("./isbn-scanner").then((m) => m.IsbnScanner), {
   ssr: false,
   loading: () => (
@@ -43,26 +42,17 @@ const IsbnScanner = dynamic(() => import("./isbn-scanner").then((m) => m.IsbnSca
 type LibrarySearchProps = {
   query: string;
   onQueryChange: (query: string) => void;
-  /** Show Open Library books above MangaDex manga (see booksFirstInSearch). */
   booksFirst: boolean;
   onSelectManga: (data: FormattedMangaData) => void;
   onSelectBook: (book: BookSearchResult) => void;
   onAddManually: () => void;
-  /** "No book found" for an ISBN: open the manual form keeping that ISBN. */
   onAddManuallyWithIsbn: (isbn: string) => void;
-  /** A scanned volume of a MangaDex series not in the library yet. */
   onStartNewSeries: (match: NewSeriesMatch, volumeNumber: number) => void;
-  /** A scanned volume was filed; the add flow is finished. */
   onClose: () => void;
 };
 
 const MIN_QUERY = 2;
 
-/**
- * One search box over MangaDex and Open Library. Each source has its own
- * section with its own loading, empty and error state, so one source failing
- * never hides the other. An ISBN only searches Open Library.
- */
 export function LibrarySearch({
   query,
   onQueryChange,
@@ -76,8 +66,6 @@ export function LibrarySearch({
 }: LibrarySearchProps) {
   const [debounced, setDebounced] = useState(query.trim());
   const [scanning, setScanning] = useState(false);
-  // Rendered only inside the (client-only) add modal, so navigator exists.
-  // No mediaDevices (old browsers, plain-http origins) means no Scan button.
   const canScan = typeof navigator !== "undefined" && Boolean(navigator.mediaDevices);
 
   useEffect(() => {
@@ -104,7 +92,6 @@ export function LibrarySearch({
       <IsbnScanner
         onDetected={(isbn) => {
           setScanning(false);
-          // Skip the typing debounce: the scan is the final query.
           setDebounced(isbn);
           onQueryChange(isbn);
         }}
@@ -143,8 +130,6 @@ export function LibrarySearch({
 
       {searching ? (
         isbn ? (
-          // The card goes below the (single) book row: when it appears or
-          // collapses, the row a thumb is aiming at doesn't move.
           <>
             {books}
             <VolumeMatchCard
@@ -191,8 +176,6 @@ export function LibrarySearch({
   );
 }
 
-// --- Shared section plumbing ---
-
 type PageResult<T> = { items: T[]; hasNextPage: boolean; existing: Set<string> };
 
 type PagedSearch<T> =
@@ -200,7 +183,6 @@ type PagedSearch<T> =
   | { status: "error"; page: number; message: string }
   | ({ status: "done"; page: number } & PageResult<T>);
 
-/** Fetches `page` of a section; the caller remounts it (via key) per query. */
 function usePagedSearch<T>(fetchPage: (page: number) => Promise<PageResult<T>>) {
   const [page, setPage] = useState(1);
   const [attempt, setAttempt] = useState(0);
@@ -222,7 +204,6 @@ function usePagedSearch<T>(fetchPage: (page: number) => Promise<PageResult<T>>) 
     return () => {
       cancelled = true;
     };
-    // fetchPage is recreated every render; the query is fixed per mount.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, attempt]);
 
@@ -375,8 +356,6 @@ function ResultButton({
 
 const mutedBadge = "bg-foreground-muted/10 text-foreground-muted border-none";
 
-// --- Sources ---
-
 function BookResults({
   query,
   isbn,
@@ -398,12 +377,10 @@ function BookResults({
       isbn ? isIsbnInLibrary(isbn) : Promise.resolve(false),
     ]);
     const existing = new Set(existingKeys);
-    // An ISBN already on one of the user's volumes: that edition is in the library.
     if (isbnInLibrary) for (const b of books) existing.add(b.key);
     return { items: books, hasNextPage: result.data.pagination.hasNextPage, existing };
   });
   const existing = search.state.status === "done" ? search.state.existing : new Set<string>();
-  // Google Books only answers ISBN lookups, so a page is from one source.
   const fromGoogle = search.state.status === "done" && search.state.items[0]?.source === "googlebooks";
 
   return (
@@ -466,7 +443,6 @@ function MangaResults({
     try {
       result = await searchManga(query, page);
     } catch {
-      // Server action errors arrive without a usable message in production.
       throw new Error("MangaDex search failed. Please try again.");
     }
     const ids = result.data.map((m) => m.id);

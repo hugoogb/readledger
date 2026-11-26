@@ -132,8 +132,6 @@ describe("markVolumeOwnedByIsbn", () => {
   });
 });
 
-// --- resolveIsbnVolume ---
-
 vi.mock("@/lib/isbn-lookup", () => ({ lookupIsbnAnySource: vi.fn() }));
 vi.mock("@/lib/manga-api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/manga-api")>()),
@@ -164,7 +162,6 @@ const manga = (overrides: Partial<MangaSearchResult> = {}): MangaSearchResult =>
   altTitles: [],
   ...overrides,
 });
-
 
 describe("resolveIsbnVolume", () => {
   beforeEach(() => {

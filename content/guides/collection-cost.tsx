@@ -13,8 +13,6 @@ export const collectionCostMeta = {
   updated: "2026-11-04",
 };
 
-// An assumption for the worked examples, labelled as such on the page. It isn't
-// a measured market price.
 const EXAMPLE_PRICE = 10;
 const EXAMPLE_USED_PRICE = 6;
 const EXAMPLE_SLUGS = ["death-note", "demon-slayer", "jujutsu-kaisen", "naruto", "one-piece"];

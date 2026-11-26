@@ -18,10 +18,6 @@ export const updateCurrency = withResult(async (currency: string) => {
   revalidatePath("/dashboard", "layout");
 });
 
-/**
- * `null` means "never asked" (shows the first-login prompt); an empty string
- * means the user chose not to set a name, so the prompt stays dismissed.
- */
 export const updateDisplayName = withResult(async (name: string) => {
   const user = await requireUser();
   const validName = displayNameSchema.parse(name);

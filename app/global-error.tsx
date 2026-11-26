@@ -80,8 +80,6 @@ export default function GlobalError({
             >
               Try again
             </button>
-            {/* A full page load (not <Link>) is intended: this replaces the
-                crashed root layout, so a hard navigation resets the app. */}
             {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
             <a
               href="/"

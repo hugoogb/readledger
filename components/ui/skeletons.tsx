@@ -45,7 +45,6 @@ export function SeriesGridSkeleton({ count = 10 }: { count?: number }) {
 export function SeriesDetailSkeleton() {
   return (
     <div className="space-y-8">
-      {/* Cover + Info */}
       <div className="flex flex-col lg:flex-row gap-8">
         <Skeleton className="w-36 aspect-2/3 rounded-[3px] shrink-0 sm:w-44" />
         <div className="flex-1 space-y-4">
@@ -71,7 +70,6 @@ export function SeriesDetailSkeleton() {
 
       <LedgerSkeleton rows={5} />
 
-      {/* Volume Grid */}
       <div className="rounded-lg border border-border bg-background-secondary p-6 space-y-6">
         <div className="flex items-center justify-between">
           <div className="space-y-1">
@@ -102,7 +100,6 @@ export function ChartGridSkeleton({ count = 4 }: { count?: number }) {
   );
 }
 
-/** Placeholder for a Ledger: label/value rows over hairlines. */
 export function LedgerSkeleton({ rows = 4 }: { rows?: number }) {
   return (
     <div className="border-t border-border">
@@ -116,7 +113,6 @@ export function LedgerSkeleton({ rows = 4 }: { rows?: number }) {
   );
 }
 
-/** Placeholder for a CoverShelf: a row of 2:3 covers. */
 export function CoverShelfSkeleton({ count = 5 }: { count?: number }) {
   return (
     <div className="flex gap-3 overflow-hidden lg:grid lg:grid-cols-6 lg:gap-4">

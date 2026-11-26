@@ -1,13 +1,3 @@
-/**
- * Pure reading statistics over a user's volumes. Everything buckets in UTC
- * (date inputs are stored as UTC midnight) and takes `now` as a parameter so
- * results are deterministic and testable.
- *
- * A volume counts as a "dated read" when it is read *and* has a readDate.
- * Read volumes without a date are excluded from every metric and surfaced
- * separately via `undatedReadCount`.
- */
-
 import { monthKey } from "@/utils/date";
 
 export type ReadingVolume = {
@@ -19,11 +9,9 @@ export type ReadingVolume = {
   purchaseDate: Date | null;
   readDate: Date | null;
   coverImage: string | null;
-  /** `standalone`: the title is a single book (see lib/format.ts). */
   series: { title: string; coverImage: string | null; standalone: boolean };
 };
 
-/** A calendar year, or every year. */
 export type Period = number | "all";
 
 type DatedVolume = Pick<ReadingVolume, "owned" | "read" | "purchaseDate" | "readDate">;
@@ -39,7 +27,6 @@ function inPeriod(date: Date, period: Period) {
   return period === "all" || date.getUTCFullYear() === period;
 }
 
-/** Monday-start week number since the epoch (1970-01-01 was a Thursday). */
 function weekIndex(date: Date) {
   const days = Math.floor(date.getTime() / DAY_MS);
   return Math.floor((days + 3) / 7);
@@ -87,7 +74,6 @@ function countByYear(volumes: DatedVolume[]) {
   return counts;
 }
 
-/** Years with reads, ascending, as chart buckets. */
 function yearCounts(volumes: DatedVolume[]) {
   return [...countByYear(volumes)]
     .sort(([a], [b]) => a - b)
@@ -111,10 +97,6 @@ export function readCount(volumes: DatedVolume[], period: Period) {
   return datedReads(volumes).filter((v) => inPeriod(v.readDate, period)).length;
 }
 
-/**
- * Reads in `year` versus the previous year. For the current year the previous
- * year is cut off at the same UTC month/day, so the comparison is like for like.
- */
 export function comparisonToLastYear(volumes: DatedVolume[], year: number, now: Date) {
   const current = readCount(volumes, year);
   const isCurrentYear = year === now.getUTCFullYear();
@@ -129,7 +111,6 @@ export function comparisonToLastYear(volumes: DatedVolume[], year: number, now: 
   return { current, previous, delta: current - previous };
 }
 
-/** Busiest month of a year (or busiest year overall); earliest wins ties. */
 export function bestPeriod(volumes: DatedVolume[], period: Period) {
   const buckets =
     period === "all"
@@ -143,15 +124,10 @@ export function bestPeriod(volumes: DatedVolume[], period: Period) {
   return best;
 }
 
-/** Mean whole days from purchase to read, for reads in the period. */
 export function averageBuyToRead(volumes: DatedVolume[], period: Period) {
   return meanBuyToRead(datedReads(volumes).filter((v) => inPeriod(v.readDate, period)));
 }
 
-/**
- * Consecutive Monday-start weeks with at least one read, ending this week.
- * An empty current week doesn't break the streak — it may still be filled.
- */
 export function currentStreak(volumes: DatedVolume[], now: Date) {
   const weeks = new Set(datedReads(volumes).map((v) => weekIndex(v.readDate)));
   let week = weekIndex(now);
@@ -165,11 +141,6 @@ export function currentStreak(volumes: DatedVolume[], now: Date) {
   return streak;
 }
 
-/**
- * Owned-but-unread volumes at each month end (year view) or year end (all
- * view). The point for the current period is taken at `now`. Volumes whose
- * dates are unknown can't be placed on the timeline and are left out.
- */
 export function backlogTrend(volumes: DatedVolume[], period: Period, now: Date) {
   const tracked = volumes.filter(
     (v) => v.owned && v.purchaseDate && !(v.read && v.readDate === null),
@@ -244,9 +215,7 @@ export type GoalProgress = {
   target: number;
   read: number;
   completed: boolean;
-  /** Current year only: reads expected by today at an even pace. */
   expected?: number;
-  /** Current year only: positive = ahead of pace. */
   paceDelta?: number;
 };
 

@@ -40,10 +40,6 @@ export interface ButtonProps
     React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {
   asChild?: boolean;
-  /**
-   * When true, shows a spinner in place of any leading icon and disables the
-   * button. Keeps the label visible so the button width stays stable.
-   */
   loading?: boolean;
 }
 
@@ -59,7 +55,6 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         {...props}
       >
         {loading && <Loader2 className="animate-spin" aria-hidden="true" />}
-        {/* For icon-only buttons the spinner replaces the icon entirely. */}
         {isIconOnly && loading ? null : children}
       </button>
     );

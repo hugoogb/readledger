@@ -18,7 +18,6 @@ import { errorMessage } from "@/lib/utils";
 type UserStore = { id: string; name: string };
 
 type BookPanelProps = {
-  /** The book's single volume row. */
   volume: VolumeWithStore;
   title: string;
   retailPrice: number | null;
@@ -30,26 +29,15 @@ type Field = keyof Flags;
 
 type EditingState = {
   focusField?: "readDate";
-  /**
-   * A toast action can fire before the refreshed server props arrive; the
-   * modal then waits until `volume` shows this flag set, so it opens on fresh
-   * data (purchase date, read date) instead of the pre-toggle copy.
-   */
   waitFor?: "owned" | "read";
 } | null;
 
-/**
- * A standalone book's own panel: large owned/read toggles (the same server
- * actions as a volume cell) and the copy's details, instead of a volume grid.
- */
 export function BookPanel({ volume, title, retailPrice, stores }: BookPanelProps) {
   const router = useRouter();
   const formatCurrency = useFormatCurrency();
   const [, startTransition] = useTransition();
   const [editing, setEditing] = useState<EditingState>(null);
 
-  // Instant feedback; reconciles when the server data refreshes. Owning a
-  // book takes it off the wishlist, as the server does.
   const [flags, toggleOptimistic] = useOptimistic<Flags, Field>(
     { owned: volume.owned, read: volume.read, wishlist: volume.wishlist },
     (state, field) => {
@@ -70,14 +58,10 @@ export function BookPanel({ volume, title, retailPrice, stores }: BookPanelProps
     });
   };
 
-  // Handlers decide from the optimistic flags (what the button shows), not the
-  // server props, so a second tap before the first save lands still flips it.
   const handleOwned = () => {
     const wasOwned = flags.owned;
     run("owned", async () => {
       if (wasOwned) {
-        // Clears the purchase details but keeps "read": you can have read a
-        // book you've since given away.
         unwrap(
           await updateVolume(volume.id, {
             owned: false,
@@ -171,7 +155,6 @@ export function BookPanel({ volume, title, retailPrice, stores }: BookPanelProps
         />
       )}
 
-      {/* minmax(0,1fr) lets the toggles shrink below their label width on narrow phones. */}
       <div
         className={`grid gap-2 sm:gap-3 ${
           flags.owned
@@ -197,7 +180,6 @@ export function BookPanel({ volume, title, retailPrice, stores }: BookPanelProps
           {flags.read ? <Check /> : <BookMarked />}
           {flags.read ? "Read" : "Unread"}
         </Button>
-        {/* Wishlisting is for books you don't own yet. */}
         {!flags.owned && (
         <Button
           variant="secondary"

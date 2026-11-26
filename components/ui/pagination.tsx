@@ -37,7 +37,6 @@ export function Pagination({
   const start = (currentPage - 1) * pageSize + 1;
   const end = Math.min(currentPage * pageSize, totalCount);
 
-  // Generate page numbers to show
   const pages: (number | "...")[] = [];
   if (totalPages <= 7) {
     for (let i = 1; i <= totalPages; i++) pages.push(i);
@@ -75,8 +74,6 @@ export function Pagination({
           <ChevronLeft className="w-4 h-4" />
         </Button>
 
-        {/* Phones: a compact "3 / 9" between large arrows; the numbered
-            buttons don't fit a narrow screen at a tappable size. */}
         <span className="sm:hidden min-w-16 text-center text-sm tabular-nums text-foreground-muted">
           {currentPage} / {totalPages}
         </span>

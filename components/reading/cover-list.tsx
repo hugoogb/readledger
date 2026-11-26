@@ -8,7 +8,6 @@ export type CoverListItem = {
   title: string;
   subtitle: string;
   coverImage: string | null;
-  /** Right-aligned value, e.g. a count. */
   aside?: string;
 };
 
@@ -17,7 +16,6 @@ type CoverListProps = {
   emptyText: string;
 };
 
-/** Compact list of cover + title rows linking into series pages. */
 export function CoverList({ items, emptyText }: CoverListProps) {
   if (items.length === 0) {
     return <p className="text-sm text-foreground-muted py-6 text-center">{emptyText}</p>;

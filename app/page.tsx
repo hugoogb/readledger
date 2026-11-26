@@ -12,8 +12,6 @@ import { guidesFor } from "@/content/guides";
 import { getMangaSeries } from "@/lib/content/manga-series";
 import { REPOSITORY_URL, SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site";
 
-// Only the home page declares this: set in the root layout, it would be
-// inherited by every route and point them all at the home page.
 export const metadata: Metadata = {
   alternates: { canonical: "/" },
 };
@@ -78,9 +76,6 @@ const features = [
   },
 ];
 
-// Rendered as visible text, not just markup: each answer targets a question
-// collectors actually search for. No FAQPage schema, because Google limits
-// that rich result to government and health sites.
 const faqs = [
   {
     question: "What is ReadLedger?",
@@ -166,7 +161,6 @@ export default function Home() {
 
       <main className="px-5 pb-24 sm:px-6">
         <div className="mx-auto max-w-[1200px]">
-          {/* Hero: copy left, an illustrative shelf and ledger right. */}
           <section className="grid items-center gap-12 pt-10 sm:pt-16 lg:grid-cols-[1.05fr_1fr] lg:gap-16 lg:pt-20">
             <div>
               <FormatStrip />
@@ -195,7 +189,6 @@ export default function Home() {
               </p>
             </div>
 
-            {/* Illustrative only, not real data: shows the kind of totals the app keeps. */}
             <div className="mx-auto w-full max-w-[30rem] lg:max-w-none">
               <LandingShelf />
               <Ledger className="mt-6">
@@ -207,7 +200,6 @@ export default function Home() {
             </div>
           </section>
 
-          {/* Features */}
           <section className="mt-24 sm:mt-32">
             <h2 className={sectionHeading}>A book tracker for your whole shelf</h2>
             <p className="mt-3 max-w-[36rem] text-foreground-muted">
@@ -226,7 +218,6 @@ export default function Home() {
             </ol>
           </section>
 
-          {/* How it works */}
           <section className="mt-24 sm:mt-32">
             <h2 className={sectionHeading}>Up and running in minutes</h2>
             <ol className="mt-10 grid gap-x-10 sm:grid-cols-3">
@@ -240,7 +231,6 @@ export default function Home() {
             </ol>
           </section>
 
-          {/* Manga stays first-class: crawl paths into the checklists and manga guides. */}
           <section className="mt-24 sm:mt-32">
             <h2 className={sectionHeading}>For manga collectors</h2>
             <p className="mt-3 max-w-[40rem] text-foreground-muted">
@@ -287,7 +277,6 @@ export default function Home() {
             </div>
           </section>
 
-          {/* FAQ: native <details> keeps the answers in the HTML and needs no JS. */}
           <section className="mt-24 max-w-[48rem] sm:mt-32">
             <h2 className={sectionHeading}>Frequently asked questions</h2>
             <div className="mt-8 border-t border-border">
@@ -303,7 +292,6 @@ export default function Home() {
             </div>
           </section>
 
-          {/* Crawl paths into the general guides and the /books page. */}
           <section className="mt-24 max-w-[48rem] sm:mt-32">
             <h2 className="font-serif text-2xl font-medium">Guides for book collectors</h2>
             <p className="mt-2 text-foreground-muted">
@@ -328,7 +316,6 @@ export default function Home() {
             </div>
           </section>
 
-          {/* Closing CTA */}
           <section className="mt-24 border-t-2 border-foreground pt-10 sm:mt-32">
             <div className="grid gap-6 lg:grid-cols-[1fr_auto] lg:items-end">
               <div>

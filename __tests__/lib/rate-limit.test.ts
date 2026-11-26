@@ -9,7 +9,6 @@ describe("createThrottle", () => {
   });
   afterEach(() => vi.useRealTimers());
 
-  /** Resolve times (ms after start) of each call. */
   function track(promises: Promise<void>[]) {
     const times: (number | "rejected")[] = [];
     promises.forEach((p, i) =>
@@ -44,7 +43,6 @@ describe("createThrottle", () => {
     await expect(throttle()).rejects.toBeInstanceOf(AppError);
     await vi.advanceTimersByTimeAsync(1000);
     await Promise.all([a, b]);
-    // Next free slot is 2000 (after b at 1000), so a call now waits 1000.
     const times = track([throttle()]);
     await vi.advanceTimersByTimeAsync(1000);
     expect(times).toEqual([2000]);
@@ -63,7 +61,6 @@ describe("createThrottle", () => {
 describe("shared upstream throttles", () => {
   beforeEach(() => {
     vi.useFakeTimers();
-    // Far past any slot an earlier test reserved on these module singletons.
     vi.setSystemTime(1_000_000);
   });
   afterEach(() => vi.useRealTimers());
@@ -74,8 +71,6 @@ describe("shared upstream throttles", () => {
     return times;
   }
 
-  // Regression: the old MangaDex throttle compared against a shared "last
-  // request" time, so concurrent callers all saw it stale and fired together.
   it("spaces concurrent MangaDex callers 200ms apart (5 req/s)", async () => {
     const times = resolveTimes([throttleMangadex(), throttleMangadex(), throttleMangadex()]);
     await vi.advanceTimersByTimeAsync(1000);
@@ -91,7 +86,6 @@ describe("shared upstream throttles", () => {
     );
     await vi.advanceTimersByTimeAsync(2000);
     expect(times).toEqual([0, 334, 668, 1002]);
-    // Never more than 3 requests in any 1-second window.
     expect(times[3] - times[0]).toBeGreaterThanOrEqual(1000);
   });
 });

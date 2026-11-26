@@ -6,7 +6,6 @@ type SectionHeadingProps = {
   as?: "h2" | "h3";
 };
 
-/** Serif section title with an optional quiet link on the right. */
 export function SectionHeading({ title, action, as: Tag = "h2" }: SectionHeadingProps) {
   return (
     <div className="mb-3 flex items-baseline justify-between gap-4">

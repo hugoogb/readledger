@@ -5,7 +5,6 @@ import { ChevronDown } from "lucide-react";
 export interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
   icon?: React.ReactNode;
   error?: boolean;
-  /** Classes for the wrapper; put width constraints here so the chevron stays inside the field. */
   containerClassName?: string;
 }
 

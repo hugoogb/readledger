@@ -25,7 +25,6 @@ const CSV_HEADERS = [
   "read_date",
   "notes",
   "isbn",
-  // Last, so spreadsheets built on the older column order keep working.
   "format",
 ];
 
@@ -77,7 +76,6 @@ export async function exportCollection(format: ExportFormat) {
     return JSON.stringify(data, null, 2);
   }
 
-  // CSV format - one row per volume
   const rows: string[][] = [];
   for (const s of series) {
     for (const v of s.volumes) {
@@ -127,7 +125,6 @@ export const importCollection = withResult(async (data: string, format: ImportFo
     throw new ValidationError("No data to import");
   }
 
-  // Group rows by series
   const seriesMap = new Map<string, ImportRow[]>();
   for (const row of preview.rows) {
     const existing = seriesMap.get(row.seriesTitle) || [];
@@ -135,8 +132,6 @@ export const importCollection = withResult(async (data: string, format: ImportFo
     seriesMap.set(row.seriesTitle, existing);
   }
 
-  // One import is one transaction; large collections need more than Prisma's
-  // default 5 s for the sequential upserts.
   await prisma.$transaction(
     async (tx) => {
       const storeIds = new Map(
@@ -161,9 +156,6 @@ export const importCollection = withResult(async (data: string, format: ImportFo
       for (const [title, volumes] of seriesMap) {
         const meta = preview.seriesMeta[title];
 
-        // Match an existing series by MangaDex id or Open Library key first
-        // (titles can change), then by title. Existing series keep their own
-        // metadata, format included.
         let series =
           (meta?.mangadexId &&
             (await tx.series.findFirst({

@@ -65,7 +65,7 @@ describe("formatRelativeDate", () => {
 
 describe("calendar date helpers", () => {
   it("todayInputValue uses the local calendar day", () => {
-    const localLateNight = new Date(2026, 0, 1, 0, 30); // 00:30 local time
+    const localLateNight = new Date(2026, 0, 1, 0, 30);
     expect(todayInputValue(localLateNight)).toBe("2026-01-01");
   });
 

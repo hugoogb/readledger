@@ -42,7 +42,7 @@ describe("TTLCache", () => {
     const cache = new TTLCache<string>(10_000, 2);
     cache.set("a", "1");
     cache.set("b", "2");
-    cache.set("c", "3"); // should evict "a"
+    cache.set("c", "3");
 
     expect(cache.get("a")).toBeUndefined();
     expect(cache.get("b")).toBe("2");

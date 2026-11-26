@@ -11,11 +11,8 @@ export type DonutSlice = { key: string; count: number };
 
 type DonutChartProps = {
   data: DonutSlice[];
-  /** Label and colour per slice key. */
   config: Record<string, { label: string; color: string }>;
-  /** What a slice counts, e.g. "title" or "book". */
   unit: string;
-  /** Colour of the percentage in the tooltip. */
   percentColor: string;
   emptyLabel: string;
   emptyIcon: LucideIcon;
@@ -46,7 +43,6 @@ function SliceTooltip({ active, payload, labelOf, unit, total, percentColor }: S
   );
 }
 
-/** Share of a whole as a donut with a legend, e.g. titles per status. */
 export function DonutChart({ data, config, unit, percentColor, emptyLabel, emptyIcon }: DonutChartProps) {
   if (data.length === 0) {
     return <ChartEmpty label={emptyLabel} icon={emptyIcon} />;

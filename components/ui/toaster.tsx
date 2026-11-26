@@ -22,11 +22,9 @@ export function Toaster() {
 
   return (
     <Sonner
-      // On phones, bottom toasts cover the bottom-sheet Save/Confirm buttons.
       position={isPhone ? "top-center" : "bottom-right"}
       theme={resolvedTheme === "dark" ? "dark" : "light"}
       richColors
-      // Palette-matched toasts: paper surface, coloured text, hairline border.
       style={
         {
           "--normal-bg": "var(--background-secondary)",

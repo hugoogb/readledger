@@ -26,7 +26,6 @@ type Props = {
 type FilteredSeriesListProps = {
   statusFilter?: SeriesStatus;
   formatFilter?: Format;
-  /** Badge each card with its format (the library holds several). */
   showFormat: boolean;
   searchQuery?: string;
   sort?: SortOption;
@@ -65,7 +64,6 @@ async function FilteredSeriesList({
             ? "Try adjusting your filters"
             : "Add your first book or series"}
         </p>
-        {/* Shown at every width: on phones the header button is hidden. */}
         {!(statusFilter || formatFilter || searchQuery) && (
           <AddBookButton className="mt-5" label="Add your first book" />
         )}
@@ -99,7 +97,6 @@ export default async function SeriesPage({ searchParams }: Props) {
     searchParams,
     getLibraryFormats(),
   ]);
-  // URL params are user-editable: ignore values we don't recognise.
   const statusFilter = (Object.values(SeriesStatus) as string[]).includes(status ?? "")
     ? (status as SeriesStatus)
     : undefined;
@@ -114,7 +111,6 @@ export default async function SeriesPage({ searchParams }: Props) {
 
   return (
     <div className="mx-auto max-w-[1200px] p-4 lg:p-8">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="font-serif text-3xl font-medium">Library</h1>
@@ -122,11 +118,9 @@ export default async function SeriesPage({ searchParams }: Props) {
             Everything on your shelves
           </p>
         </div>
-        {/* Phones add from the tab bar. */}
         <AddBookButton className="hidden lg:inline-flex" />
       </div>
 
-      {/* Filters */}
       <div className="mb-8">
         <Suspense fallback={null}>
           <SeriesFilters formats={formats} />

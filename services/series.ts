@@ -15,7 +15,6 @@ export type VolumeInput = {
   title?: string;
   coverImage?: string | null;
   isbn?: string | null;
-  /** Created already owned (bought today), e.g. the volume that was just scanned. */
   owned?: boolean;
 };
 
@@ -30,14 +29,9 @@ export type LibraryQuery = {
 
 const CLEARABLE_FIELDS = ["author", "coverImage", "description"] as const;
 
-// A one-volume title renders as a standalone book, which needs its volume row.
 const needsStandaloneVolume = (totalVolumes: number | null | undefined, volumeCount: number) =>
   totalVolumes === 1 && volumeCount === 0;
 
-/**
- * Creates a title with its volume rows. A one-volume title with no rows given
- * gets volume 1, so it can render as a standalone book.
- */
 export async function createSeries(
   userId: string,
   validated: CreateSeriesInput,
@@ -88,15 +82,11 @@ export async function updateSeries(userId: string, id: string, validated: Update
     where: { id },
     data: {
       ...blankToNull(validated, CLEARABLE_FIELDS),
-      // undefined = not sent (leave as is); "" or null = clear it
       publisherId:
         validated.publisherId === undefined ? undefined : validated.publisherId || null,
     },
   });
 
-  // If totalVolumes increased, create new volume entries. A one-volume title
-  // also gets its volume row if it has none (older data), so it can render as
-  // a standalone book.
   if (
     (validated.totalVolumes && validated.totalVolumes > (series.totalVolumes || 0)) ||
     needsStandaloneVolume(validated.totalVolumes, series.volumes.length)
@@ -155,7 +145,6 @@ export async function getSeries(userId: string, id: string) {
   });
 }
 
-// Only what the series grid and its sorts read.
 const seriesListSelect = {
   id: true,
   title: true,
@@ -188,7 +177,6 @@ export async function getAllSeries(
     orderBy,
   });
 
-  // Client-side sort for computed fields
   if (sort === "completion") {
     series.sort((a, b) => {
       const aTotal = a.totalVolumes || a.volumes.length;
@@ -208,7 +196,6 @@ export async function getAllSeries(
   return series;
 }
 
-/** The formats present in a user's library, in enum order. */
 export async function getLibraryFormats(userId: string): Promise<Format[]> {
   const rows = await prisma.series.findMany({
     where: { userId },
@@ -259,7 +246,6 @@ export async function getExistingOpenLibraryKeys(userId: string, keys: string[])
   return existing.map((s) => s.openLibraryKey).filter((key): key is string => key !== null);
 }
 
-/** Titles per format in a user's library; formats they don't have are absent. */
 export async function getFormatCounts(userId: string): Promise<Partial<Record<Format, number>>> {
   const rows = await prisma.series.groupBy({
     by: ["format"],

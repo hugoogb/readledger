@@ -28,7 +28,6 @@ function FormatTooltip({ active, payload, label }: BaseTooltipProps) {
   );
 }
 
-/** Owned books per format, as horizontal bars (labels stay readable on phones). */
 export function FormatBreakdown({ data }: FormatBreakdownProps) {
   if (data.every((d) => d.count === 0)) {
     return <ChartEmpty label="owned books" icon={Library} />;

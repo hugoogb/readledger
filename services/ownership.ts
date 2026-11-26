@@ -1,9 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { NotFoundError } from "@/lib/errors";
 
-// Publishers and stores are per-user. Reject ids belonging to someone else so
-// a series/volume can't be linked to (and leak the name of) another user's row.
-
 export async function assertOwnedPublisher(userId: string, publisherId: string | null | undefined) {
   if (!publisherId) return;
   const found = await prisma.publisher.findFirst({

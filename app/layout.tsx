@@ -13,8 +13,6 @@ const newsreader = Newsreader({
   style: ["normal", "italic"],
 });
 
-// Self-hosted (latin subset from Fontsource, OFL): Turbopack's next/font/google
-// can't resolve IBM Plex Sans's font file URLs.
 const plexSans = localFont({
   variable: "--font-plex-sans",
   src: [
@@ -47,7 +45,6 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      // Google's search-result favicon needs a square PNG, a multiple of 48px.
       { url: "/icon.svg", type: "image/svg+xml" },
       { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
     ],
@@ -60,10 +57,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  // Lets the page extend under the iPhone home indicator, so the tab bar's
-  // env(safe-area-inset-bottom) padding takes effect.
   viewportFit: "cover",
-  // Matches --background in globals.css, so the browser chrome blends in.
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#f6f2e9" },
     { media: "(prefers-color-scheme: dark)", color: "#17140f" },

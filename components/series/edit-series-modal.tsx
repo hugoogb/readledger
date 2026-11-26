@@ -24,11 +24,6 @@ type Publisher = { id: string; name: string };
 type EditSeriesModalProps = {
   series: Series;
   publishers?: Publisher[];
-  /**
-   * "icon" (default): the gear button. "seriesHint": a "Part of a series?"
-   * link for a single book that may really be a partly imported series; it
-   * opens the same form with total volumes focused.
-   */
   variant?: "icon" | "seriesHint";
 };
 
@@ -49,14 +44,12 @@ export function EditSeriesModal({ series, publishers = [], variant = "icon" }: E
     if (!isOpen) return;
     reset(getSeriesFormDefaults(series));
     if (variant !== "seriesHint") return;
-    // After the modal's focus trap has focused its first field.
     const timer = setTimeout(() => setFocus("totalVolumes", { shouldSelect: true }), 0);
     return () => clearTimeout(timer);
   }, [isOpen, series, reset, setFocus, variant]);
 
   const onSubmit: SubmitHandler<SeriesSchema> = async (data) => {
     try {
-      // Validated by the form; blanks clear the field (see services/series).
       unwrap(await updateSeries(series.id, data));
       toast.success(`${series.title} updated`);
       setIsOpen(false);

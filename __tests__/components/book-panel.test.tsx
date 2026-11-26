@@ -45,7 +45,6 @@ function makeBook(overrides: Partial<VolumeWithStore> = {}): VolumeWithStore {
   };
 }
 
-// Server actions that never settle, so taps land while the first is pending.
 const pending = () => new Promise(() => {});
 
 beforeEach(() => vi.clearAllMocks());

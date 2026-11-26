@@ -43,16 +43,12 @@ export function CreatableSelect({
     if (!trimmed || isSubmitting) return;
 
     setIsSubmitting(true);
-    try {
-      const created = await onCreate(trimmed);
-      onChange(created.id);
-      setNewName("");
-      setIsCreating(false);
-    } catch {
-      // error handling is done by the caller via toast
-    } finally {
-      setIsSubmitting(false);
-    }
+    const created = await onCreate(trimmed).catch(() => null);
+    setIsSubmitting(false);
+    if (!created) return;
+    onChange(created.id);
+    setNewName("");
+    setIsCreating(false);
   };
 
   if (isCreating) {

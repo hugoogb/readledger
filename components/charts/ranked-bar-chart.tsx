@@ -28,7 +28,6 @@ function RankedTooltip({ active, payload, label }: BaseTooltipProps) {
   );
 }
 
-/** Books per store or publisher, top ten, as horizontal bars. */
 function RankedBarChart({
   data,
   emptyLabel,

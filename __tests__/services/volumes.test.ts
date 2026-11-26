@@ -65,8 +65,6 @@ function makeVolumeWithSeries(volOverrides = {}, seriesOverrides = {}) {
   };
 }
 
-// --- createVolume ---
-
 describe("createVolume", () => {
   it("throws NotFoundError if series is not owned by user", async () => {
     prismaMock.series.findFirst.mockResolvedValue(null);
@@ -116,8 +114,6 @@ describe("createVolume", () => {
     expect(createCall.data.readDate).toBeInstanceOf(Date);
   });
 });
-
-// --- updateVolume ---
 
 describe("updateVolume", () => {
   it("updates an owned volume", async () => {
@@ -231,8 +227,6 @@ describe("updateVolume", () => {
   });
 });
 
-// --- deleteVolume ---
-
 describe("deleteVolume", () => {
   it("deletes volume and returns seriesId", async () => {
     prismaMock.volume.findFirst.mockResolvedValue(makeVolumeWithSeries());
@@ -254,8 +248,6 @@ describe("deleteVolume", () => {
     );
   });
 });
-
-// --- toggleVolumeRead ---
 
 describe("toggleVolumeRead", () => {
   it("toggles read on: sets readDate", async () => {
@@ -300,8 +292,6 @@ describe("toggleVolumeRead", () => {
     expect(result).toEqual({ updated, seriesId: "series-1" });
   });
 });
-
-// --- computeVolumeStats ---
 
 describe("computeVolumeStats", () => {
   it("calculates all stats correctly", () => {
@@ -349,8 +339,6 @@ describe("computeVolumeStats", () => {
   });
 });
 
-// --- bulkMarkOwned ---
-
 describe("bulkMarkOwned", () => {
   it("throws for unauthorized volumes", async () => {
     prismaMock.volume.findMany.mockResolvedValue([
@@ -362,8 +350,6 @@ describe("bulkMarkOwned", () => {
     ).rejects.toThrow("Some volumes not found");
   });
 });
-
-// --- bulkSetRead ---
 
 describe("bulkSetRead", () => {
   it("only updates owned volumes", async () => {
@@ -397,8 +383,6 @@ describe("bulkSetRead", () => {
     expect(call.data.readDate).toBe(readDate);
   });
 });
-
-// --- status sync for standalone books ---
 
 const book = (status: string) => ({ status, totalVolumes: 1, _count: { volumes: 1 } });
 

@@ -15,27 +15,22 @@ export type { VolumeMatch } from "@/services/isbn-volume";
 
 const volumeNumberSchema = z.number().int().min(1).max(MAX_VOLUMES);
 
-// Resolving can call Open Library, Google Books and MangaDex, so it shares
-// one per-user budget with marking.
 function limit(userId: string) {
   checkRateLimit(`isbn-volume:${userId}`, 30, 60_000);
 }
 
-/** Bare ISBN-13 for a valid ISBN-10/13 query; throws otherwise. */
 function isbnInput(isbn: string): string {
   const isbn13 = isbn13FromQuery(isbn);
   if (!isbn13) throw new ValidationError("Not a valid ISBN");
   return isbn13;
 }
 
-/** What a scanned ISBN most likely is in the library; null for a plain book. */
 export const resolveIsbnVolume = withResult(async (isbn: string) => {
   const user = await requireUser();
   limit(user.id);
   return isbnVolumeService.resolveIsbnVolume(user.id, isbnInput(isbn));
 });
 
-/** Marks a series volume owned and stores the scanned ISBN on it. */
 export const markVolumeOwnedByIsbn = withResult(
   async (seriesId: string, volumeNumber: number, isbn: string) => {
     const user = await requireUser();
@@ -53,7 +48,6 @@ export const markVolumeOwnedByIsbn = withResult(
   },
 );
 
-/** The user's series a scanned volume can be filed under (no standalones). */
 export const listMultiVolumeSeries = withResult(async () => {
   const user = await requireUser();
   return isbnVolumeService.listMultiVolumeSeries(user.id);

@@ -25,11 +25,6 @@ type VolumeMatchCardProps = {
 
 type SeriesOption = { id: string; title: string };
 
-/**
- * Shown above the book result for an ISBN query: "this looks like Vol. N of
- * <series>". Nothing changes until the user confirms; the volume number and
- * the series can be corrected first.
- */
 export function VolumeMatchCard({ isbn, onStartNewSeries, onDone }: VolumeMatchCardProps) {
   const router = useRouter();
   const [match, setMatch] = useState<VolumeMatch | null | undefined>(undefined);
@@ -81,10 +76,8 @@ export function VolumeMatchCard({ isbn, onStartNewSeries, onDone }: VolumeMatchC
     }
   };
 
-  // The ISBN is already on this volume: nothing to guess, so no stepper or picker.
   const known = match.kind === "existing" && match.byIsbn;
   const alreadyOwned = known && match.owned;
-  // A title guess landed on a volume the user owns: likely another volume or edition.
   const ownedGuess =
     match.kind === "existing" &&
     !match.byIsbn &&

@@ -55,7 +55,7 @@ describe("issueOtp", () => {
     const code = await issueOtp(EMAIL);
 
     expect(code).toMatch(/^\d{6}$/);
-    expect(prismaMock.$executeRaw).toHaveBeenCalled(); // advisory lock
+    expect(prismaMock.$executeRaw).toHaveBeenCalled();
     expect(prismaMock.otpCode.updateMany).toHaveBeenCalledWith({
       where: { email: EMAIL, consumedAt: null },
       data: { consumedAt: NOW },

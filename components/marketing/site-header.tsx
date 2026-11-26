@@ -13,7 +13,6 @@ export function SiteHeader() {
           <Logo size={28} />
         </Link>
         <div className="flex items-center gap-1 sm:gap-3">
-          {/* On phones these live in the footer, keeping the header on one line. */}
           <Link href="/books" className={`hidden md:block ${linkClass}`}>
             Books
           </Link>
@@ -23,7 +22,6 @@ export function SiteHeader() {
           <Link href="/guides" className={`hidden md:block ${linkClass}`}>
             Guides
           </Link>
-          {/* Below 360px only the button fits; it leads to the same sign-in page. */}
           <Link href="/login" className={`max-[359px]:hidden ${linkClass} text-foreground`}>
             Sign in
           </Link>

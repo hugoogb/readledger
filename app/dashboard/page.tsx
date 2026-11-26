@@ -222,8 +222,6 @@ export default async function DashboardPage() {
       <div className="mx-auto max-w-[1200px]">
         <Greeting name={user?.name ?? null} />
 
-        {/* Phones read top to bottom: ledger, shelves, status. lg: two columns,
-            ledger and status on the left, shelves on the right. */}
         <div className="mt-6 grid grid-cols-[minmax(0,1fr)] gap-10 lg:grid-cols-[minmax(0,380px)_1fr] lg:grid-rows-[auto_1fr] lg:gap-x-12 lg:gap-y-10">
           <div className="lg:col-start-1 lg:row-start-1">
             <Suspense fallback={<LedgerSkeleton rows={5} />}>

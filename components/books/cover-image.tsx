@@ -5,16 +5,11 @@ import { cn } from "@/lib/utils";
 type CoverImageProps = {
   src: string | null;
   title: string;
-  /** next/image sizes for the rendered width. */
   sizes: string;
   className?: string;
   priority?: boolean;
 };
 
-/**
- * A 2:3 book cover with a spine shadow. Without an image it draws a cloth
- * cover in a colour picked from the title, with the title set on it.
- */
 export function CoverImage({ src, title, sizes, className, priority }: CoverImageProps) {
   return (
     <div
@@ -26,7 +21,6 @@ export function CoverImage({ src, title, sizes, className, priority }: CoverImag
       {src ? (
         <>
           <Image src={src} alt="" fill sizes={sizes} priority={priority} className="object-cover" />
-          {/* Keep the spine shadow above the image. */}
           <span className="pointer-events-none absolute inset-0 shadow-[inset_3px_0_0_rgba(0,0,0,0.18)]" />
         </>
       ) : (

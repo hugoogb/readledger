@@ -5,25 +5,18 @@ export const formatDateForInput = (date: Date | string | null | undefined) => {
   return d.toISOString().split("T")[0];
 };
 
-/**
- * Format a "YYYY-MM" string to a full month label, e.g. "January 2024"
- */
 export function formatChartMonth(month: string): string {
   const [year, m] = month.split("-");
   const date = new Date(Number(year), Number(m) - 1);
   return date.toLocaleDateString("en-US", { month: "long", year: "numeric" });
 }
 
-/**
- * Format a "YYYY-MM" string to a short label for axis ticks, e.g. "Jan '24"
- */
 export function formatChartMonthShort(month: string): string {
   const [year, m] = month.split("-");
   const date = new Date(Number(year), Number(m) - 1);
   return date.toLocaleDateString("en-US", { month: "short", year: "2-digit" });
 }
 
-/** Short calendar date in UTC, e.g. "Jan 8, 2026". */
 export function formatShortDate(date: Date): string {
   return date.toLocaleDateString("en-US", {
     month: "short",
@@ -33,10 +26,6 @@ export function formatShortDate(date: Date): string {
   });
 }
 
-/**
- * Coarse relative time from `now`, e.g. "today", "3 days ago",
- * "2 weeks ago", "14 months ago", "2 years ago".
- */
 export function formatRelativeDate(date: Date, now: Date = new Date()): string {
   const days = Math.floor((now.getTime() - date.getTime()) / 86_400_000);
   const rtf = new Intl.RelativeTimeFormat("en-US", { numeric: "auto" });
@@ -48,12 +37,6 @@ export function formatRelativeDate(date: Date, now: Date = new Date()): string {
   return rtf.format(-Math.floor(days / 365), "year");
 }
 
-/**
- * Calendar dates (purchase/read dates) are stored as UTC midnight of the day,
- * which is what `new Date("YYYY-MM-DD")` from a date input produces.
- */
-
-/** Today in the viewer's local timezone as "YYYY-MM-DD", for date inputs. */
 export function todayInputValue(now: Date = new Date()): string {
   const y = now.getFullYear();
   const m = String(now.getMonth() + 1).padStart(2, "0");
@@ -61,19 +44,16 @@ export function todayInputValue(now: Date = new Date()): string {
   return `${y}-${m}-${d}`;
 }
 
-/** UTC midnight of `date`'s UTC calendar day. */
 export function startOfUtcDay(date: Date = new Date()): Date {
   return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
 }
 
-/** Parse a strict "YYYY-MM-DD" string into a stored date, or null if invalid. */
 export function parseDateInput(value: string | null | undefined): Date | null {
   if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
   const d = new Date(value);
   return isNaN(d.getTime()) || formatDateForInput(d) !== value ? null : d;
 }
 
-/** "YYYY-MM" of `date`'s UTC month, the bucket key monthly charts use. */
 export function monthKey(date: Date): string {
   return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}`;
 }

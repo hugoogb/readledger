@@ -6,12 +6,8 @@ export const SESSION_REFRESH_AFTER_MS = 24 * 60 * 60_000;
 
 const isProduction = process.env.NODE_ENV === "production";
 
-// `__Host-` requires Secure, Path=/ and no Domain, so sibling subdomains
-// (e.g. staging) cannot set or overwrite it. Browsers reject it over plain
-// http, hence the unprefixed name in development.
 export const SESSION_COOKIE = isProduction ? "__Host-rl_session" : "rl_session";
 
-// 32 random bytes encoded as base64url.
 const TOKEN_PATTERN = /^[A-Za-z0-9_-]{43}$/;
 
 export function sessionCookieOptions(expiresAt: Date) {
@@ -24,11 +20,6 @@ export function sessionCookieOptions(expiresAt: Date) {
   };
 }
 
-/**
- * Options for expiring the cookie. A `__Host-` cookie can only be overwritten
- * by a Set-Cookie carrying the same Secure/Path attributes, so a bare
- * delete-by-name would be ignored by browsers in production.
- */
 export function clearedSessionCookieOptions() {
   return { ...sessionCookieOptions(new Date(0)), maxAge: 0 };
 }
@@ -53,11 +44,6 @@ export async function createSession(userId: string, userAgent?: string | null) {
   return { token, expiresAt };
 }
 
-/**
- * Resolves a session token to its user. With `refresh`, sessions not seen for
- * a day get their expiry pushed out (sliding expiration); the caller must then
- * re-set the cookie with the returned `expiresAt`.
- */
 export async function validateSession(
   token: string,
   { refresh = false }: { refresh?: boolean } = {},

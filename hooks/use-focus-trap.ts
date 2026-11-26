@@ -12,7 +12,6 @@ export function useFocusTrap(isActive: boolean) {
     const container = containerRef.current;
     const previouslyFocused = document.activeElement as HTMLElement;
 
-    // Focus first focusable element
     const focusableElements = container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR);
     if (focusableElements.length > 0) {
       focusableElements[0].focus();

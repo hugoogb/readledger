@@ -1,11 +1,5 @@
 type PricedVolume = { owned: boolean; pricePaid: number | null };
 
-/**
- * Savings versus retail, counted only over volumes where both prices are
- * known. An owned volume with no recorded price (or a series with no retail
- * price) is left out entirely, rather than counting as 100% saved or as pure
- * overspend.
- */
 export function comparableSavings(
   volumes: PricedVolume[],
   retailPrice: number | null,
