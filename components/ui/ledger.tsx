@@ -3,26 +3,22 @@ import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { DoubleRule } from "./double-rule";
 
-/** A column of ledger rows separated by hairlines. */
 export function Ledger({ children, className }: { children: ReactNode; className?: string }) {
   return <div className={cn("border-t border-border", className)}>{children}</div>;
 }
 
 type LedgerRowProps = {
   label: ReactNode;
-  /** Muted aside after the label, e.g. "· 23 missing". */
   note?: ReactNode;
   value: ReactNode;
   href?: string;
 };
 
-/** Label · dotted leader · figure. The label truncates; the figure never shrinks. */
 export function LedgerRow({ label, note, value, href }: LedgerRowProps) {
   const content = (
     <>
       <span className="min-w-0">
         <span className="block truncate sm:inline">{label}</span>
-        {/* Under the label on phones, inline from sm; never truncated. */}
         {note && (
           <span className="block text-xs text-foreground-muted sm:ml-1.5 sm:inline">
             <span aria-hidden="true" className="hidden sm:inline">
@@ -50,7 +46,6 @@ export function LedgerRow({ label, note, value, href }: LedgerRowProps) {
   );
 }
 
-/** The closing total: small caps label, larger figure, then the double rule. */
 export function LedgerTotal({ label, value }: { label: ReactNode; value: ReactNode }) {
   return (
     <div>

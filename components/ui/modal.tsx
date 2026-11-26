@@ -11,6 +11,7 @@ type ModalProps = {
   title: string;
   children: React.ReactNode;
   maxWidth?: "sm" | "md" | "lg" | "xl";
+  initialFocus?: string;
 };
 
 const maxWidthClasses = {
@@ -26,10 +27,11 @@ export function Modal({
   title,
   children,
   maxWidth = "lg",
+  initialFocus,
 }: ModalProps) {
   const [mounted, setMounted] = useState(false);
   const titleId = useId();
-  const focusTrapRef = useFocusTrap(isOpen && mounted);
+  const focusTrapRef = useFocusTrap(isOpen && mounted, initialFocus);
 
   useEffect(() => {
     setTimeout(() => {
@@ -69,22 +71,15 @@ export function Modal({
       onKeyDown={handleKeyDown}
       ref={focusTrapRef}
     >
-      {/* Backdrop */}
       <div
         className="fixed inset-0 bg-[#1d1b18]/55"
         onClick={onClose}
         aria-hidden="true"
       />
 
-      {/* Modal — full-width bottom sheet on mobile, centered card on sm+.
-          Flex column: fixed header + single vertically-scrolling body. The
-          panel clips its own overflow so neither axis can spawn a scrollbar
-          on the panel itself (`overflow-y-auto` alone would force
-          `overflow-x: auto`, producing a stray horizontal scrollbar). */}
       <div
         className={`relative flex w-full ${maxWidthClasses[maxWidth]} flex-col bg-background-secondary border border-border max-h-[92dvh] sm:max-h-[90dvh] overflow-hidden rounded-t-lg sm:rounded-lg shadow-2xl animate-slide-up sm:animate-scale-in`}
       >
-        {/* Header (with mobile drag-handle affordance) */}
         <div className="shrink-0 bg-background-secondary border-b border-border/60">
           <div className="sm:hidden flex justify-center pt-3 pb-1">
             <span
@@ -108,8 +103,6 @@ export function Modal({
             </button>
           </div>
         </div>
-        {/* Scrollable body — vertical only; horizontal overflow is clipped so
-            wide children never produce a horizontal scrollbar. */}
         <div className="flex-1 overflow-y-auto overflow-x-hidden px-6 pt-5 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
           {children}
         </div>

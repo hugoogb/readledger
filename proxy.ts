@@ -11,17 +11,14 @@ const securityHeaders: Record<string, string> = {
   "X-Frame-Options": "DENY",
   "X-Content-Type-Options": "nosniff",
   "Referrer-Policy": "strict-origin-when-cross-origin",
-  // camera=(self): the add modal's barcode scanner. Still blocked for embeds.
   "Permissions-Policy": "camera=(self), microphone=(), geolocation=()",
   "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
   "Content-Security-Policy": [
     "default-src 'self'",
-    // Next.js only needs eval in development (React Refresh).
     process.env.NODE_ENV === "production"
       ? "script-src 'self' 'unsafe-inline'"
       : "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
     "style-src 'self' 'unsafe-inline'",
-    // Covers are served through next/image (/_next/image), so same-origin.
     "img-src 'self' data:",
     "font-src 'self'",
     "connect-src 'self'",
@@ -30,8 +27,6 @@ const securityHeaders: Record<string, string> = {
 };
 
 const protectedRoutes = ["/dashboard"];
-// The landing and auth pages only serve logged-out visitors; a signed-in user
-// opening them should land in the app instead.
 const publicEntryRoutes = ["/", "/login"];
 
 type SessionState =
@@ -39,7 +34,6 @@ type SessionState =
   | { status: "invalid" }
   | { status: "valid"; token: string; refreshedExpiresAt: Date | null }
   | { status: "unknown" }
-  // Route doesn't depend on auth, so the session wasn't looked up.
   | { status: "skipped" };
 
 async function resolveSession(request: NextRequest): Promise<SessionState> {
@@ -55,8 +49,6 @@ async function resolveSession(request: NextRequest): Promise<SessionState> {
       refreshedExpiresAt: session.refreshed ? session.expiresAt : null,
     };
   } catch (error) {
-    // Database unreachable: don't log the user out over an outage. Pages call
-    // requireUser() and will surface the error themselves.
     logger.error("Session check failed in proxy", { error: String(error) });
     return { status: "unknown" };
   }
@@ -80,13 +72,10 @@ function withCookies(response: NextResponse, request: NextRequest, session: Sess
 }
 
 export async function proxy(request: NextRequest) {
-  // www -> apex is a Cloudflare Redirect Rule on the readledger.app zone, so
-  // www requests never reach this server.
   const { pathname } = request.nextUrl;
   const isProtectedRoute = protectedRoutes.some((route) => pathname.startsWith(route));
   const isPublicEntryRoute = publicEntryRoutes.includes(pathname);
 
-  // Only routes that redirect on auth state need the session (a DB lookup).
   const session: SessionState =
     isProtectedRoute || isPublicEntryRoute
       ? await resolveSession(request)
@@ -109,14 +98,6 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - health (container health check)
-     * - public files (public folder)
-     */
     "/((?!_next/static|_next/image|favicon.ico|health|manifest.webmanifest|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
   ],
 };

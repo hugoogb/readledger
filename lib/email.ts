@@ -5,7 +5,6 @@ const BREVO_ENDPOINT = "https://api.brevo.com/v3/smtp/email";
 
 function otpEmail(code: string) {
   const minutes = OTP_TTL_MS / 60_000;
-  // Code first in the subject so it is readable from the phone notification.
   const subject = `${code} is your ReadLedger code`;
   const text = [
     `Your ReadLedger sign-in code is: ${code}`,
@@ -36,7 +35,6 @@ export async function sendOtpEmail(to: string, code: string): Promise<void> {
 
   if (!apiKey) {
     if (process.env.NODE_ENV !== "production") {
-      // Local development without an email provider: surface the code in logs.
       logger.info("OTP email (dev, not sent)", { to, code });
       return;
     }
@@ -69,8 +67,6 @@ export async function sendOtpEmail(to: string, code: string): Promise<void> {
     throw new Error(`Brevo responded ${response.status}: ${body.slice(0, 300)}`);
   }
 
-  // The message ID is what Brevo's logs are searchable by; without this a
-  // successful send leaves no trace on our side.
   const { messageId } = (await response.json().catch(() => ({}))) as {
     messageId?: string;
   };

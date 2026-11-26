@@ -14,8 +14,6 @@ export type UpdateVolumeInput = Partial<VolumeSchema>;
 
 const CLEARABLE_FIELDS = ["title", "coverImage", "notes"] as const;
 
-// What a volume lookup needs from its title: ownership plus the inputs of the
-// standalone status sync.
 const seriesForSync = {
   select: {
     userId: true,
@@ -27,11 +25,6 @@ const seriesForSync = {
 
 type SyncSeries = { status: SeriesStatus; totalVolumes: number | null; _count: { volumes: number } };
 
-/**
- * Standalone books keep their status in step with being read: reading one
- * completes it, un-reading a completed one reopens it. Series are untouched.
- * Runs inside the caller's transaction so every read change gets it.
- */
 async function syncStandaloneStatus(
   tx: Prisma.TransactionClient,
   seriesId: string,
@@ -88,8 +81,6 @@ export async function updateVolume(userId: string, id: string, validated: Update
       where: { id },
       data: {
         ...blankToNull(validated, CLEARABLE_FIELDS),
-        // Owning a volume takes it off the wishlist (as bulkMarkOwned does), so
-        // removing it from the collection later doesn't resurrect the wish.
         ...(validated.owned === true && { wishlist: false }),
         storeId: validated.storeId !== undefined ? (validated.storeId || null) : undefined,
         readDate: resolveReadDate(validated, volume.readDate),
@@ -102,9 +93,6 @@ export async function updateVolume(userId: string, id: string, validated: Update
   });
 }
 
-// Keep readDate consistent with the read flag: unread volumes have no date,
-// and a read volume always has one (an explicit date wins, then the stored
-// one, then today). `undefined` leaves the column untouched.
 function resolveReadDate(
   input: Pick<UpdateVolumeInput, "read" | "readDate">,
   current: Date | null,
@@ -133,8 +121,6 @@ export async function deleteVolume(userId: string, id: string) {
   return volume.seriesId;
 }
 
-// `today` is the client's local calendar date ("YYYY-MM-DD"); the server runs
-// in UTC and would otherwise date late-night reads to the previous day.
 export async function toggleVolumeRead(userId: string, id: string, today?: string) {
   const volume = await prisma.volume.findFirst({
     where: { id },
@@ -198,10 +184,6 @@ export function computeVolumeStats(series: {
   };
 }
 
-/**
- * The volumes behind `volumeIds` with their series' sync fields, and the
- * series they belong to. Throws unless every id is one of the user's volumes.
- */
 async function findOwnedVolumes(userId: string, volumeIds: string[]) {
   const volumes = await prisma.volume.findMany({
     where: { id: { in: volumeIds } },
@@ -215,7 +197,6 @@ async function findOwnedVolumes(userId: string, volumeIds: string[]) {
   return { volumes, seriesIds: new Set(volumes.map((v) => v.seriesId)) };
 }
 
-/** `volumeIds` is validated by the action (volumeIdsSchema: 1 to MAX_BULK_SIZE ids). */
 export async function bulkMarkOwned(
   userId: string,
   volumeIds: string[],
@@ -261,7 +242,6 @@ export async function bulkSetRead(
         readDate: readDate ?? startOfUtcDay(),
       },
     });
-    // Only the volumes this update actually marks read change their title.
     for (const volume of volumes) {
       if (volume.owned && !volume.read) {
         await syncStandaloneStatus(tx, volume.seriesId, volume.series, true);

@@ -49,7 +49,6 @@ export function VolumeGrid({
   stores,
 }: VolumeGridProps) {
   const [, startTransition] = useTransition();
-  // One modal for the whole grid, so a toast action can open any volume.
   const [editing, setEditing] = useState<EditingState>(null);
 
   const openVolume = useCallback(
@@ -57,9 +56,6 @@ export function VolumeGrid({
     [],
   );
 
-  // Optimistic layer over the server-provided volumes. Both this reducer and
-  // the server action toggle the boolean, so the UI updates instantly on click
-  // and reconciles automatically when revalidatePath refreshes the page data.
   const [optimisticVolumes, applyOptimistic] = useOptimistic(
     volumes,
     (state, action: OptimisticAction) =>

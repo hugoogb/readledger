@@ -21,17 +21,8 @@ type Publisher = { id: string; name: string };
 
 type SeriesFormFieldsProps = {
   publishers?: Publisher[];
-  /**
-   * "single" hides the series-only fields (total volumes, still publishing);
-   * the caller keeps totalVolumes at 1. Omitted = show everything.
-   */
   kind?: "single" | "series";
-  /** Rendered between Format and Title, e.g. the single/series switch. */
   afterFormat?: React.ReactNode;
-  /**
-   * Called with a publisher created from the dropdown. Callers that hold the
-   * list in state (the add modal) must add it, or the new option won't show.
-   */
   onPublisherCreated?: (publisher: Publisher) => void;
 };
 
@@ -119,7 +110,7 @@ export function SeriesFormFields({
                 return pub;
               } catch (err) {
                 toast.error(errorMessage(err, "Failed to create publisher"));
-                throw err;
+                return null;
               }
             }}
             placeholder="No publisher"

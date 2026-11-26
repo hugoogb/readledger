@@ -8,7 +8,6 @@ export function JsonLd({ data }: { data: object }) {
   return (
     <script
       type="application/ld+json"
-      // Our own static data, but "<" is escaped so it can't close the script tag.
       dangerouslySetInnerHTML={{ __html: JSON.stringify(data).replace(/</g, "\\u003c") }}
     />
   );
@@ -16,7 +15,6 @@ export function JsonLd({ data }: { data: object }) {
 
 export type Crumb = { name: string; href: string };
 
-/** Visible breadcrumb trail plus its BreadcrumbList markup. */
 export function Breadcrumbs({ items }: { items: Crumb[] }) {
   return (
     <>
@@ -54,7 +52,6 @@ export function Breadcrumbs({ items }: { items: Crumb[] }) {
   );
 }
 
-/** Long-form text styling, since the project doesn't use the typography plugin. */
 export function Prose({ children }: { children: React.ReactNode }) {
   return (
     <div className="max-w-[40rem] text-[1.0625rem] text-foreground/85 leading-relaxed [&>p]:mt-4 [&_h2]:mt-12 [&_h2]:font-serif [&_h2]:text-[1.75rem] [&_h2]:font-medium [&_h2]:leading-tight [&_h2]:text-foreground [&_h3]:mt-8 [&_h3]:font-serif [&_h3]:text-xl [&_h3]:font-medium [&_h3]:text-foreground [&_a]:text-foreground [&_a]:underline [&_a]:underline-offset-4 [&_a]:decoration-border-hover hover:[&_a]:decoration-foreground [&_ul]:mt-4 [&_ul]:list-disc [&_ul]:space-y-2 [&_ul]:pl-5 [&_ol]:mt-4 [&_ol]:list-decimal [&_ol]:space-y-2 [&_ol]:pl-5 [&_strong]:text-foreground">
@@ -63,7 +60,6 @@ export function Prose({ children }: { children: React.ReactNode }) {
   );
 }
 
-/** Scrolls inside its own box so a wide table never widens the phone viewport. */
 export function DataTable({ head, rows }: { head: string[]; rows: React.ReactNode[][] }) {
   return (
     <div className="mt-6 overflow-x-auto border-y border-border">

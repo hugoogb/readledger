@@ -1,10 +1,5 @@
 import data from "./manga-series.json";
 
-/**
- * Hand-picked series with public checklist pages. Counts are a committed
- * snapshot from MangaDex (see scripts/refresh-manga-series.mjs); `note` is
- * written by hand.
- */
 export type MangaSeries = {
   slug: string;
   title: string;
@@ -14,7 +9,6 @@ export type MangaSeries = {
   demographic: string | null;
   status: string;
   volumes: number;
-  /** False means "at least this many": the series may have more volumes. */
   exact: boolean;
   note: string;
 };
@@ -41,12 +35,9 @@ export function statusLabel(series: MangaSeries): string {
   return STATUS_LABELS[series.status] ?? series.status;
 }
 
-/** Same demographic first, so the links stay relevant to the reader. */
 export function relatedSeries(series: MangaSeries, count = 4): MangaSeries[] {
   const others = mangaSeries.filter((other) => other.slug !== series.slug);
   const start = mangaSeries.indexOf(series);
-  // Rotate from this series' position so that link equity spreads across the
-  // list instead of always pointing at the alphabetically first titles.
   const rotated = [...others.slice(start), ...others.slice(0, start)];
   const same = rotated.filter((other) => other.demographic === series.demographic);
   const rest = rotated.filter((other) => other.demographic !== series.demographic);

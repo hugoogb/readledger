@@ -85,8 +85,6 @@ export function ImportModal() {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  // Adapt the import button to the current state so it never reads
-  // "Import 0 Volumes" when there's simply no valid file selected yet.
   const hasErrors = (preview?.errors.length ?? 0) > 0;
   const volumeCount = preview?.volumeCount ?? 0;
   const canImport = !!preview && !hasErrors && preview.rows.length > 0;
@@ -107,7 +105,6 @@ export function ImportModal() {
 
       <Modal isOpen={isOpen} onClose={handleClose} title="Import Collection">
         <div className="space-y-4">
-          {/* File Upload */}
           <div
             role="button"
             tabIndex={0}
@@ -137,7 +134,6 @@ export function ImportModal() {
             />
           </div>
 
-          {/* Preview loading */}
           {isPreviewing && (
             <div className="flex items-center justify-center gap-2 py-4">
               <Loader2 className="w-5 h-5 animate-spin text-accent" />
@@ -145,10 +141,8 @@ export function ImportModal() {
             </div>
           )}
 
-          {/* Preview results */}
           {preview && (
             <div className="space-y-3">
-              {/* Stats */}
               <div className="flex gap-3">
                 <Badge variant="default" className="gap-1">
                   {plural(preview.seriesCount, "title")}
@@ -158,7 +152,6 @@ export function ImportModal() {
                 </Badge>
               </div>
 
-              {/* Errors */}
               {preview.errors.length > 0 && (
                 <div className="p-3 bg-error/10 border border-error/20 rounded-md space-y-1">
                   <div className="flex items-center gap-2 text-error font-medium text-sm">
@@ -178,7 +171,6 @@ export function ImportModal() {
                 </div>
               )}
 
-              {/* Sample data */}
               {preview.rows.length > 0 && (
                 <div className="max-h-48 overflow-y-auto border border-border rounded-md">
                   <table className="w-full text-sm">
@@ -213,7 +205,6 @@ export function ImportModal() {
             </div>
           )}
 
-          {/* Actions */}
           <div className="flex gap-3 pt-2">
             <Button
               variant="outline"

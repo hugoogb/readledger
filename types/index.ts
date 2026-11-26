@@ -8,7 +8,6 @@ export type SeriesDefaults = {
   retailPrice?: number | null;
 };
 
-/** The subset of a series the grid card and list sorts need. */
 export type SeriesCardData = Pick<
   Series,
   "id" | "title" | "author" | "status" | "format" | "publishing" | "coverImage" | "totalVolumes"

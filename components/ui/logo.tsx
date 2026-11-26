@@ -2,10 +2,6 @@ import { cn } from "@/lib/utils";
 
 type LogoProps = { size?: number; className?: string };
 
-/**
- * The ReadLedger mark: four spines on a shelf that doubles as a bar chart,
- * standing on the bookkeeper's double rule. Same artwork as app/icon.svg.
- */
 export function LogoMark({ size = 24, className }: LogoProps) {
   return (
     <svg
@@ -34,7 +30,6 @@ export function LogoMark({ size = 24, className }: LogoProps) {
   );
 }
 
-/** Mark plus the serif wordmark. */
 export function Logo({ size = 24, className }: LogoProps) {
   return (
     <span className={cn("inline-flex items-center gap-2", className)}>

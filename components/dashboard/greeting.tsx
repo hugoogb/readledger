@@ -12,10 +12,6 @@ function greetingFor(date: Date) {
   return "Good evening";
 }
 
-/**
- * Time-of-day greeting and today's date in the reader's own timezone. The
- * server render says "Welcome back"; the client swaps in local time.
- */
 export function Greeting({ name }: { name: string | null }) {
   const greeting = useSyncExternalStore(
     subscribe,

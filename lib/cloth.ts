@@ -1,7 +1,3 @@
-/**
- * Bookcloth colours for covers we don't have an image for. Muted, dark enough
- * for light serif text, and drawn from the app palette.
- */
 export const CLOTH_COLORS = [
   "#1f4a3a",
   "#7b2d26",
@@ -13,7 +9,6 @@ export const CLOTH_COLORS = [
   "#8a3a2c",
 ] as const;
 
-/** Deterministic: the same title always gets the same cloth. */
 export function clothColor(title: string): string {
   let hash = 0;
   for (let i = 0; i < title.length; i++) {

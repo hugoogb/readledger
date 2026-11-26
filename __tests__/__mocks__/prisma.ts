@@ -51,7 +51,6 @@ export const prismaMock = {
   },
   $queryRaw: vi.fn(),
   $executeRaw: vi.fn(),
-  // Interactive transactions run the callback against the same mock client.
   $transaction: vi.fn(async (fn: (tx: unknown) => unknown) => fn(prismaMock)),
 };
 

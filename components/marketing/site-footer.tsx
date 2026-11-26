@@ -30,8 +30,6 @@ export function SiteFooter() {
             <ThemeToggle />
           </div>
         </div>
-        {/* MangaDex's API policy requires this credit; Open Library asks for a courtesy link;
-            Google Books results must be attributed. */}
         <p className="text-xs leading-relaxed text-foreground-muted">
           Manga data from{" "}
           <a href="https://mangadex.org" rel="noopener" className="underline underline-offset-2 hover:text-foreground">

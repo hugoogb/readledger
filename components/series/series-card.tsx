@@ -6,11 +6,9 @@ import type { SeriesCardData } from "@/types";
 
 type SeriesCardProps = {
   series: SeriesCardData;
-  /** Name the format; only useful when the library mixes formats. */
   showFormat?: boolean;
 };
 
-/** A library entry: the cover leads, with a short ledger-style caption below. */
 export function SeriesCard({ series, showFormat = false }: SeriesCardProps) {
   const standalone = isStandalone(series.totalVolumes, series.volumes.length);
   const owned = series.volumes.filter((v) => v.owned).length;
@@ -23,7 +21,6 @@ export function SeriesCard({ series, showFormat = false }: SeriesCardProps) {
       <CoverImage
         src={series.coverImage}
         title={series.title}
-        // Matches the grid: 2 cols on phones, up to 5 on wide screens.
         sizes="(min-width: 1280px) 20vw, (min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
         className="transition-transform duration-200 group-hover:-translate-y-0.5"
       />

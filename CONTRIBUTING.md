@@ -64,6 +64,7 @@ prisma/         Database schema and migrations
 - **Server actions** should be thin — business logic goes in `services/`
 - **Custom errors** (`NotFoundError`, `UnauthorizedError`, `ValidationError`) from `lib/errors.ts`. Their messages reach the user: actions wrapped in `withResult()` return them as values
 - Prefer simple functions over classes; match existing patterns
+- **No code comments** (lint-enforced, see `docs/adr/0001-no-comments-in-code.md`): record non-obvious decisions in `docs/adr/` and file shortcuts as issues
 
 ## Testing
 

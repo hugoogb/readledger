@@ -15,8 +15,6 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 
-// The 32px buttons get an invisible 40x44px touch target that doesn't
-// overlap the neighbouring button (gap-2).
 const HIT_AREA = "relative after:absolute after:-inset-y-1.5 after:-inset-x-1 after:content-['']";
 
 type VolumeCellProps = {
@@ -80,7 +78,6 @@ export const VolumeCell = memo(function VolumeCell({
         `}
         aria-label={`Volume ${volume.volumeNumber}${isOwned ? (isRead ? ", owned and read" : ", owned") : ", not owned"}`}
       >
-        {/* Background */}
         <div
           className={`
             absolute inset-0
@@ -94,7 +91,6 @@ export const VolumeCell = memo(function VolumeCell({
           `}
         />
 
-        {/* Cover Image */}
         {hasCover && (
           <Image
             fill
@@ -106,7 +102,6 @@ export const VolumeCell = memo(function VolumeCell({
           />
         )}
 
-        {/* Volume Number */}
         <div
           className={`
             absolute inset-0 flex items-center justify-center
@@ -131,7 +126,6 @@ export const VolumeCell = memo(function VolumeCell({
           </span>
         </div>
 
-        {/* Status Badge - Top Right */}
         {isOwned ? (
           <div className="absolute top-1 right-1 z-10">
             <Badge
@@ -165,7 +159,6 @@ export const VolumeCell = memo(function VolumeCell({
           </div>
         ) : null}
 
-        {/* Price badge */}
         {volume.pricePaid != null && isOwned && (
           <div className="hidden lg:block absolute top-1 left-1 z-10">
             <Badge
@@ -178,7 +171,6 @@ export const VolumeCell = memo(function VolumeCell({
           </div>
         )}
 
-        {/* Store badge - Bottom Left */}
         {volume.store && isOwned && (
           <div className="hidden lg:block absolute bottom-1 left-1 z-10">
             <Badge
@@ -192,10 +184,6 @@ export const VolumeCell = memo(function VolumeCell({
           </div>
         )}
 
-        {/* Action Buttons - Bottom Right.
-            Touch devices (phones and tablets) can't hover, so the buttons are
-            always visible there; only devices with a real hover pointer reveal
-            them on hover/focus to keep covers clean. */}
         <div className="flex absolute bottom-1 right-1 z-20 items-center gap-2 opacity-100 [@media(hover:hover)]:opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
           {!isOwned ? (
             <>

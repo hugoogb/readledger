@@ -11,13 +11,11 @@ import { SpreadsheetVsAppGuide, spreadsheetVsAppMeta } from "./spreadsheet-vs-ap
 export type Guide = {
   slug: string;
   kind: string;
-  /** "books" guides are for any reader; "manga" guides are for manga collectors. */
   audience: "books" | "manga";
   title: string;
   heading: string;
   description: string;
   published: string;
-  /** Change only when the content really changes: it feeds the sitemap's lastmod. */
   updated: string;
   Body: ComponentType;
 };

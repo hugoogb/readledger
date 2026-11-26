@@ -6,8 +6,6 @@ import { checkRateLimit } from "@/lib/rate-limit";
 import { MAX_VOLUMES } from "@/lib/validations";
 import { z } from "zod";
 
-// Both actions proxy MangaDex through the shared throttle, so they require a
-// session and bounded inputs to keep anonymous callers from tying it up.
 const searchInput = z.object({
   query: z.string().trim().min(1).max(200),
   page: z.number().int().min(1).max(100),

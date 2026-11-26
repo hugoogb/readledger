@@ -4,11 +4,9 @@ type PageMessageProps = {
   eyebrow?: string;
   title: string;
   body: ReactNode;
-  /** Buttons or links. */
   children?: ReactNode;
 };
 
-/** Full-width notice for 404s and error boundaries: quiet, text-first. */
 export function PageMessage({ eyebrow, title, body, children }: PageMessageProps) {
   return (
     <div className="flex min-h-[60vh] items-center justify-center px-5 py-12">

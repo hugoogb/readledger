@@ -29,7 +29,6 @@ export default async function StatisticsPage({ searchParams }: Props) {
 
   return (
     <div className="p-4 lg:p-8">
-      {/* Header */}
       <div className="mb-6">
         <h1 className="font-serif text-3xl font-medium mb-1">Statistics</h1>
         <p className="text-foreground-muted">
@@ -49,7 +48,6 @@ export default async function StatisticsPage({ searchParams }: Props) {
         />
       </div>
 
-      {/* Keyed so switching tab/year shows the skeleton instead of stale data. */}
       <Suspense key={`${tab}-${year ?? ""}`} fallback={<ChartGridSkeleton />}>
         {tab === "reading" && <ReadingTab yearParam={year} />}
         {tab === "collection" && <CollectionTab />}

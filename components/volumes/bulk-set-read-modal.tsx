@@ -68,7 +68,6 @@ export function BulkSetReadModal({ volumes }: BulkSetReadModalProps) {
     }
   };
 
-  // Get unique volume numbers for quick select
   const quickSelectNumbers = [
     ...new Set(unreadVolumes.map((v) => v.volumeNumber)),
   ]
@@ -107,7 +106,6 @@ export function BulkSetReadModal({ volumes }: BulkSetReadModalProps) {
             maxHeight="max-h-48"
           />
 
-          {/* Quick Select */}
           {quickSelectNumbers.length > 0 && (
             <div>
               <div className="mb-3">
@@ -148,7 +146,6 @@ export function BulkSetReadModal({ volumes }: BulkSetReadModalProps) {
             </p>
           </FormField>
 
-          {/* Actions */}
           <div className="flex gap-3 pt-2">
             <Button
               variant="outline"

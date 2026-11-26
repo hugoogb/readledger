@@ -113,7 +113,7 @@ describe("comparisonToLastYear", () => {
       read("2026-02-01"),
       read("2026-09-01"),
       read("2025-03-01"),
-      read("2025-11-01"), // after Oct 2 — not counted
+      read("2025-11-01"),
     ];
     expect(comparisonToLastYear(volumes, 2026, NOW)).toEqual({
       current: 2,
@@ -151,8 +151,8 @@ describe("bestPeriod", () => {
 describe("averageBuyToRead", () => {
   it("averages whole days between purchase and read", () => {
     const volumes = [
-      read("2026-01-11", { purchaseDate: d("2026-01-01") }), // 10
-      read("2026-02-21", { purchaseDate: d("2026-02-01") }), // 20
+      read("2026-01-11", { purchaseDate: d("2026-01-01") }),
+      read("2026-02-21", { purchaseDate: d("2026-02-01") }),
     ];
     expect(averageBuyToRead(volumes, 2026)).toBe(15);
   });
@@ -172,7 +172,6 @@ describe("averageBuyToRead", () => {
 });
 
 describe("currentStreak", () => {
-  // NOW is Friday 2026-10-02; its ISO week starts Monday 2026-09-28.
   it("counts consecutive weeks including the current one", () => {
     const volumes = [read("2026-09-29"), read("2026-09-22"), read("2026-09-14")];
     expect(currentStreak(volumes, NOW)).toBe(3);
@@ -188,24 +187,24 @@ describe("currentStreak", () => {
   });
 
   it("continues across New Year", () => {
-    const now = d("2026-01-06T10:00:00Z"); // Tuesday
+    const now = d("2026-01-06T10:00:00Z");
     const volumes = [read("2026-01-05"), read("2025-12-30"), read("2025-12-22")];
     expect(currentStreak(volumes, now)).toBe(3);
   });
 
   it("treats Sunday as the end of the week", () => {
-    const now = d("2026-10-04T23:00:00Z"); // Sunday, same week as Monday 09-28
+    const now = d("2026-10-04T23:00:00Z");
     expect(currentStreak([read("2026-09-28")], now)).toBe(1);
   });
 });
 
 describe("backlogTrend", () => {
   const volumes = [
-    vol({ purchaseDate: d("2026-01-10") }), // unread throughout
+    vol({ purchaseDate: d("2026-01-10") }),
     vol({ purchaseDate: d("2026-01-15"), read: true, readDate: d("2026-03-05") }),
     vol({ purchaseDate: d("2026-02-01") }),
-    vol({ purchaseDate: null }), // owned, undated → excluded
-    vol({ purchaseDate: d("2026-01-01"), read: true }), // read without date → excluded
+    vol({ purchaseDate: null }),
+    vol({ purchaseDate: d("2026-01-01"), read: true }),
   ];
 
   it("returns month-end points up to the current month", () => {
@@ -270,7 +269,6 @@ describe("goalProgress", () => {
   });
 
   it("computes pace for the current year", () => {
-    // 2026-10-02 is day 275 of 365.
     const result = goalProgress({ year: 2026, target: 73 }, 50, 2026, NOW);
     expect(result).toEqual({ target: 73, read: 50, completed: false, expected: 55, paceDelta: -5 });
   });

@@ -53,7 +53,6 @@ export const deleteSeries = withResult(async (id: string) => {
 
 export const getSeries = cache(async function getSeries(id: string) {
   const user = await requireUser();
-  // A malformed id in the URL is simply "not found", not a database error.
   if (!idSchema.safeParse(id).success) return null;
   return seriesService.getSeries(user.id, id);
 });
@@ -75,12 +74,10 @@ export async function getExistingMangadexIds(mangadexIds: string[]): Promise<str
 
 export async function getExistingOpenLibraryKeys(keys: string[]): Promise<string[]> {
   const user = await requireUser();
-  // Bounded like a search page; anything else isn't a key we stored.
   const valid = keys.slice(0, 50).filter((k) => openLibraryKeySchema.safeParse(k).success);
   return seriesService.getExistingOpenLibraryKeys(user.id, valid);
 }
 
-/** Whether any volume in the user's library holds this ISBN. */
 export async function isIsbnInLibrary(isbn: string): Promise<boolean> {
   const user = await requireUser();
   const isbn13 = isbn13FromQuery(isbn);
@@ -93,7 +90,6 @@ export const getFormatCounts = cache(async function getFormatCounts() {
   return seriesService.getFormatCounts(user.id);
 });
 
-/** What the add-a-book flow needs, fetched when it opens rather than on every page. */
 export async function getAddBookOptions(): Promise<{
   publishers: { id: string; name: string }[];
   booksFirst: boolean;
@@ -112,6 +108,5 @@ export const getSeriesStats = cache(async function getSeriesStats() {
 
 export async function getRecentSeries() {
   const user = await requireUser();
-  // Six fills one row of the desktop cover shelf.
   return seriesService.getRecentSeries(user.id, 6);
 }

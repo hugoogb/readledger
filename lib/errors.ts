@@ -1,4 +1,3 @@
-/** An expected failure whose message is safe to show the user (see lib/action-result.ts). */
 export class AppError extends Error {
   constructor(message: string) {
     super(message);

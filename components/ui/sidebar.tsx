@@ -8,7 +8,6 @@ import { Logo } from "@/components/ui/logo";
 import { isNavActive, NAV_ITEMS } from "./nav-items";
 import { ThemeToggle } from "./theme-toggle";
 
-/** Desktop navigation (lg and up). Phones use BottomTabBar instead. */
 export function Sidebar() {
   const pathname = usePathname();
   const profileActive =

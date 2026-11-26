@@ -19,8 +19,6 @@ export class TTLCache<T> {
   }
 
   set(key: string, value: T): void {
-    // Re-inserting moves the key to the newest position; only a new key can
-    // push the cache over its size, evicting the oldest entry.
     if (!this.store.delete(key) && this.store.size >= this.maxSize) {
       const oldestKey = this.store.keys().next().value;
       if (oldestKey !== undefined) this.store.delete(oldestKey);

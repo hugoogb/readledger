@@ -1,7 +1,5 @@
 import { DoubleRule } from "@/components/ui/double-rule";
 
-// Spine colours from the palette and heights (% of the shelf). The null is the
-// "missing volume" gap, which is what ReadLedger is good at showing.
 const SPINES: (readonly [string, number] | null)[] = [
   ["#1f4a3a", 78],
   ["#7b2d26", 92],
@@ -19,7 +17,6 @@ const SPINES: (readonly [string, number] | null)[] = [
   ["#3a2f28", 86],
 ];
 
-/** Decorative bookshelf on a double rule, with one missing volume. */
 export function LandingShelf() {
   return (
     <div aria-hidden="true">

@@ -10,10 +10,6 @@ type ChipNavProps = {
   label: string;
 };
 
-/**
- * Horizontally scrollable row of URL-backed chips (tabs, year filters).
- * Navigation runs in a transition so the row dims while the next view loads.
- */
 export function ChipNav({ items, active, label }: ChipNavProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();

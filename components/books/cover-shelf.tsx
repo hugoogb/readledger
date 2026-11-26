@@ -14,10 +14,6 @@ type CoverShelfProps = {
   emptyText: string;
 };
 
-/**
- * A row of covers. Phones scroll it sideways; from lg it becomes a six-column
- * grid so wider screens show more books, not bigger cards.
- */
 export function CoverShelf({ items, emptyText }: CoverShelfProps) {
   if (items.length === 0) {
     return <p className="py-6 text-sm text-foreground-muted">{emptyText}</p>;

@@ -16,7 +16,6 @@ import { startOfUtcDay } from "@/utils/date";
 
 export type KnownVolume = { seriesId: string; seriesTitle: string; volumeNumber: number; owned: boolean };
 
-/** The user's volume holding this ISBN (either form), or null. */
 export async function findVolumeByIsbn(userId: string, isbn13: string): Promise<KnownVolume | null> {
   const volume = await prisma.volume.findFirst({
     where: { isbn: { in: isbnVariants(isbn13) }, series: { userId } },
@@ -31,7 +30,6 @@ export async function findVolumeByIsbn(userId: string, isbn13: string): Promise<
   };
 }
 
-/** Series a scanned volume can belong to: everything except standalone books. */
 export async function listMultiVolumeSeries(
   userId: string,
 ): Promise<Array<{ id: string; title: string; totalVolumes: number | null }>> {
@@ -45,7 +43,6 @@ export async function listMultiVolumeSeries(
     .map(({ id, title, totalVolumes }) => ({ id, title, totalVolumes }));
 }
 
-/** The first multi-volume series whose normalised title equals `normalized`. */
 export async function findSeriesByTitle(
   userId: string,
   normalized: string,
@@ -54,11 +51,6 @@ export async function findSeriesByTitle(
   return match ? { id: match.id, title: match.title } : null;
 }
 
-/**
- * Marks volume `volumeNumber` of the series owned and stores the scanned ISBN
- * on it, creating the row when missing (a newly released volume). An ISBN
- * belongs to one volume per user, so it's cleared from any other volume.
- */
 export async function markVolumeOwnedByIsbn(
   userId: string,
   seriesId: string,
@@ -99,7 +91,6 @@ export async function markVolumeOwnedByIsbn(
     }
 
     if (series.totalVolumes !== null && series.totalVolumes < volumeNumber) {
-      // Keep rows 1..total contiguous, as raising the total in the edit form does.
       const gap = [];
       for (let n = series.totalVolumes + 1; n < volumeNumber; n++) gap.push({ seriesId, volumeNumber: n });
       if (gap.length > 0) await tx.volume.createMany({ data: gap, skipDuplicates: true });
@@ -107,8 +98,6 @@ export async function markVolumeOwnedByIsbn(
     }
   });
 }
-
-// --- Resolving a scanned ISBN ---
 
 export type VolumeMatch =
   | {
@@ -118,7 +107,6 @@ export type VolumeMatch =
       volumeNumber: number;
       owned: boolean;
       isbn: string;
-      /** The ISBN is already on this volume (not a guess from the title). */
       byIsbn: boolean;
     }
   | {
@@ -126,12 +114,10 @@ export type VolumeMatch =
       manga: FormattedMangaData;
       volumeNumber: number;
       totalVolumes: number | null;
-      /** False when the edition's printed total differs from MangaDex's: its covers would show other books. */
       useMangadexCovers: boolean;
       isbn: string;
     };
 
-/** A title-based guess: volume `volumeNumber` of one of the user's series. */
 async function guessedVolume(
   series: { id: string; title: string },
   volumeNumber: number,
@@ -152,7 +138,6 @@ async function guessedVolume(
   };
 }
 
-/** MangaDex's top result for the title, if its title or an alt title is that title. */
 async function findMangaByTitle(seriesTitle: string): Promise<MangaSearchResult | null> {
   const wanted = normalizeTitle(seriesTitle);
   const top = await findTopManga(seriesTitle);
@@ -161,19 +146,12 @@ async function findMangaByTitle(seriesTitle: string): Promise<MangaSearchResult 
   return names.some((n) => normalizeTitle(n) === wanted) ? top : null;
 }
 
-/**
- * What a scanned ISBN most likely is in the user's library: a volume they
- * already have, a volume of a series they have, or a volume of a MangaDex
- * series they don't. Null when it looks like a plain book. Only a suggestion:
- * nothing is written until the user confirms (markVolumeOwnedByIsbn).
- */
 export async function resolveIsbnVolume(userId: string, isbn13: string): Promise<VolumeMatch | null> {
   try {
     const known = await findVolumeByIsbn(userId, isbn13);
     if (known) return { kind: "existing", ...known, isbn: isbn13, byIsbn: true };
 
     const book = await lookupIsbnAnySource(isbn13);
-    // The work title is the reliable one; the edition title is a fallback.
     const parsed =
       book && (parseVolumeTitle(book.title) ?? (book.editionTitle ? parseVolumeTitle(book.editionTitle) : null));
     if (!parsed) return null;
@@ -194,7 +172,6 @@ export async function resolveIsbnVolume(userId: string, isbn13: string): Promise
       return guessedVolume(existing, volumeNumber, isbn13);
     }
 
-    // The edition's printed total wins over MangaDex's (kanzenban, 3-in-1...).
     const totalVolumes = parsed.totalVolumes ?? manga.lastVolume;
     return {
       kind: "new",

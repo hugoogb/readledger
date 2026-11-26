@@ -13,10 +13,6 @@ import {
   getLibraryFormats,
 } from "@/services/series";
 
-// ---------------------------------------------------------------------------
-// Helpers – realistic mock data
-// ---------------------------------------------------------------------------
-
 const USER_ID = "user-001";
 const SERIES_ID = "series-001";
 const now = new Date("2026-03-16T12:00:00Z");
@@ -64,13 +60,7 @@ function makeVolume(overrides: Record<string, unknown> = {}) {
   };
 }
 
-// ---------------------------------------------------------------------------
-// Tests
-// ---------------------------------------------------------------------------
-
 beforeEach(() => vi.clearAllMocks());
-
-// ---- createSeries ---------------------------------------------------------
 
 describe("createSeries", () => {
   it("creates a series with the correct userId and normalizes publisherId", async () => {
@@ -226,8 +216,6 @@ describe("createSeries for a standalone book", () => {
   });
 });
 
-// ---- updateSeries ---------------------------------------------------------
-
 describe("updateSeries", () => {
   it("updates an existing series", async () => {
     const existing = makeSeries({ volumes: [] });
@@ -333,7 +321,6 @@ describe("updateSeries", () => {
       ]),
       skipDuplicates: true,
     });
-    // Should be exactly 3 new volumes (2, 4, 5) since 1 and 3 already exist
     expect(prismaMock.volume.createMany.mock.calls[0][0].data).toHaveLength(3);
   });
 
@@ -347,14 +334,11 @@ describe("updateSeries", () => {
     prismaMock.series.findFirst.mockResolvedValue(existing);
     prismaMock.series.update.mockResolvedValue(makeSeries({ totalVolumes: 3 }));
 
-    // totalVolumes stays the same, so no new volumes should be created
     await updateSeries(USER_ID, SERIES_ID, { totalVolumes: 3 });
 
     expect(prismaMock.volume.createMany).not.toHaveBeenCalled();
   });
 });
-
-// ---- deleteSeries ---------------------------------------------------------
 
 describe("deleteSeries", () => {
   it("deletes an owned series", async () => {
@@ -379,8 +363,6 @@ describe("deleteSeries", () => {
     ).rejects.toThrow(NotFoundError);
   });
 });
-
-// ---- getAllSeries ----------------------------------------------------------
 
 describe("getAllSeries", () => {
   it("returns series with default ordering (updatedAt desc)", async () => {
@@ -441,7 +423,6 @@ describe("getAllSeries", () => {
         makeVolume({ id: "vol-2b", volumeNumber: 2, owned: true }),
       ],
     });
-    // A = 1/10 = 10%, B = 2/4 = 50%  => B should come first
     prismaMock.series.findMany.mockResolvedValue([seriesA, seriesB]);
 
     const result = await getAllSeries(USER_ID, { sort: "completion" });
@@ -464,7 +445,6 @@ describe("getAllSeries", () => {
         makeVolume({ id: "vol-2h", volumeNumber: 2, pricePaid: 15.0 }),
       ],
     });
-    // High = 35, Low = 5  => High should come first
     prismaMock.series.findMany.mockResolvedValue([seriesLow, seriesHigh]);
 
     const result = await getAllSeries(USER_ID, { sort: "spent" });
@@ -488,8 +468,6 @@ describe("getLibraryFormats", () => {
     });
   });
 });
-
-// ---- getSeriesStats -------------------------------------------------------
 
 describe("getSeriesStats", () => {
   it("ignores unpriced volumes and series without retail in savings", async () => {
@@ -545,29 +523,17 @@ describe("getSeriesStats", () => {
 
     const stats = await getSeriesStats(USER_ID);
 
-    // totalSeries = 2
     expect(stats.totalSeries).toBe(2);
-    // owned: v1, v2, v4, v5 = 4
     expect(stats.totalVolumesOwned).toBe(4);
-    // read: v1, v4, v5 = 3
     expect(stats.totalVolumesRead).toBe(3);
-    // spent: 7 + 8 + 0 + 9 + 10 = 34
     expect(stats.totalSpent).toBe(34);
-    // retailValue: s1 has 2 owned * 10 = 20, s2 has 2 owned * 12 = 24 => 44
     expect(stats.totalRetailValue).toBe(44);
-    // savings: 44 - 34 = 10
     expect(stats.totalSavings).toBe(10);
-    // savingsPercentage: (10/44)*100
     expect(stats.savingsPercentage).toBeCloseTo((10 / 44) * 100);
-    // totalExpected: 5 + 2 = 7
     expect(stats.totalExpectedVolumes).toBe(7);
-    // averagePrice: 34 / 4 = 8.5
     expect(stats.averagePrice).toBe(8.5);
-    // collectionProgress: (4/7)*100
     expect(stats.collectionProgress).toBeCloseTo((4 / 7) * 100);
-    // readingProgress: (3/4)*100
     expect(stats.readingProgress).toBeCloseTo((3 / 4) * 100);
-    // byStatus
     expect(stats.byStatus).toEqual({
       reading: 1,
       completed: 1,
@@ -596,8 +562,6 @@ describe("getSeriesStats", () => {
   });
 });
 
-// ---- getExistingMangadexIds -----------------------------------------------
-
 describe("getExistingMangadexIds", () => {
   it("filters to only existing mangadex IDs", async () => {
     prismaMock.series.findMany.mockResolvedValue([
@@ -622,8 +586,6 @@ describe("getExistingMangadexIds", () => {
   });
 });
 
-// ---- getExistingOpenLibraryKeys -------------------------------------------
-
 describe("getExistingOpenLibraryKeys", () => {
   it("returns the keys already in the library", async () => {
     prismaMock.series.findMany.mockResolvedValue([{ openLibraryKey: "OL1W" }]);
@@ -640,8 +602,6 @@ describe("getExistingOpenLibraryKeys", () => {
     expect(prismaMock.series.findMany).not.toHaveBeenCalled();
   });
 });
-
-// ---- getFormatCounts ------------------------------------------------------
 
 describe("getFormatCounts", () => {
   it("counts titles per format", async () => {

@@ -14,7 +14,6 @@ import { errorMessage } from "@/lib/utils";
 
 type Item = { id: string; name: string };
 
-// Stores and publishers are the same kind of per-user name list.
 const KINDS = {
   store: {
     noun: "store",

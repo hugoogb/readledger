@@ -1,13 +1,8 @@
-/**
- * Simple CSV parser/serializer for collection data.
- */
-
 export function serializeCsv(
   headers: string[],
   rows: string[][],
 ): string {
   const escapeField = (field: string) => {
-    // Prevent CSV formula injection in spreadsheet applications
     const formulaPrefixes = ["=", "+", "-", "@", "\t", "\r"];
     if (formulaPrefixes.some((p) => field.startsWith(p))) {
       field = `'${field}`;

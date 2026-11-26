@@ -29,7 +29,6 @@ export function generateOtp(): string {
     .padStart(OTP_LENGTH, "0");
 }
 
-/** HMAC bound to the email, so a code is only valid for the address it was sent to. */
 export function hashOtp(email: string, code: string): string {
   return createHmac("sha256", getAuthSecret())
     .update(`${email}:${code}`)
@@ -42,17 +41,11 @@ function hashesEqual(a: string, b: string): boolean {
   return bufA.length === bufB.length && timingSafeEqual(bufA, bufB);
 }
 
-/**
- * Creates a new code for `email`, superseding any live one, and returns it so
- * the caller can send it. Throws OtpThrottledError when sending too often.
- */
 export async function issueOtp(email: string): Promise<string> {
   const code = generateOtp();
   const now = new Date();
 
   await prisma.$transaction(async (tx) => {
-    // Serialise concurrent requests for the same email so the throttle checks
-    // and the "one live code" invariant hold under parallel submissions.
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${email}))`;
 
     const recent = await tx.otpCode.findMany({
@@ -85,13 +78,7 @@ export async function issueOtp(email: string): Promise<string> {
   return code;
 }
 
-/**
- * Verifies and consumes a code. Returns true exactly once per valid code.
- */
 export async function consumeOtp(email: string, code: string): Promise<boolean> {
-  // Count the attempt and fetch the live code in a single statement, so
-  // parallel guesses cannot exceed OTP_MAX_ATTEMPTS. Timestamps are stored as
-  // UTC `timestamp without time zone`, hence the explicit UTC conversion.
   const rows = await prisma.$queryRaw<{ id: string; codeHash: string }[]>`
     UPDATE "otp_codes"
     SET "attempts" = "attempts" + 1
@@ -105,7 +92,6 @@ export async function consumeOtp(email: string, code: string): Promise<boolean> 
   const match = rows.find((row) => hashesEqual(row.codeHash, candidate));
   if (!match) return false;
 
-  // Guard against two concurrent correct submissions both succeeding.
   const { count } = await prisma.otpCode.updateMany({
     where: { id: match.id, consumedAt: null },
     data: { consumedAt: new Date() },

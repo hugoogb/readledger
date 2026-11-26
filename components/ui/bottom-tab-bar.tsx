@@ -22,7 +22,6 @@ function Tab({ item, active }: { item: NavItem; active: boolean }) {
   );
 }
 
-/** Phone navigation: four sections around a central "Add a book" button. */
 export function BottomTabBar() {
   const pathname = usePathname();
   const { open } = useAddBook();

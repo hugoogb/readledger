@@ -123,15 +123,12 @@ export default async function SeriesDetailPage({ params }: Props) {
 
   const statusInfo = statusConfig[series.status];
   const stats = computeVolumeStats(series);
-  // A standalone book shows its single copy instead of a volume grid. The
-  // migration and the series service guarantee the row exists.
   const book = isStandalone(series.totalVolumes, series.volumes.length)
     ? series.volumes[0]
     : undefined;
 
   return (
     <div className="mx-auto max-w-[1200px] p-4 lg:p-8">
-      {/* Header */}
       <div className="mb-8">
         <Link
           href="/dashboard/library"
@@ -142,12 +139,10 @@ export default async function SeriesDetailPage({ params }: Props) {
         </Link>
 
         <div className="flex flex-col lg:flex-row gap-8">
-          {/* Cover */}
           <div className="w-36 shrink-0 sm:w-44">
             <CoverImage src={series.coverImage} title={series.title} sizes="176px" priority />
           </div>
 
-          {/* Info */}
           <div className="flex-1">
             <div className="flex items-start justify-between gap-4 mb-4 flex-wrap">
               <div>
@@ -169,7 +164,6 @@ export default async function SeriesDetailPage({ params }: Props) {
                     .map((part, i, parts) => (
                       <span key={i}>
                         {part}
-                        {/* Trailing dots, so a wrapped line never starts with one. */}
                         {i < parts.length - 1 && (
                           <span aria-hidden="true" className="ml-2">
                             ·
@@ -209,8 +203,6 @@ export default async function SeriesDetailPage({ params }: Props) {
                   retailPrice={series.retailPrice}
                   stores={stores}
                 />
-                {/* A CSV import that lists only volume 1 of a manga leaves
-                    totalVolumes = 1, so it shows as a single book. */}
                 {(series.format === Format.MANGA || series.format === Format.LIGHT_NOVEL) && (
                   <div className="mt-2">
                     <EditSeriesModal series={series} publishers={publishers} variant="seriesHint" />
@@ -219,7 +211,6 @@ export default async function SeriesDetailPage({ params }: Props) {
               </>
             ) : (
               <>
-                {/* Progress Bars */}
                 <SeriesProgressSection stats={stats} />
 
                 <SeriesTimeline volumes={series.volumes} />
@@ -234,7 +225,6 @@ export default async function SeriesDetailPage({ params }: Props) {
 
       <SeriesLedger stats={stats} formatCurrency={formatCurrency} />
 
-      {/* Volume Grid */}
       <section>
         <div className="flex items-end justify-between flex-wrap gap-4 mb-5 border-b border-border pb-4">
           <div>
@@ -249,7 +239,6 @@ export default async function SeriesDetailPage({ params }: Props) {
           </div>
         </div>
 
-        {/* Legend */}
         <div className="mb-6">
           <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs">
             <div className="flex items-center gap-2">

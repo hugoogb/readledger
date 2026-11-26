@@ -16,7 +16,6 @@ import { ChartEmpty } from "./chart-empty";
 import { AXIS_TICK, TOOLTIP_CONTENT } from "./chart-theme";
 
 type BacklogTrendProps = {
-  /** `label` is "YYYY-MM" for months or "YYYY" for years. */
   data: { label: string; count: number }[];
   granularity: "month" | "year";
 };

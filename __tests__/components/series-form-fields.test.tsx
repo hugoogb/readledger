@@ -11,8 +11,6 @@ vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
 import { SeriesFormFields } from "@/components/series/series-form-fields";
 
-// Holds the publisher list the way AddSeriesModal does: local state that only
-// changes when the form reports a newly created publisher.
 function Harness() {
   const methods = useForm();
   const [publishers, setPublishers] = useState([{ id: "p1", name: "Viz Media" }]);

@@ -8,7 +8,6 @@ import { toast } from "sonner";
 import { unwrap } from "@/lib/unwrap";
 import { errorMessage } from "@/lib/utils";
 
-/** Shown once to users who have never set a name (e.g. right after sign-up). */
 export function NamePrompt() {
   const [name, setName] = useState("");
   const [pendingAction, setPendingAction] = useState<"save" | "skip" | null>(null);
@@ -18,7 +17,6 @@ export function NamePrompt() {
     setPendingAction(action);
     startTransition(async () => {
       try {
-        // Saving "" records that the user skipped, so the prompt won't return.
         unwrap(await updateDisplayName(value));
         if (action === "save") toast.success(`Nice to meet you, ${value.trim()}!`);
       } catch (err) {

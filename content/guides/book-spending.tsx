@@ -12,8 +12,6 @@ export const bookSpendingMeta = {
   updated: "2026-11-19",
 };
 
-// Assumptions for the worked example, labelled as such on the page. They
-// aren't measured market prices.
 const BOOKS_PER_YEAR = 24;
 const NEW_PRICE = 15;
 const USED_PRICE = 9;

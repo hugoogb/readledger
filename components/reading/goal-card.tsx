@@ -9,7 +9,6 @@ import { plural } from "@/lib/utils";
 
 type GoalCardProps = {
   year: number;
-  /** Dated reads in `year` — shown even without a goal. */
   readCount: number;
   progress: GoalProgress | null;
 };

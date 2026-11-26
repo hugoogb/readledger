@@ -1,12 +1,5 @@
-// Applies a scanned volume to the volume rows of a series being created. Pure.
-
 import type { VolumeInput } from "@/services/series";
 
-/**
- * Marks the scanned volume owned with its ISBN. A scan past the end (stale
- * MangaDex count, a new release) raises the total and fills the gap, so the
- * series stays numbered 1..total like any other.
- */
 export function withScannedVolume(
   volumes: VolumeInput[],
   totalVolumes: number | null,

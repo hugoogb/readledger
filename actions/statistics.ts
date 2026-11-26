@@ -5,10 +5,8 @@ import { formatBreakdown } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 import { monthKey } from "@/utils/date";
 
-/** Rounds money to cents. */
 const cents = (amount: number) => Math.round(amount * 100) / 100;
 
-/** Dated owned volumes, oldest first; `pricePaid` for the spending chart. */
 async function datedOwnedVolumes(userId: string) {
   const volumes = await prisma.volume.findMany({
     where: { series: { userId }, owned: true, purchaseDate: { not: null } },
@@ -18,7 +16,6 @@ async function datedOwnedVolumes(userId: string) {
   return volumes as { pricePaid: number | null; purchaseDate: Date }[];
 }
 
-/** Sum of `value` per purchase month, in month order. */
 function byMonth<T extends { purchaseDate: Date }>(rows: T[], value: (row: T) => number) {
   const months = new Map<string, number>();
   for (const row of rows) {
@@ -85,10 +82,6 @@ export async function getPublisherBreakdown() {
   );
 }
 
-/**
- * Rows merged by name ("Unknown" when unnamed), most books first, spending
- * rounded to cents.
- */
 function rankByName(rows: { name: string | undefined; count: number; spent: number }[]) {
   const byName = new Map<string, { count: number; spent: number }>();
   for (const row of rows) {
@@ -101,7 +94,6 @@ function rankByName(rows: { name: string | undefined; count: number; spent: numb
     .sort((a, b) => b.count - a.count);
 }
 
-/** Owned books per format; every format in the library appears, even at 0. */
 export async function getFormatBreakdown() {
   const user = await requireUser();
 
@@ -138,7 +130,6 @@ export async function getConditionDistribution() {
 export async function getStoreBreakdown() {
   const user = await requireUser();
 
-  // Aggregate in the database instead of loading every owned volume.
   const [groups, stores] = await Promise.all([
     prisma.volume.groupBy({
       by: ["storeId"],
@@ -165,7 +156,6 @@ export async function getStoreBreakdown() {
   );
 }
 
-/** Owned volumes the date-based charts can't place (no purchaseDate). */
 export async function getUndatedOwnedCount() {
   const user = await requireUser();
 

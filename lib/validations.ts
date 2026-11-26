@@ -3,14 +3,10 @@ import { Condition, Format, SeriesStatus } from "./generated/prisma/enums";
 import { isAllowedCoverUrl } from "./covers";
 import { toStoredIsbn } from "./isbn";
 
-/** Upper bound for volumes in one series — keeps volume generation bounded. */
 export const MAX_VOLUMES = 1000;
 
-/** Most volumes one bulk action may change. */
 export const MAX_BULK_SIZE = 500;
 
-// Covers render through next/image, which only allows the hosts in
-// lib/covers.ts (see next.config.ts). Any other URL would crash the page.
 const coverImageSchema = z
   .url("Must be a valid URL")
   .refine(isAllowedCoverUrl, "Cover must be a MangaDex or Open Library cover URL")
@@ -19,7 +15,6 @@ const coverImageSchema = z
 
 export const idSchema = z.uuid("Invalid id");
 
-/** Open Library work key without the /works/ prefix, e.g. "OL893414W". */
 export const openLibraryKeySchema = z.string().regex(/^OL\d+W$/, "Invalid Open Library work");
 
 export const seriesSchema = z.object({
@@ -60,7 +55,6 @@ export const bulkMarkOwnedSchema = z.object({
   notes: z.string().max(1000).optional().or(z.literal("")),
 });
 
-/** Volume ids for bulk server actions. */
 export const volumeIdsSchema = z
   .array(idSchema)
   .min(1, "No volumes selected")
@@ -68,7 +62,6 @@ export const volumeIdsSchema = z
 
 export const readDateSchema = z.date("Invalid read date").optional();
 
-/** Server-side payload of bulkMarkOwned (the form schema above is client-side). */
 export const bulkOwnedPayloadSchema = z.object({
   pricePaid: z.number().min(0).max(100_000).optional(),
   storeId: idSchema.optional(),

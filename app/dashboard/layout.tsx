@@ -24,7 +24,6 @@ export default async function DashboardLayout({
             Skip to main content
           </a>
 
-          {/* Phones: top bar + bottom tab bar. lg and up: sidebar. */}
           <MobileHeader />
           <aside
             aria-label="Main sidebar"

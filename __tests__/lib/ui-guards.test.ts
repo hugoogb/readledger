@@ -2,8 +2,6 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
-// Guards the redesign: these are the tells of the old, template look, and
-// emoji or unicode symbols standing in for icons.
 const ROOTS = ["app", "components"];
 const BANNED: [string, RegExp][] = [
   ["emoji or symbol used as an icon", /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B50}]/u],

@@ -38,7 +38,6 @@ export default async function GuidePage({ params }: Props) {
 
   const url = `/guides/${guide.slug}`;
   const { Body } = guide;
-  // Same-audience guides first, so a manga reader keeps reading about manga.
   const others = guides
     .filter((other) => other.slug !== guide.slug)
     .sort((a, b) => Number(b.audience === guide.audience) - Number(a.audience === guide.audience))

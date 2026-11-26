@@ -31,14 +31,11 @@ type VolumePickerProps = {
   onToggle: (id: string) => void;
   onSelectAll: () => void;
   onClear: () => void;
-  /** Shown when there is nothing to pick. */
   emptyText: string;
   tone: keyof typeof TONES;
-  /** Tailwind max-height class of the scrolling grid. */
   maxHeight?: string;
 };
 
-/** Volume-number buttons to pick several volumes for a bulk action. */
 export function VolumePicker({
   label,
   volumes,

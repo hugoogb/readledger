@@ -2,15 +2,10 @@ import { BarChart3 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 type ChartEmptyProps = {
-  /** Short description of what data is missing, e.g. "spending". */
   label: string;
   icon?: LucideIcon;
 };
 
-/**
- * Shared empty state for charts with no data yet. Sized to roughly match the
- * 300px chart height so cards don't collapse when empty.
- */
 export function ChartEmpty({ label, icon: Icon = BarChart3 }: ChartEmptyProps) {
   return (
     <div className="flex flex-col items-center justify-center text-center h-[300px] gap-3">

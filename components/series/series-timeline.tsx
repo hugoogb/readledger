@@ -6,7 +6,6 @@ type SeriesTimelineProps = {
   volumes: Parameters<typeof seriesTimeline>[0];
 };
 
-/** Collecting and reading milestones for one series; hides unknown steps. */
 export function SeriesTimeline({ volumes }: SeriesTimelineProps) {
   const t = seriesTimeline(volumes);
 

@@ -26,7 +26,6 @@ export async function CollectionTab() {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      {/* Only meaningful once the library mixes formats. */}
       {formats.length > 1 && (
         <ChartCard title="By Format">
           <FormatBreakdown data={formats} />

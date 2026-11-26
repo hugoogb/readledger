@@ -116,7 +116,7 @@ describe("parseImport (json)", () => {
 });
 
 describe("parseImport format", () => {
-  const FHEADER = "series_title,format,volume_number,owned"; // any column order
+  const FHEADER = "series_title,format,volume_number,owned";
 
   it("reads the format column per title", () => {
     const { formats, errors } = parseImport(`${FHEADER}\nDune,novel,1,yes`, "csv");

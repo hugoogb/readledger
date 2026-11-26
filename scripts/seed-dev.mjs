@@ -1,24 +1,7 @@
-// Seeds the local development database (docker-compose.dev.yml) with a
-// representative collection, so every screen has something to show:
-// manga runs with gaps, single books, missing covers, a very long title,
-// prices, stores, reading dates, a goal and a wishlist.
-//
-//   pnpm db:seed:dev
-//
-// Creates two accounts: dev@readledger.local (seeded) and
-// empty@readledger.local (no books, for empty states). Sign in with either;
-// without BREVO_API_KEY the login code is printed to the dev server log.
-//
-// Idempotent: if the dev account already has series, nothing is changed.
-// Writes through `docker exec ... psql`, so it needs no extra dependencies,
-// and it only ever writes to the local dev container.
-
 import { execFileSync } from "node:child_process";
 
 const CONTAINER = "readledger-dev-db";
 
-// Writes go through `docker exec` into this container and nowhere else, so
-// the safety check is that the local dev container exists and is running.
 function containerRunning() {
   try {
     return (
@@ -77,7 +60,6 @@ const stores = ["Kinokuniya", "Second-hand market"];
 const publishers = ["Viz Media", "Penguin"];
 const conditions = ["NEW", "LIKE_NEW", "VERY_GOOD", "GOOD"];
 
-// owned: volume numbers owned; read: how many of the owned are read.
 const manga = [
   { title: "Berserk", author: "Kentaro Miura", status: "READING", total: 42, owned: 30, read: 24, id: "801513ba-a712-498c-8f57-cae55b38cc92", file: "88b10820-0309-44c5-9a40-c799865ad968.jpg", gaps: [7, 19] },
   { title: "Vinland Saga", author: "Makoto Yukimura", status: "READING", total: 14, owned: 14, read: 11, id: "5d1fc77e-706a-4fc5-bea8-486c9be0145d", file: "47e19a12-b0fb-4b52-b105-c202c555b966.jpg", publishing: true },
@@ -87,7 +69,6 @@ const manga = [
   { title: "Jujutsu Kaisen", author: "Gege Akutami", status: "DROPPED", total: 30, owned: 5, read: 3, id: "c52b2ce3-7f95-469c-96b0-479524fb7a1a", file: "258999da-cbcf-4dd9-8786-91f5eaa968b8.png" },
   { title: "Naruto", author: "Masashi Kishimoto", status: "PLAN_TO_READ", total: 72, owned: 3, read: 0, id: "6b1eb93e-473a-4ab3-9922-1a66d2a29a4a", file: "c5a3090c-4ca0-40a2-9102-e0ee0c6dac15.jpg" },
   { title: "One Piece", author: "Eiichiro Oda", status: "READING", total: 110, owned: 60, read: 52, id: "a1c7c817-4e59-43b7-9365-09675a149a6f", file: "2f4aca53-64c7-46ac-ae85-3bc9b3169890.png", publishing: true },
-  // No cover, no author, very long title: placeholder and truncation cases.
   { title: "The Extraordinarily Long and Winding Chronicle of a Small Bookshop at the Edge of the Map", author: null, status: "READING", total: 6, owned: 4, read: 2, noCover: true, format: "LIGHT_NOVEL" },
   { title: "Hand-bound Zine Collection", author: "Various", status: "COMPLETED", total: 3, owned: 3, read: 3, noCover: true, format: "COMIC" },
 ];
@@ -107,10 +88,8 @@ const wishlist = [
   { title: "Gödel, Escher, Bach", author: "Douglas Hofstadter", format: "NONFICTION" },
 ];
 
-// Spread purchase dates over this year and last, deterministically, never in
-// the future. A read lands 3 to 40 days after its purchase, capped at today.
 const today = new Date();
-const thisMonth = today.getUTCMonth(); // 0-based
+const thisMonth = today.getUTCMonth();
 const day = (i, y) => {
   const months = y < year ? 12 : Math.max(1, thisMonth);
   const date = `${y}-${String((i % months) + 1).padStart(2, "0")}-${String(((i * 7) % 27) + 1).padStart(2, "0")}`;

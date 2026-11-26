@@ -12,7 +12,6 @@ export async function toggleWishlist(userId: string, volumeId: string) {
     throw new NotFoundError("Volume");
   }
 
-  // Can't wishlist an already-owned volume
   if (volume.owned && !volume.wishlist) {
     throw new ValidationError("Volume is already owned");
   }
@@ -53,7 +52,6 @@ export async function getWishlistVolumes(userId: string) {
     ],
   });
 
-  // Group by series
   const grouped = new Map<
     string,
     {
@@ -87,7 +85,6 @@ export async function getWishlistVolumes(userId: string) {
   return Array.from(grouped.values());
 }
 
-/** Summary numbers derived from getWishlistVolumes() — no extra queries. */
 export function wishlistStats(groups: Awaited<ReturnType<typeof getWishlistVolumes>>) {
   let count = 0;
   let estimatedCost = 0;

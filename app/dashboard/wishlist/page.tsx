@@ -24,7 +24,6 @@ export default async function WishlistPage() {
 
   return (
     <div className="mx-auto max-w-[1200px] p-4 lg:p-8">
-      {/* Header */}
       <div className="mb-8">
         <h1 className="font-serif text-3xl font-medium mb-1">Wishlist</h1>
         <p className="text-foreground-muted">
@@ -38,7 +37,6 @@ export default async function WishlistPage() {
         <LedgerTotal label="Estimated cost" value={formatCurrency(stats.estimatedCost)} />
       </Ledger>
 
-      {/* Wishlist Groups */}
       {groups.length === 0 ? (
         <div className="border-t-2 border-foreground py-8">
           <h3 className="font-serif text-2xl font-medium">No wishlisted books</h3>

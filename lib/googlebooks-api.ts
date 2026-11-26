@@ -1,11 +1,3 @@
-// Google Books API, used only as an ISBN fallback when Open Library has no
-// record (common for Spanish editions). Documentation:
-// https://developers.google.com/books/docs/v1/using
-//
-// Needs GOOGLE_BOOKS_API_KEY: the keyless quota is shared by every caller and
-// is usually exhausted. Without a key the fallback is skipped. Results must be
-// credited to Google Books where they are shown.
-
 import { TTLCache } from "./cache";
 import { isRecord, stringArray } from "./json";
 import { toStoredIsbn } from "./isbn";
@@ -19,7 +11,6 @@ const GOOGLE_BOOKS_TIMEOUT_MS = 10_000;
 
 const str = (v: unknown): string => (typeof v === "string" ? v.trim() : "");
 
-/** The thumbnail over https, without the page-curl effect; "" when absent. */
 function coverUrl(volumeInfo: Record<string, unknown>): string {
   const links = isRecord(volumeInfo.imageLinks) ? volumeInfo.imageLinks : {};
   const thumb = str(links.thumbnail);
@@ -27,17 +18,12 @@ function coverUrl(volumeInfo: Record<string, unknown>): string {
   return thumb.replace(/^http:/, "https:").replace(/&edge=curl/, "");
 }
 
-/**
- * Whether the volume lists `isbn` (either form). A volume without identifiers
- * can't be checked and is given the benefit of the doubt.
- */
 function listsIsbn(info: Record<string, unknown>, isbn: string): boolean {
   if (!Array.isArray(info.industryIdentifiers)) return true;
   const wanted = toStoredIsbn(isbn);
   return info.industryIdentifiers.some((id) => isRecord(id) && toStoredIsbn(str(id.identifier)) === wanted);
 }
 
-/** Map one `items[]` entry; null when it lacks an id or title, or is another book. */
 export function mapGoogleVolume(item: unknown, isbn: string): BookSearchResult | null {
   if (!isRecord(item) || !isRecord(item.volumeInfo)) return null;
   const info = item.volumeInfo;
@@ -69,7 +55,6 @@ export function mapGoogleVolume(item: unknown, isbn: string): BookSearchResult |
 
 const isbnCache = new TTLCache<BookSearchResult | null>(10 * 60_000, 200);
 
-/** The book for a normalised ISBN, or null (also when unconfigured or unreachable). */
 export async function lookupIsbnGoogle(isbn: string): Promise<BookSearchResult | null> {
   const key = process.env.GOOGLE_BOOKS_API_KEY;
   if (!key) return null;
@@ -91,7 +76,6 @@ export async function lookupIsbnGoogle(isbn: string): Promise<BookSearchResult |
     isbnCache.set(isbn, result);
     return result;
   } catch (error) {
-    // Not cached: a transient failure shouldn't hide the book for 10 minutes.
     logger.error("Error fetching from Google Books", {
       error: errorMessage(error),
     });

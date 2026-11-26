@@ -1,9 +1,5 @@
 "use client";
 
-// Loaded on demand (next/dynamic in library-search.tsx): zxing is ~125 KB
-// gzipped and only needed once someone taps Scan. Pure JS, so there's no
-// WASM to host and nothing fetched from a CDN at runtime.
-
 import { Button } from "@/components/ui/button";
 import { isbnFromBarcode } from "@/lib/isbn";
 import { BrowserMultiFormatOneDReader, type IScannerControls } from "@zxing/browser";
@@ -35,11 +31,9 @@ function cameraErrorMessage(err: unknown): string {
   return "Couldn't start the camera. Type the ISBN from the back cover instead.";
 }
 
-/** Camera view that reads an EAN-13 book barcode and reports its ISBN. */
 export function IsbnScanner({ onDetected, onClose }: IsbnScannerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [state, setState] = useState<ScanState>({ status: "starting" });
-  // Latest callback without restarting the camera when the parent re-renders.
   const onDetectedRef = useRef(onDetected);
   useEffect(() => {
     onDetectedRef.current = onDetected;
@@ -53,7 +47,6 @@ export function IsbnScanner({ onDetected, onClose }: IsbnScannerProps) {
     const stop = () => {
       stopped = true;
       controls?.stop();
-      // Always release the camera ourselves, even if zxing never started.
       stream?.getTracks().forEach((track) => track.stop());
     };
 
@@ -67,7 +60,6 @@ export function IsbnScanner({ onDetected, onClose }: IsbnScannerProps) {
         if (!stopped) setState({ status: "error", message: cameraErrorMessage(err) });
         return;
       }
-      // Closed while the permission prompt was up.
       if (stopped || !videoRef.current) {
         stop();
         return;
@@ -119,7 +111,6 @@ export function IsbnScanner({ onDetected, onClose }: IsbnScannerProps) {
             playsInline
             aria-label="Camera preview"
           />
-          {/* Aiming guide: book barcodes are wide and short. */}
           <div
             aria-hidden="true"
             className="absolute left-1/2 top-1/2 h-1/3 w-3/4 -translate-x-1/2 -translate-y-1/2 rounded-lg border-2 border-white/80 shadow-[0_0_0_9999px_rgba(0,0,0,0.35)]"

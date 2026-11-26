@@ -20,7 +20,6 @@ import {
 const RESEND_COOLDOWN_S = 30;
 
 export default function LoginPage() {
-  // Set once a code has been sent; switches the form to the code step.
   const [email, setEmail] = useState<string | null>(null);
   const [cooldown, setCooldown] = useState(0);
 
@@ -127,7 +126,6 @@ function EmailStep({ onSent }: { onSent: (email: string) => void }) {
           </Button>
         </form>
 
-        {/* Transition notice for users who signed up with a password. */}
         <p className="mt-6 text-center text-xs text-foreground-muted">
           ReadLedger no longer uses passwords. Your collection is still here,
           just sign in with the code we email you.
@@ -154,7 +152,6 @@ function CodeStep({
   const [state, formAction, isPending] = useActionState(
     async (_: { error?: string } | null, formData: FormData) => {
       const result = await verifyOtp(formData);
-      // On success verifyOtp redirects and this never returns.
       setCode("");
       return result ?? null;
     },
@@ -164,7 +161,6 @@ function CodeStep({
   function handleCodeChange(value: string) {
     const digits = value.replace(/\D/g, "").slice(0, 6);
     setCode(digits);
-    // Auto-submit on the 6th digit (typed, pasted or autofilled).
     if (digits.length === 6 && !isPending) {
       queueMicrotask(() => formRef.current?.requestSubmit());
     }
