@@ -4,9 +4,9 @@ import { ImportModal } from "@/components/import-export/import-modal";
 import { Button } from "@/components/ui/button";
 import { Ledger, LedgerRow } from "@/components/ui/ledger";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import { getCurrentUser } from "@/lib/auth";
 import { ChevronRight, LogOut } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 
 const sectionTitle = "font-serif text-xl font-medium";
@@ -24,15 +24,7 @@ export default async function ProfilePage() {
     <div className="p-4 lg:p-8">
       <div className="mx-auto max-w-[40rem]">
         <header className="flex items-center gap-4">
-          {user.avatarUrl && (
-            <Image
-              width={56}
-              height={56}
-              src={user.avatarUrl}
-              alt=""
-              className="size-14 rounded-full object-cover"
-            />
-          )}
+          <UserAvatar user={user} size={56} className="size-14" />
           <div className="min-w-0">
             <h1 className="truncate font-serif text-3xl font-medium leading-tight">
               {user.name || "Your profile"}

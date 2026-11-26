@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 /* Light theme (default): paper, ink, bookcloth green, gilt, oxblood. */
 :root {
   --background: #f6f2e9;
